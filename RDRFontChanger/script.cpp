@@ -1,19 +1,16 @@
-#include "script.h"
+﻿#include "script.h"
 #include "keyboard.h"
 #include <string>
 #include <format>
 #include <vector>
+#include <filesystem>
+#include <unordered_map>
+#include <mutex>
+#include "Hooks.h"
+#include "Logger.h"
+#define logFormat logIt
 
-void TeleportToArmadillo()
-{
-	Vector3 coords = { -2171.0f, 23.0f, 2592.0f };
-
-	Actor localActor = ACTOR::GET_PLAYER_ACTOR(ACTOR::GET_LOCAL_SLOT());
-	float heading = ACTOR::GET_HEADING(localActor);
-	if (ENTITY::IS_ACTOR_VALID(localActor)) {
-		ACTOR::TELEPORT_ACTOR_WITH_HEADING(localActor, Vector2(coords.x, coords.y), coords.z, heading, false, false, false);
-	}
-}
+int MyFont::g_thaiFont = 0;
 
 void PrintStatic()
 {
@@ -36,48 +33,45 @@ void printMessage(std::string msg) {
 	HUD::PRINT_OBJECTIVE_B(msg.c_str(), 2.0f, true, 2, 1, 0, 0, 0);
 }
 
-void KillAllActors()
-{
-	constexpr int SIZE = 100;
-	int actors[SIZE];
 
-	int count = worldGetAllActors(actors, SIZE);
+void SetupOnDllMain(HMODULE hInstance) {
+	Logger::Instance();
 
-	for (int i = 0; i < count; i++) {
-		if (!ENTITY::IS_ACTOR_VALID(actors[i])) continue;
-		if (ACTOR::IS_ACTOR_LOCAL_PLAYER(actors[i])) continue;
+	// scriptRegister(hInstance, ScriptMain);
+	MyFont::RegisterFonts();
+	keyboardHandlerRegister(OnKeyboardMessage);
 
-		HEALTH::KILL_ACTOR(actors[i]);
-	}
-}
+	Hooks::SetupHooks();
 
-void GiveMonyFromScript()
-{
-	std::vector<u64> args{1000, 1, 1 };
-	scriptCall("$/content/main", 107871, (u32)args.size(), args.data());
+	logFormat("Setup Main Dll!");
 }
 
 void ScriptMain()
 {
 	srand(static_cast<unsigned int>(GetTickCount64()));
+
 	while (true)
 	{
-		drawText(0.5f, 0.5f, 
-		"<outline><33c4ff>outlined text</33c4ff></outline> "
+		drawText(0.5f, 0.5f,
+			"<outline><33c4ff>outlined text</33c4ff></outline> "
 			"<outline><sepia>Outlined sepia text</sepia></outline> "
 			"<0xFcAf17>hex color text</0xFCAF17> "
+			"normal text here & こんにちは "
 			"<outline><shadow><00FF00>Text with shadow and outline</00FF00></shadow></outline>",
-			255, 255, 255, 255, s_CustomFontId2, 0.03f, Center);
-
-		if (IsKeyJustUp(VK_F7))
-			GiveMonyFromScript();
-
-		if (IsKeyJustUp(VK_F8))
-			TeleportToArmadillo();
-
-		if (IsKeyJustUp(VK_F11))
-			KillAllActors();
+			255, 255, 255, 255, MyFont::g_thaiFont, 0.03f, Center);
 
 		scriptWait(0);
+	}
+}
+
+void MyFont::RegisterFonts()
+{
+	// Register custom fonts
+	auto currentPath = std::filesystem::current_path();
+	auto fontPathString = (currentPath / "noto-sans-jp-japanese-500-normal.ttf").string();
+	auto fontPath = fontPathString.c_str();
+	MyFont::g_thaiFont = getCustomFontByPath(fontPath);
+	if (MyFont::g_thaiFont == -1) {
+		MyFont::g_thaiFont = registerFont(fontPath, 50);
 	}
 }

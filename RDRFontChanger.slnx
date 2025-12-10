@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="RDRFontChanger/RDRFontChanger.vcxproj" />
+  <Project Path="RDRFontChanger/RDRFontChanger.vcxproj" Id="6aadc69f-6a84-45b0-b2ab-c6782c8f8f6c" />
 </Solution>

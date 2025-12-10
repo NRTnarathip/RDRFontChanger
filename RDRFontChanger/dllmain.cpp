@@ -1,26 +1,24 @@
 #include <main.h>
 #include "script.h"
 #include "keyboard.h"
+#include "dllmain.h"
+#include <iostream>
+#include <fstream>
+#include <Windows.h>
+#include <sstream>
+#include <cstdint>
+#include <chrono>
+#include <iomanip>
+#include <ctime>
+#include <cstdarg>
+#include <filesystem>
 
 BOOL APIENTRY DllMain(HMODULE hInstance, DWORD reason, LPVOID lpReserved)
 {
 	switch (reason)
 	{
 	case DLL_PROCESS_ATTACH:
-		scriptRegister(hInstance, ScriptMain);
-
-		// Register custom fonts
-		s_CustomFontId = getCustomFontByPath("redo.ttf");
-		if (s_CustomFontId == -1) {
-			s_CustomFontId = registerFont("redo.ttf", 72.0f);
-		}
-
-		s_CustomFontId2 = getCustomFontByPath("droid.ttf");
-		if (s_CustomFontId2 == -1) {
-			s_CustomFontId2 = registerFont("droid.ttf", 72.0f);
-		}
-
-		keyboardHandlerRegister(OnKeyboardMessage);
+		SetupOnDllMain(hInstance);
 		break;
 	case DLL_PROCESS_DETACH:
 		scriptUnregister(hInstance);

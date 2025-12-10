@@ -48,7 +48,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v145</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -130,7 +130,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;RDRFONTCHANGER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;RDRFONTCHANGER_EXPORTS;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -141,21 +141,26 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>$(ProjectDir)libs\ScriptHookRDR.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ScriptHookRDR.lib;libMinHook.x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\RDR1-Example-Script\src\keyboard.h" />
-    <ClInclude Include="..\..\..\RDR1-Example-Script\src\script.h" />
-    <ClInclude Include="framework.h" />
-    <ClInclude Include="pch.h" />
+    <ClInclude Include="dllmain.h" />
+    <ClInclude Include="Hooks.h" />
+    <ClInclude Include="keyboard.h" />
+    <ClInclude Include="Logger.h" />
+    <ClInclude Include="script.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\RDR1-Example-Script\src\keyboard.cpp" />
-    <ClCompile Include="..\..\..\RDR1-Example-Script\src\script.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="Hooks.cpp" />
+    <ClCompile Include="keyboard.cpp" />
+    <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="script.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Library Include="libs\libMinHook.x64.lib" />
     <Library Include="libs\ScriptHookRDR.lib" />
   </ItemGroup>
   <ItemGroup>
