@@ -4,14 +4,20 @@
 #pragma comment(lib, "libMinHook.x64.lib")
 #include <unordered_map>
 #include "Logger.h"
+#include <string>
 #define logFormat logIt
 
 
-uintptr_t GetImageBase() {
+uintptr_t Hooks::GetImageBase() {
 	static uintptr_t g_imageBase = (uintptr_t)GetModuleHandleA(NULL);
 	if (g_imageBase == NULL)
 		g_imageBase = (uintptr_t)GetModuleHandleA(NULL);
 	return g_imageBase;
+}
+
+uintptr_t Hooks::GetRvaFromAddress(uintptr_t addr)
+{
+	return (uintptr_t)(addr - GetImageBase());
 }
 
 struct HookInfo {
@@ -60,7 +66,7 @@ bool HookFuncAddr(void* targetFunc, void* detour, void* ppBackupFunc) {
 }
 
 void* GetAddressFromRva(int rva) {
-	return (void*)(GetImageBase() + rva);
+	return (void*)(Hooks::GetImageBase() + rva);
 }
 bool HookFuncRva(uintptr_t funcRva, void* detour, void* ppBackup) {
 	return HookFuncAddr(GetAddressFromRva(funcRva), detour, ppBackup);
@@ -80,6 +86,9 @@ struct SWFGLYPH {
 };
 struct ALIGNZONE {};
 struct FONTUSAGE {};
+struct GLYPH {
+
+};
 struct SWFFONT
 {
 	//int		id; // -1 = not set
@@ -101,7 +110,12 @@ struct SWFFONT
 	//U8		language;
 	//char** glyphnames;
 	//FONTUSAGE* use;
-	char off0xB0[0xb0];
+	void** vftable;
+	char _0x0_0x20[0x18];
+	void* glyphToCode; //0x20 - > 0x28
+	void* advance;
+	GLYPH** codeToGlyph; // 0x30 -> 0x38
+	char _0x38_0xB0[0x78];
 	short sheetCount;
 	short ascent;
 	short desent;
@@ -115,10 +129,41 @@ struct SWFFONT
 	Sheet** sheet;
 };
 
+static_assert(offsetof(SWFFONT, glyphToCode) == 0x20, "Assert It");
 static_assert(offsetof(SWFFONT, sheetCount) == 0xb0, "Assert It");
 static_assert(offsetof(SWFFONT, glyphCount) == 0xb8, "Assert It");
 static_assert(offsetof(SWFFONT, langCode) == 0xbb, "Assert It");
 static_assert(offsetof(SWFFONT, sheet) == 0xc0, "Assert It");
+static_assert(offsetof(SWFFONT, codeToGlyph) == 0x30, "Assert It");
+
+typedef  int (*GetGlyphFromChar_Fn)(SWFFONT* p1_font, unsigned char p2_char);
+GetGlyphFromChar_Fn backup_GetGlyphFromChar;
+int HK_GetGlyphFromChar(SWFFONT* p1_font, unsigned short p2_char) {
+	logFormat("GetGlyphFromChar()!!");
+	logFormat("p1 font: %p", p1_font);
+	logFormat("p2 char: %d", p2_char);
+	auto result = backup_GetGlyphFromChar(p1_font, p2_char);
+	logFormat("result: %d", result);
+	return result;
+}
+// GLYPH* GetGlyphFromChar(SWFFONT* font, unsigned char p1_char)
+//{
+//	GLYPH* index;
+//
+//	if (p1_char < 0x80) {
+//		return (GLYPH*)(ULONG) * (byte*)((long)&font->codeToGlyph + (ULONG)p1_char);
+//	}
+//	if (0 < (short)font->glyphCount) {
+//		index = (GLYPH*)0x0;
+//		do {
+//			if (*(USHORT*)((long)font->glyphToCode + (long)index * 2) == p1_char) {
+//				return index;
+//			}
+//			index = (GLYPH*)((long)&index + 1);
+//		} while ((GLYPH*)(ULONG)font->glyphCount != index);
+//	}
+//	return (GLYPH*)0x0;
+//}
 
 
 struct swfEDITFONT {
@@ -131,31 +176,55 @@ struct swfEDITFONT {
 	int64_t stringSize;
 };
 
+bool IsFontObj(void* obj) {
+	if (obj == nullptr)
+		return false;
+
+	auto font = (SWFFONT*)obj;
+	if (font->vftable == nullptr)
+		return false;
+
+	uintptr_t vf0 = Hooks::GetRvaFromAddress((uintptr_t)font->vftable[0]);
+	return vf0 == 0x195980;
+}
+
 typedef void (*HK_DrawTextWithFont_TypeDef)(
 	swfEDITFONT* p1, const char* p2, SWFFONT* p3, LONGLONG p4,
 	LONGLONG p5, LONGLONG p6, LONGLONG p7);
 HK_DrawTextWithFont_TypeDef backup_DrawTextWithFont;
 static void HK_DrawTextWithFont(
-	swfEDITFONT* p1, const char* p2, SWFFONT* p3, LONGLONG p4,
+	swfEDITFONT* p1, const char* p2, SWFFONT* p3_font, LONGLONG p4,
 	LONGLONG p5, LONGLONG p6, LONGLONG p7) {
 	logFormat("HK_DrawTextWithFont!!");
 	logFormat("draw text: %s", (const char*)p2);
 	logFormat("self: %p", (void*)p1);
 	logFormat("string: %p", (void*)p2);
-	logFormat("font: %p", p3);
+	logFormat("font: %p", p3_font);
 	logFormat("p4: %p", (void*)p4);
 	logFormat("p5: %p", (void*)p5);
 	logFormat("p6: %p", (void*)p6);
 	logFormat("p7: %p", (void*)p7);
 
 	logFormat("font info...");
-	logFormat("p3->glyphCount: %d", p3->glyphCount);
-	logFormat("p3->langCode: %d", p3->langCode);
-	logFormat("p3->sheetCount: %d", p3->sheetCount);
-	//logFormat("p3 + 0x60: %s", (char*)p3 + 0x60);
-	//logFormat("p3 + 0x30: %s", (char*)p3 + 0x30);
+	logFormat("p3->glyphCount: %d", p3_font->glyphCount);
+	logFormat("p3->langCode: %d", p3_font->langCode);
+	logFormat("p3->sheetCount: %d", p3_font->sheetCount);
 
-	backup_DrawTextWithFont(p1, p2, p3, p4, p5, p6, p7);
+	uintptr_t fontDtorRva = Hooks::GetRvaFromAddress((uintptr_t)p3_font->vftable[0]);
+	logFormat("font vf0 rva: 0x%x", fontDtorRva);
+
+
+
+	std::string replaceString = "Empty Text";
+	if (p2 != nullptr)
+		replaceString = p2;
+
+	if (replaceString.contains("Play")) {
+		// replaceString = "สวัสดีครับ นี่คือมอด!!";
+		// replaceString = "Play With Mods!";
+	}
+
+	backup_DrawTextWithFont(p1, replaceString.c_str(), p3_font, p4, p5, p6, p7);
 	logFormat("called original function!");
 }
 
@@ -191,6 +260,30 @@ void* swfFontDeclareStruct(SWFFONT* self, void* p1) {
 	return result;
 }
 
+typedef void* (*HK_swfFont_VF0_Fn)(void* p1, void* p2);
+HK_swfFont_VF0_Fn backup_swfFont_VF0;
+void* HK_swfFont_VF0(void* p1, void* p2) {
+	logFormat("HK_swfFont_VF0");
+	logFormat("p1: %p", p1);
+	logFormat("p2: %p", p2);
+	auto result = backup_swfFont_VF0(p1, p2);
+	logFormat("result: %p", result);
+	return result;
+}
+void* (*backup_swfSomeFactory)(int p1);
+void* HK_swfSomeFactory(int p1) {
+	logFormat("HK_swfSomeFactory");
+	logFormat("p1: %d", p1);
+	auto result = backup_swfSomeFactory(p1);
+	logFormat("result: %p", result);
+
+	//create swfFont??
+	if (IsFontObj(result)) {
+		logFormat("this obj is swfFont: %p", result);
+	}
+
+	return result;
+}
 
 void Hooks::SetupHooks()
 {
@@ -203,4 +296,9 @@ void Hooks::SetupHooks()
 	HookFuncRva(0x1fced0, LoadFlashFile, &backup_LoadFlashFile);
 	//HookFuncRva(0xc7510, rage_swfCONTEXT_GetGlobal, &backup_rage_swfCONTEXT_GetGlobal);
 	HookFuncRva(0x19b9e0, swfFontDeclareStruct, &backup_swfFontDeclareStruct);
+	HookFuncRva(0x196860, HK_GetGlyphFromChar, &backup_GetGlyphFromChar);
+	HookFuncRva(0x195980, HK_swfFont_VF0, &backup_swfFont_VF0);
+	HookFuncRva(0x194d10, HK_swfSomeFactory, &backup_swfSomeFactory);
 }
+
+
