@@ -146,6 +146,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CustomFont.h" />
     <ClInclude Include="dllmain.h" />
     <ClInclude Include="Hooks.h" />
     <ClInclude Include="keyboard.h" />
@@ -153,6 +154,7 @@
     <ClInclude Include="script.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CustomFont.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="Hooks.cpp" />
     <ClCompile Include="keyboard.cpp" />

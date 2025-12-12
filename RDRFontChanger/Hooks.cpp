@@ -7,6 +7,7 @@
 #include <string>
 #define logFormat logIt
 #include <stacktrace>
+#include "CustomFont.h"
 
 uintptr_t Hooks::GetImageBase() {
 	static uintptr_t g_imageBase = (uintptr_t)GetModuleHandleA(NULL);
@@ -27,7 +28,7 @@ std::string GetModuleNameFromAddress(void* addr)
 	if (!GetModuleFileNameA(hMod, path, sizeof(path)))
 		return "";
 
-	// µ—¥ path ‡À≈◊Õ·§Ë™◊ËÕ‰ø≈Ï
+	// ‡∏ï‡∏±‡∏î path ‡πÄ‡∏´‡∏•‡∏∑‡∏≠‡πÅ‡∏Ñ‡πà‡∏ä‡∏∑‡πà‡∏≠‡πÑ‡∏ü‡∏•‡πå
 	const char* filename = strrchr(path, '\\');
 	if (filename)
 		return filename + 1;
@@ -49,7 +50,7 @@ void Hooks::PrintStackRva()
 	//const int maxFrames = 30;
 	//USHORT frameCount = RtlCaptureStackBackTrace(0, maxFrames, stack, NULL);
 
-	//// À“ module base ¢Õßª—®®ÿ∫—π
+	//// ‡∏´‡∏≤ module base ‡∏Ç‡∏≠‡∏á‡∏õ‡∏±‡∏à‡∏à‡∏∏‡∏ö‡∏±‡∏ô
 	//uintptr_t base = GetImageBase();
 	//logFormat("Stack Trace...");
 	//for (USHORT i = 0; i < frameCount; i++)
@@ -130,66 +131,32 @@ bool HookFuncVTable(void* obj, int index, LPVOID detour, void* ppBackup) {
 
 typedef unsigned char U8;
 typedef unsigned short U16;
-struct SWFLAYOUT {
 
-};
-struct SWFGLYPH {
-
-};
-struct ALIGNZONE {};
-struct FONTUSAGE {};
-struct GLYPH {
-	float xOffset;
-	float yOffset;
-	float width;
-	float height;
-	float unk0x10;
-	float unk0x14;
-	float unk0x18;
-	float unk0x1C;
-};
-static_assert(sizeof(GLYPH) == 0x20, "Assert Size");
-struct Sheet {
-	void* unk0x0;
-	void* glyphArrayPtr;
-};
-struct SWFFONT
-{
-	void** vftable; // 0x0 -> 0x8
-	void* _0x8;
-	void* _0x10;
-	void* _0x18; // 0x18 -> 0x20
-	USHORT* glyphToCode; //0x20 - > 0x28
-	void* advance;
-	void* codeToGlyph; // 0x30 -> 0x38
-	char _0x38_0xB0[0x78];
-	short sheetCount;
-	short ascent;
-	short desent;
-	short leading;
-	unsigned short glyphCount;
-	unsigned char flags;
-	unsigned char langCode;
-	Sheet* sheetArrayPtr;
-};
-
-static_assert(offsetof(SWFFONT, glyphToCode) == 0x20, "Assert It");
-static_assert(offsetof(SWFFONT, sheetCount) == 0xb0, "Assert It");
-static_assert(offsetof(SWFFONT, glyphCount) == 0xb8, "Assert It");
-static_assert(offsetof(SWFFONT, langCode) == 0xbb, "Assert It");
-static_assert(offsetof(SWFFONT, sheetArrayPtr) == 0xc0, "Assert It");
-static_assert(offsetof(SWFFONT, codeToGlyph) == 0x30, "Assert It");
-
-typedef  int (*GetGlyphFromChar_Fn)(SWFFONT* p1_font, unsigned char p2_char);
+typedef uint(*GetGlyphFromChar_Fn)(swfFont* p1_font, unsigned char p2_char);
 GetGlyphFromChar_Fn backup_GetGlyphFromChar;
-int HK_GetGlyphFromChar(SWFFONT* p1_font, unsigned short p2_char) {
+uint HK_GetGlyphFromChar(swfFont* font, unsigned short charCode) {
 	logFormat("GetGlyphFromChar()!!");
-	logFormat("p1 font: %p", p1_font);
-	logFormat("p2 char: %d", p2_char);
-	auto result = backup_GetGlyphFromChar(p1_font, p2_char);
+	logFormat("font: %p", font);
+	logFormat("char code: %d", charCode);
+
+	if (backup_GetGlyphFromChar == 0)
+		backup_GetGlyphFromChar = (GetGlyphFromChar_Fn)GetAddressFromRva(0x196860);
+
+	auto result = backup_GetGlyphFromChar(font, charCode);
 	logFormat("result: %d", result);
 	return result;
 }
+
+#include <unordered_set>
+
+std::string TranslateThaiText(swfFont* font, std::string text) {
+	CustomFont::TryRegisterThaiFontGlyphs(font);
+
+	// not replace font yet
+	return text;
+}
+
+
 
 struct swfEDITFONT {
 	void* offset1;
@@ -205,7 +172,7 @@ bool IsFontObj(void* obj) {
 	if (obj == nullptr)
 		return false;
 
-	auto font = (SWFFONT*)obj;
+	auto font = (swfFont*)obj;
 	if (font->vftable == nullptr)
 		return false;
 
@@ -213,95 +180,66 @@ bool IsFontObj(void* obj) {
 	return vf0 == 0x195980;
 }
 
-uint GetGlyphFromChar(SWFFONT* font, USHORT p1_char)
-{
-	// not sure!!
-	if (p1_char < 0x80 && font->codeToGlyph != nullptr) {
-		return(ULONG) * (byte*)((long)&font->codeToGlyph + (ULONG)p1_char);
-	}
-
-	if (font->glyphCount > 0) {
-		uint index = 0;
-		do {
-			//logFormat("try check glyph To code, current index: %d", index);
-			if (*(USHORT*)((long long)font->glyphToCode + (long long)index * 2) == p1_char) {
-				//	logFormat("found glyph To code at index: %d", index);
-				return index;
-			}
-
-			index = index + 1;
-		} while (font->glyphCount != index);
-	}
-
-	return 0;
-}
 
 typedef void (*HK_DrawTextWithFont_TypeDef)(
-	swfEDITFONT* p1, const char* p2, SWFFONT* p3, LONGLONG p4,
+	swfEDITFONT* p1, const char* p2, swfFont* p3, LONGLONG p4,
 	LONGLONG p5, LONGLONG p6, LONGLONG p7);
 HK_DrawTextWithFont_TypeDef backup_DrawTextWithFont;
 static void HK_DrawTextWithFont(
-	swfEDITFONT* p1, const char* p2_text, SWFFONT* p3_font, LONGLONG p4,
+	swfEDITFONT* p1, const char* p2_text, swfFont* p3_font, LONGLONG p4,
 	LONGLONG p5, LONGLONG p6, LONGLONG p7) {
 	logFormat("HK_DrawTextWithFont!!");
 	logFormat("draw text: %s", (const char*)p2_text);
-	logFormat("font: %p", p3_font);
-	//logFormat("p4: %p", (void*)p4);
-	//logFormat("p5: %p", (void*)p5);
-	//logFormat("p6: %p", (void*)p6);
-	//logFormat("p7: %p", (void*)p7);
-
-	logFormat("font info...");
-	logFormat("p3->glyphCount: %d", p3_font->glyphCount);
-	logFormat("p3->codeToGlyph: %p", p3_font->codeToGlyph);
-	logFormat("p3->glyphToCode: %p", p3_font->glyphToCode);
-	logFormat("p3->langCode: %d", p3_font->langCode);
-	logFormat("p3->sheetCount: %d", p3_font->sheetCount);
+	//logFormat("font: %p", p3_font);
+	//logFormat("font info...");
+	//logFormat("p3->glyphCount: %d", p3_font->glyphCount);
+	//logFormat("p3->codeToGlyph: %p", p3_font->codeToGlyph);
+	//logFormat("p3->glyphToCode: %p", p3_font->glyphToCode);
+	//logFormat("p3->langCode: %d", p3_font->langCode);
+	//logFormat("p3->sheetCount: %d", p3_font->sheetCount);
 
 	// debug glyph all
 	//for (int i = 0; i < p3_font->glyphCount;i++) {
 	//GLYPH* g = GetGlyphFromChar(p3_font, 0x0);
 	auto font = p3_font;
+	//char* fontName = (char*)(font + 1);
+	//logFormat("font name: %s", fontName);
 
-	char* fontName = (char*)(font + 1);
-	logFormat("font name: %s", fontName);
-
-	char charCode = 'Q';
-	logFormat("charCode: %d", charCode);
+	//char charCode = 'Q';
+	//logFormat("charCode: %d", charCode);
 	//auto index = GetGlyphFromChar(p3_font, charCode);
 	// logFormat("g index: %d", index);
-	backup_GetGlyphFromChar = (GetGlyphFromChar_Fn)GetAddressFromRva(0x196860);
-	uint glyphIndex = backup_GetGlyphFromChar(p3_font, charCode);
-	logFormat("glyph index: %d", glyphIndex);
-	logFormat("sheet array ptr: %p", font->sheetArrayPtr);
-	auto sheet = font->sheetArrayPtr;
-	logFormat("sheet ptr: %p", sheet);
-	logFormat("sheet glyph array ptr: %p", sheet->glyphArrayPtr);
+	//backup_GetGlyphFromChar = (GetGlyphFromChar_Fn)GetAddressFromRva(0x196860);
+	//uint glyphIndex = backup_GetGlyphFromChar(p3_font, charCode);
+	//logFormat("glyph index: %d", glyphIndex);
+	//logFormat("sheet array ptr: %p", font->sheetArrayPtr);
+	//auto sheet = font->sheetArrayPtr;
+	//logFormat("sheet ptr: %p", sheet);
+	//logFormat("sheet glyph array ptr: %p", sheet->glyphArrayPtr);
 
-	auto g = (GLYPH*)((uintptr_t)sheet->glyphArrayPtr + glyphIndex * 0x20);
-	logFormat("glyph ptr: %p", g);
-	logFormat("x: %.2f", g->xOffset);
-	logFormat("y: %.2f", g->yOffset);
-	logFormat("width: %.2f", g->width);
-	logFormat("height: %.2f", g->height);
-	logFormat("0x10: %.2f", g->unk0x10);
-	logFormat("0x14: %.2f", g->unk0x14);
-	logFormat("0x18: %.2f", g->unk0x18);
-	logFormat("0x1C: %.2f", g->unk0x1C);
+	//auto g = (GLYPH*)((uintptr_t)sheet->glyphArrayPtr + glyphIndex * 0x20);
+	//logFormat("glyph ptr: %p", g);
+	//logFormat("x: %.2f", g->left);
+	//logFormat("y: %.2f", g->top);
+	//logFormat("width: %.2f", g->width);
+	//logFormat("height: %.2f", g->height);
+	//logFormat("0x10: %.2f", g->unk0x10);
+	//logFormat("0x14: %.2f", g->unk0x14);
+	//logFormat("0x18: %.2f", g->unk0x18);
+	//logFormat("0x1C: %.2f", g->unk0x1C);
 
-	uintptr_t fontDtorRva = Hooks::GetRvaFromAddress((uintptr_t)p3_font->vftable[0]);
-	logFormat("font vf0 rva: 0x%x", fontDtorRva);
+	//uintptr_t fontDtorRva = Hooks::GetRvaFromAddress((uintptr_t)p3_font->vftable[0]);
+	//logFormat("font vf0 rva: 0x%x", fontDtorRva);
 
-
-
-	std::string replaceString = "Empty Text";
+	std::string replaceString = "";
 	if (p2_text != nullptr)
 		replaceString = p2_text;
 
-	if (replaceString.contains("Play")) {
-		// replaceString = " «— ¥’§√—∫ π’Ë§◊Õ¡Õ¥!!";
-		// replaceString = "Play With Mods!";
-	}
+
+	// replace font glyphs
+	if (replaceString.empty() == false)
+		replaceString = TranslateThaiText(font, replaceString);
+
 
 	backup_DrawTextWithFont(p1, replaceString.c_str(), p3_font, p4, p5, p6, p7);
 }
@@ -329,9 +267,9 @@ static LONGLONG rage_swfCONTEXT_GetGlobal(const char* param_1, LONGLONG param_2)
 	return result;
 }
 
-typedef void* (*swfFontDeclareStruct_Fn)(SWFFONT* self, void* p1);
+typedef void* (*swfFontDeclareStruct_Fn)(swfFont* self, void* p1);
 swfFontDeclareStruct_Fn backup_swfFontDeclareStruct;
-void* swfFontDeclareStruct(SWFFONT* self, void* p1) {
+void* swfFontDeclareStruct(swfFont* self, void* p1) {
 	logFormat("Hook swfFontDeclareStruct");
 	logFormat("self: %p", self);
 	logFormat("p1: %p", p1);
