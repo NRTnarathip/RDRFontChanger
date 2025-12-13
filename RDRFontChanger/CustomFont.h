@@ -58,8 +58,14 @@ public:
 		int page;       // 0 - texture page
 		int chnl;       // 15 - channel
 	};
+	char face[256];
+	std::string fontName;
+	int size, bold, italic;
+	int lineHeight, baseline, scaleW, scaleH;
+
 	std::vector<Glyph> glyphs;
 	void ParseGlyph(const std::string& line, BitmapFont::Glyph& g);
+	bool isLoaded;
 	void Load(std::string path);
 };
 
@@ -68,7 +74,35 @@ class CustomFont
 public:
 	// glyphs count per font
 	static std::unordered_map<void*, int> g_registeredFontGlyphs;
+	static void RegisterGlyph(swfFont* font, BitmapFont& bitmapFont, BitmapFont::Glyph& bitmapGlyph);
 	static void TryRegisterThaiFontGlyphs(swfFont* font);
-	static void RegisterGlyph(swfFont* font, BitmapFont::Glyph& g);
 };
 
+
+struct Fonttext {
+public:
+	// float Version;
+	char unk[0x50];
+	int CharHeight;  // 0x50
+	int CharSpacing; // 0x54
+	int SpaceWidth; // 0x58
+	int MonospaceWidth; // 0x5C
+	int MaxAscent; // 0x60
+	int MaxDescent;
+	int ShadowLeft;
+	int ShadowRight;
+	int ShadowTop; // 70
+	int ShadowBottom;
+	int unk0x78;
+	int unk0x7C; // 7C
+	uint64_t unk0x80; // 80
+	uint64_t unk0x88; // 88
+	uint64_t unk0x90; // 90
+	int NumGlyphs;
+	void* Glyphs;
+	int NumTextures;
+	int* GlyphsPerTexture;
+};
+
+static_assert(offsetof(Fonttext, CharHeight) == 0x50, "assert");
+static_assert(offsetof(Fonttext, NumGlyphs) == 0x98, "assert");

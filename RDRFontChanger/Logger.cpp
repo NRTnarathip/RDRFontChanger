@@ -35,7 +35,7 @@ Logger::Logger()
 	m_logStream.open(m_logFileName, std::ios::out | std::ios::trunc);
 }
 
-void Logger::logFormat(const char* format, ...)
+void Logger::LogFormat(const char* format, ...)
 {
 	char buffer[1024];
 	va_list args;

@@ -11,7 +11,7 @@ public:
 		static Logger instance;
 		return &instance;
 	}
-	void logFormat(const char* format, ...);
+	void LogFormat(const char* format, ...);
 
 	// static utils
 	static std::string GetTimeNowMsString();
@@ -22,4 +22,5 @@ private:
 	const char* m_logFileName = "RDRFontChanger.log";
 };
 
-#define logIt Logger::Instance()->logFormat
+#define cw Logger::Instance()->LogFormat
+#define logFormat Logger::Instance()->LogFormat

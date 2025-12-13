@@ -4,7 +4,6 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
-#define logFormat logIt
 
 std::unordered_map<void*, int> CustomFont::g_registeredFontGlyphs;
 
@@ -43,7 +42,7 @@ void TryDumpSwfFont(swfFont* font) {
 
 }
 
-void CustomFont::RegisterGlyph(swfFont* font, BitmapFont::Glyph& bitmapGlyph)
+void CustomFont::RegisterGlyph(swfFont* font, BitmapFont& bitmapFont, BitmapFont::Glyph& bitmapGlyph)
 {
 	// init
 	if (g_registeredFontGlyphs.contains(font) == false) {
@@ -51,7 +50,6 @@ void CustomFont::RegisterGlyph(swfFont* font, BitmapFont::Glyph& bitmapGlyph)
 	}
 
 	int glyphIndex = g_registeredFontGlyphs[font];
-	logFormat("registered font glyphIndex: %d", glyphIndex);
 
 	// can't register max char
 	if (glyphIndex == font->glyphCount - 1)
@@ -63,8 +61,10 @@ void CustomFont::RegisterGlyph(swfFont* font, BitmapFont::Glyph& bitmapGlyph)
 
 	// update x advance
 	float* advanceArray = (float*)font->advanceFirstItem;
-	const float advanceScacleFactor = 8.5;
-	advanceArray[glyphIndex] = bitmapGlyph.xadvance * advanceScacleFactor;
+
+	// img size / font size
+	float advanceScale = 1.0;
+	advanceArray[glyphIndex] = bitmapGlyph.xadvance * advanceScale;
 
 	// update glyphToCode 
 	unsigned short* glyphToCodeArray = font->glyphToCodeArrayFirstItem;
@@ -78,19 +78,36 @@ void CustomFont::RegisterGlyph(swfFont* font, BitmapFont::Glyph& bitmapGlyph)
 	g->top = bitmapGlyph.y;
 	g->width = bitmapGlyph.width;
 	g->height = bitmapGlyph.height;
-	g->u0x10 = g->u0x14 = 0;
-	//g->u0x18 = g->u0x1C = 0;
-	// logFormat("reigstered font: x:%d, y:%d, w:%d, h:%d", (int)g->left, (int)g->top, (int)g->width, (int)g->height);
+	float baseline = bitmapFont.baseline;
+	float xoffset = bitmapGlyph.xoffset;
+	float yoffset = bitmapGlyph.yoffset;
+	// Formula (Y-up coordinate)
+	float bmY_top = baseline - yoffset - bitmapFont.lineHeight;
+	float bmY_bot = baseline - yoffset;
+
+	float bearingX = xoffset;
+	float bearingY = bitmapFont.lineHeight - yoffset - g->height;
+
+	float unkScale = 1;
+	g->u0x10 = bearingX * unkScale;
+	g->u0x14 = -bearingY * unkScale;
+	g->u0x18 = (g->left + g->width) * unkScale;
+	g->u0x1C = (g->top + g->height) * unkScale;
+	logFormat("reigstered font: x:%d, y:%d, w:%d, h:%d", (int)g->left, (int)g->top, (int)g->width, (int)g->height);
+	logFormat("unk info: a:%d, b:%d, c:%d, d:%d", (int)g->u0x10, (int)g->u0x14, (int)g->u0x18, (int)g->u0x1C);
 }
 
 void CustomFont::TryRegisterThaiFontGlyphs(swfFont* font) {
 	if (g_registeredFontGlyphs.contains(font) == false) {
-		BitmapFont fnt;
-		fnt.Load("thai.fnt");
+		static BitmapFont thaiBitmapFont;
+		if (thaiBitmapFont.isLoaded == false) {
+			thaiBitmapFont.Load("thai.fnt");
+		}
+
 		logFormat("registered font glyphs for: %p", font);
-		for (int i = 0;i < fnt.glyphs.size();i++) {
-			auto g = fnt.glyphs[i];
-			RegisterGlyph(font, g);
+		for (int i = 0;i < thaiBitmapFont.glyphs.size();i++) {
+			auto g = thaiBitmapFont.glyphs[i];
+			RegisterGlyph(font, thaiBitmapFont, g);
 		}
 	}
 }
@@ -106,15 +123,30 @@ void BitmapFont::ParseGlyph(const std::string& line, BitmapFont::Glyph& g) {
 
 void BitmapFont::Load(std::string path)
 {
+	if (isLoaded)
+		return;
+	isLoaded = true;
+
 	std::ifstream file(path);
 	std::string line;
 
 	while (std::getline(file, line)) {
+		auto lineCstr = line.c_str();
 		// parse line
 		if (line.find("char id=") == 0) {
 			Glyph g;
 			ParseGlyph(line, g);
 			this->glyphs.push_back(g);
 		}
+		else if (line.find("common") == 0) {
+			sscanf(lineCstr, "common lineHeight=%d base=%d scaleW=%d scaleH=%d",
+				&lineHeight, &baseline, &scaleW, &scaleH);
+		}
+		else if (line.find("info") == 0) {
+			sscanf(lineCstr, "info face=\"%[^\"]\" size=%d bold=%d italic=%d",
+				face, &size, &bold, &italic);
+			fontName = face;
+		}
 	}
+	logFormat("loaded bitmap font name: %s, size: %d", fontName, size);
 }

@@ -8,7 +8,6 @@
 #include <mutex>
 #include "Hooks.h"
 #include "Logger.h"
-#define logFormat logIt
 
 int MyFont::g_thaiFont = 0;
 

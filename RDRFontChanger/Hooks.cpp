@@ -5,16 +5,12 @@
 #include <unordered_map>
 #include "Logger.h"
 #include <string>
-#define logFormat logIt
 #include <stacktrace>
 #include "CustomFont.h"
+#include "SWFTypes.h"
+#include "XMem.h"
 
-uintptr_t Hooks::GetImageBase() {
-	static uintptr_t g_imageBase = (uintptr_t)GetModuleHandleA(NULL);
-	if (g_imageBase == NULL)
-		g_imageBase = (uintptr_t)GetModuleHandleA(NULL);
-	return g_imageBase;
-}
+using namespace XMem;
 
 std::string GetModuleNameFromAddress(void* addr)
 {
@@ -35,7 +31,8 @@ std::string GetModuleNameFromAddress(void* addr)
 
 	return path;
 }
-void Hooks::PrintStackRva()
+
+void PrintStackRva()
 {
 	std::stringstream ss;
 	auto stack = std::stacktrace::current();
@@ -44,33 +41,6 @@ void Hooks::PrintStackRva()
 	logFormat("Stack trace...");
 	logFormat("image base: %llx", GetImageBase());
 	logFormat("\n%s", stackString.c_str());
-
-	return;
-	//void* stack[64];
-	//const int maxFrames = 30;
-	//USHORT frameCount = RtlCaptureStackBackTrace(0, maxFrames, stack, NULL);
-
-	//// หา module base ของปัจจุบัน
-	//uintptr_t base = GetImageBase();
-	//logFormat("Stack Trace...");
-	//for (USHORT i = 0; i < frameCount; i++)
-	//{
-	//	uintptr_t addr = (uintptr_t)stack[i] - 8;
-	//	uintptr_t rva = addr - base;
-	//	std::string moduleName = GetModuleNameFromAddress((void*)addr);
-	//	logFormat("[#%-2d] VA = %p | RVA = 0x%llX | %s",
-	//		i,
-	//		(void*)addr,
-	//		rva,
-	//		moduleName.c_str()
-	//	);
-	//}
-	//logFormat("End Stack Trace!");
-}
-
-uintptr_t Hooks::GetRvaFromAddress(uintptr_t addr)
-{
-	return (uintptr_t)(addr - GetImageBase());
 }
 
 struct HookInfo {
@@ -118,9 +88,7 @@ bool HookFuncAddr(void* targetFunc, void* detour, void* ppBackupFunc) {
 	return true;
 }
 
-void* GetAddressFromRva(int rva) {
-	return (void*)(Hooks::GetImageBase() + rva);
-}
+
 bool HookFuncRva(uintptr_t funcRva, void* detour, void* ppBackup) {
 	return HookFuncAddr(GetAddressFromRva(funcRva), detour, ppBackup);
 }
@@ -150,7 +118,14 @@ uint HK_GetGlyphFromChar(swfFont* font, unsigned short charCode) {
 #include <unordered_set>
 
 std::string TranslateThaiText(swfFont* font, std::string text) {
-	CustomFont::TryRegisterThaiFontGlyphs(font);
+	//CustomFont::TryRegisterThaiFontGlyphs(font);
+
+	//if (text.contains("Setttings"))
+	//	text = "S";
+	//else if (text.contains("Play"))
+	//	text = "P";
+	//else if (text.contains("Quit"))
+	//	text = "Q";
 
 	// not replace font yet
 	return text;
@@ -158,28 +133,43 @@ std::string TranslateThaiText(swfFont* font, std::string text) {
 
 
 
-struct swfEDITFONT {
-	void* offset1;
-	void* offset2;
-	void* offset3;
-	// 0x18
-	const char* string;
-	const char* varName;
-	int64_t stringSize;
-};
 
-bool IsFontObj(void* obj) {
-	if (obj == nullptr)
-		return false;
+int (*backup_GetMovieID)(void* p1, void* p2);
+int HK_GetMovieID(FlashManager* p1, char* p2) {
+	logFormat("BeginHook GetMovieID!!");
+	cw("p1: %p", p1);
+	cw("p2: %s", p2);
+	auto result = backup_GetMovieID(p1, p2);
+	cw("result: %d", result);
 
-	auto font = (swfFont*)obj;
-	if (font->vftable == nullptr)
-		return false;
+	cw("try dump all find font...");
 
-	uintptr_t vf0 = Hooks::GetRvaFromAddress((uintptr_t)font->vftable[0]);
-	return vf0 == 0x195980;
+	//int dumpMovies = 200;
+	//for (int i = 0;i < dumpMovies;i++) {
+	auto movie = TryGetMovieFromID(p1, result);
+	cw("movie ptr: %p, index: %d", movie, result);
+
+	if (movie) {
+		auto movieCtx = movie->ctx;
+		cw("movie ctx: %p", movieCtx);
+
+		if (movieCtx) {
+			auto file = movieCtx->file;
+			cw("movie file: %p", file);
+
+			if (file) {
+				cw("movie file name: %s", file->name);
+				//const char* fontName = "font_rdr2narrow";
+				//auto mainFont = FindFont(file, fontName);
+			}
+		}
+	}
+	//}
+
+	logFormat("EndHook GetMovieID!!");
+
+	return result;
 }
-
 
 typedef void (*HK_DrawTextWithFont_TypeDef)(
 	swfEDITFONT* p1, const char* p2, swfFont* p3, LONGLONG p4,
@@ -190,46 +180,18 @@ static void HK_DrawTextWithFont(
 	LONGLONG p5, LONGLONG p6, LONGLONG p7) {
 	logFormat("HK_DrawTextWithFont!!");
 	logFormat("draw text: %s", (const char*)p2_text);
-	//logFormat("font: %p", p3_font);
-	//logFormat("font info...");
-	//logFormat("p3->glyphCount: %d", p3_font->glyphCount);
-	//logFormat("p3->codeToGlyph: %p", p3_font->codeToGlyph);
-	//logFormat("p3->glyphToCode: %p", p3_font->glyphToCode);
-	//logFormat("p3->langCode: %d", p3_font->langCode);
-	//logFormat("p3->sheetCount: %d", p3_font->sheetCount);
+	cw("font: %p", p3_font);
+	logFormat("p3->glyphCount: %d", p3_font->glyphCount);
 
-	// debug glyph all
-	//for (int i = 0; i < p3_font->glyphCount;i++) {
-	//GLYPH* g = GetGlyphFromChar(p3_font, 0x0);
+	// check fui flash manager
+	auto flashMgr = GetFlashManager();
+	cw("flash mgr: %p", flashMgr);
+	cw("langName: %s", flashMgr->langName);
+	cw("movie id count: %d", flashMgr->movieCount);
+
+
+
 	auto font = p3_font;
-	//char* fontName = (char*)(font + 1);
-	//logFormat("font name: %s", fontName);
-
-	//char charCode = 'Q';
-	//logFormat("charCode: %d", charCode);
-	//auto index = GetGlyphFromChar(p3_font, charCode);
-	// logFormat("g index: %d", index);
-	//backup_GetGlyphFromChar = (GetGlyphFromChar_Fn)GetAddressFromRva(0x196860);
-	//uint glyphIndex = backup_GetGlyphFromChar(p3_font, charCode);
-	//logFormat("glyph index: %d", glyphIndex);
-	//logFormat("sheet array ptr: %p", font->sheetArrayPtr);
-	//auto sheet = font->sheetArrayPtr;
-	//logFormat("sheet ptr: %p", sheet);
-	//logFormat("sheet glyph array ptr: %p", sheet->glyphArrayPtr);
-
-	//auto g = (GLYPH*)((uintptr_t)sheet->glyphArrayPtr + glyphIndex * 0x20);
-	//logFormat("glyph ptr: %p", g);
-	//logFormat("x: %.2f", g->left);
-	//logFormat("y: %.2f", g->top);
-	//logFormat("width: %.2f", g->width);
-	//logFormat("height: %.2f", g->height);
-	//logFormat("0x10: %.2f", g->unk0x10);
-	//logFormat("0x14: %.2f", g->unk0x14);
-	//logFormat("0x18: %.2f", g->unk0x18);
-	//logFormat("0x1C: %.2f", g->unk0x1C);
-
-	//uintptr_t fontDtorRva = Hooks::GetRvaFromAddress((uintptr_t)p3_font->vftable[0]);
-	//logFormat("font vf0 rva: 0x%x", fontDtorRva);
 
 	std::string replaceString = "";
 	if (p2_text != nullptr)
@@ -237,8 +199,8 @@ static void HK_DrawTextWithFont(
 
 
 	// replace font glyphs
-	if (replaceString.empty() == false)
-		replaceString = TranslateThaiText(font, replaceString);
+	//if (replaceString.empty() == false)
+	//	replaceString = TranslateThaiText(font, replaceString);
 
 
 	backup_DrawTextWithFont(p1, replaceString.c_str(), p3_font, p4, p5, p6, p7);
@@ -251,19 +213,20 @@ void* LoadFlashFile(const char* p1) {
 	logFormat("p1: %p", (void*)p1);
 	auto result = backup_LoadFlashFile(p1);
 	logFormat("loaded flash file: result: %p", result);
-	Hooks::PrintStackRva();
+	PrintStackRva();
 	logFormat("EndHook LoadFlashFile()!");
 	return result;
 }
 
 
-typedef LONGLONG(*rage_swfCONTEXT_GetGlobal_FuncType)(const char* param_1, LONGLONG param_2);
+// error!!
+typedef void* (*rage_swfCONTEXT_GetGlobal_FuncType)(void* p1, void* param_2, void* p3, void* p4);
 rage_swfCONTEXT_GetGlobal_FuncType backup_rage_swfCONTEXT_GetGlobal;
-static LONGLONG rage_swfCONTEXT_GetGlobal(const char* param_1, LONGLONG param_2) {
-	logFormat("Hook rage_swfCONTEXT_GetGlobal!!");
-	logFormat("p1: %s", param_1);
-	auto result = backup_rage_swfCONTEXT_GetGlobal(param_1, param_2);
-	logFormat("result: %lld", result);
+static void* rage_swfCONTEXT_GetGlobal(void* p1, void* p2, void* p3, void* p4) {
+	cw("BeginHook rage_swfCONTEXT_GetGlobal ...");
+	auto result = backup_rage_swfCONTEXT_GetGlobal(p1, p2, p3, p4);
+	cw("result: %p", result);
+	cw("EndHook rage_swfCONTEXT_GetGlobal!!");
 	return result;
 }
 
@@ -278,6 +241,7 @@ void* swfFontDeclareStruct(swfFont* self, void* p1) {
 	return result;
 }
 
+
 typedef void* (*HK_swfFont_VF0_Fn)(void* p1, void* p2);
 HK_swfFont_VF0_Fn backup_swfFont_VF0;
 void* HK_swfFont_VF0(void* p1, void* p2) {
@@ -291,16 +255,12 @@ void* HK_swfFont_VF0(void* p1, void* p2) {
 void* (*backup_swfSomeFactory)(int p1);
 void* HK_swfSomeFactory(int p1) {
 	logFormat("HK_swfSomeFactory");
-	logFormat("p1: %d", p1);
+	int fileType = p1;
+	logFormat("file type: %s", GetSWFTypeName(p1));
+
 	auto result = backup_swfSomeFactory(p1);
 	logFormat("result: %p", result);
 
-	//create swfFont??
-	if (IsFontObj(result)) {
-		logFormat("this obj is swfFont: %p", result);
-		logFormat("swfFont rva: %llx", Hooks::GetRvaFromAddress((uintptr_t)result));
-		Hooks::PrintStackRva();
-	}
 	logFormat("EndHook: HK_swfSomeFactory");
 
 	return result;
@@ -323,8 +283,20 @@ void* fiAssetManager_Open(void* self, char* p2, char* p3, void* p4, void* p5, vo
 	std::string path1(p2);
 	logFormat("path1: %s", path1.c_str());
 	auto res = backup_fiAssetManager_Open(self, p2, p3, p4, p5, p6);
-	logFormat("res: %p", res);
+	//logFormat("res: %p", res);
 	logFormat("EndHook fiAssetManager_Open");
+	return res;
+}
+
+void* (*backup_fiAssetManager_Open2)(void* self, char* p1,
+	char* p2, uint64_t p3, uint64_t p4);
+void* fiAssetManager_Open2(void* self, char* p1, char* p2, uint64_t p3, uint64_t p4) {
+	logFormat("BeginHook fiAssetManager_Open2");
+	logFormat("path: %s", p1);
+	logFormat("fileType: %s", p2);
+	auto res = backup_fiAssetManager_Open2(self, p1, p2, p3, p4);
+	//	logFormat("res: %p", res);
+	logFormat("EndHook fiAssetManager_Open2");
 	return res;
 }
 
@@ -348,6 +320,35 @@ void* CreateAndMountRedemptionPackfile(char* p1) {
 	return res;
 }
 
+void* (*backup_txtFontTex_Load)(void* self, char* p1_fontPath, bool p2, bool p3);
+void* txtFontTex_Load(void* self, char* p1_fontPath, uint64_t p2, uint64_t p3) {
+	cw("BeginHook txtFontTex_Load...");
+	cw("self: %p", self);
+	cw("font path: %s", p1_fontPath);
+	cw("p2: %d", p2);
+	cw("p3: %d", p3);
+	auto result = backup_txtFontTex_Load(self, p1_fontPath, p2, p3);
+	cw("result: %p", result);
+	cw("try debug font...");
+
+	Fonttext* fnt = (Fonttext*)self;
+	cw("char height: %d", fnt->CharHeight);
+	cw("NumGlyphs: %d", fnt->NumGlyphs);
+
+	cw("EndHook txtFontTex_Load");
+	return result;
+}
+
+void* (*backup_PackFile_c)(PackFile_c* self, void* p1, void* p2, void* p3);
+void* HK_PackFile_c(PackFile_c* self, void* p1, void* p2, void* p3) {
+	cw("BeginHook HK_PackFile_c");
+	cw("self: %p", self);
+	cw("file name: %s", p1);
+	auto r = backup_PackFile_c(self, p1, p2, p3);
+	cw("EndHook HK_PackFile_c");
+	return r;
+}
+
 void Hooks::SetupHooks()
 {
 	// hooks
@@ -357,15 +358,17 @@ void Hooks::SetupHooks()
 
 	HookFuncRva(0x1979c0, HK_DrawTextWithFont, &backup_DrawTextWithFont);
 	// HookFuncRva(0x1fced0, LoadFlashFile, &backup_LoadFlashFile);
-	//HookFuncRva(0xc7510, rage_swfCONTEXT_GetGlobal, &backup_rage_swfCONTEXT_GetGlobal);
+	// HookFuncRva(0xc7510, rage_swfCONTEXT_GetGlobal, &backup_rage_swfCONTEXT_GetGlobal);
 	//HookFuncRva(0x19b9e0, swfFontDeclareStruct, &backup_swfFontDeclareStruct);
 	//HookFuncRva(0x196860, HK_GetGlyphFromChar, &backup_GetGlyphFromChar);
 	//HookFuncRva(0x195980, HK_swfFont_VF0, &backup_swfFont_VF0);
-	// HookFuncRva(0x194d10, HK_swfSomeFactory, &backup_swfSomeFactory);
+	HookFuncRva(0x194d10, HK_swfSomeFactory, &backup_swfSomeFactory);
 	// HookFuncRva(0xc95c0, PushFolder, &backup_PushFolder);
-	//HookFuncRva(0xc9140, fiAssetManager_Open, &backup_fiAssetManager_Open);
+	// HookFuncRva(0xc9140, fiAssetManager_Open, &backup_fiAssetManager_Open);
+	HookFuncRva(0xc98b0, fiAssetManager_Open2, &backup_fiAssetManager_Open2);
 	//HookFuncRva(0xeae740, PackFileInit, &backup_PackFileInit);
 	// HookFuncRva(0x60e080, CreateAndMountRedemptionPackfile, &g_CreateAndMountRedemptionPackfile);
+	HookFuncRva(0x88fb70, txtFontTex_Load, &backup_txtFontTex_Load);
+	HookFuncRva(0x11a000, HK_GetMovieID, &backup_GetMovieID);
+	HookFuncRva(0xeae5a0, HK_PackFile_c, &backup_PackFile_c);
 }
-
-
