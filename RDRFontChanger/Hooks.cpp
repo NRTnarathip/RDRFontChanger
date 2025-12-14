@@ -345,6 +345,10 @@ void* HK_PackFile_c(PackFile_c* self, void* p1, void* p2, void* p3) {
 	cw("self: %p", self);
 	cw("file name: %s", p1);
 	auto r = backup_PackFile_c(self, p1, p2, p3);
+	cw("result= %p", r);
+
+	DumpPackFile(self);
+
 	cw("EndHook HK_PackFile_c");
 	return r;
 }
@@ -356,19 +360,19 @@ void Hooks::SetupHooks()
 		logFormat("minhook initialization failed");
 	}
 
-	HookFuncRva(0x1979c0, HK_DrawTextWithFont, &backup_DrawTextWithFont);
+	// HookFuncRva(0x1979c0, HK_DrawTextWithFont, &backup_DrawTextWithFont);
 	// HookFuncRva(0x1fced0, LoadFlashFile, &backup_LoadFlashFile);
 	// HookFuncRva(0xc7510, rage_swfCONTEXT_GetGlobal, &backup_rage_swfCONTEXT_GetGlobal);
-	//HookFuncRva(0x19b9e0, swfFontDeclareStruct, &backup_swfFontDeclareStruct);
-	//HookFuncRva(0x196860, HK_GetGlyphFromChar, &backup_GetGlyphFromChar);
-	//HookFuncRva(0x195980, HK_swfFont_VF0, &backup_swfFont_VF0);
-	HookFuncRva(0x194d10, HK_swfSomeFactory, &backup_swfSomeFactory);
+	// HookFuncRva(0x19b9e0, swfFontDeclareStruct, &backup_swfFontDeclareStruct);
+	// HookFuncRva(0x196860, HK_GetGlyphFromChar, &backup_GetGlyphFromChar);
+	// HookFuncRva(0x195980, HK_swfFont_VF0, &backup_swfFont_VF0);
+	// HookFuncRva(0x194d10, HK_swfSomeFactory, &backup_swfSomeFactory);
 	// HookFuncRva(0xc95c0, PushFolder, &backup_PushFolder);
 	// HookFuncRva(0xc9140, fiAssetManager_Open, &backup_fiAssetManager_Open);
-	HookFuncRva(0xc98b0, fiAssetManager_Open2, &backup_fiAssetManager_Open2);
-	//HookFuncRva(0xeae740, PackFileInit, &backup_PackFileInit);
+	// HookFuncRva(0xc98b0, fiAssetManager_Open2, &backup_fiAssetManager_Open2);
+	// HookFuncRva(0xeae740, PackFileInit, &backup_PackFileInit);
 	// HookFuncRva(0x60e080, CreateAndMountRedemptionPackfile, &g_CreateAndMountRedemptionPackfile);
-	HookFuncRva(0x88fb70, txtFontTex_Load, &backup_txtFontTex_Load);
-	HookFuncRva(0x11a000, HK_GetMovieID, &backup_GetMovieID);
+	// HookFuncRva(0x88fb70, txtFontTex_Load, &backup_txtFontTex_Load);
+	// HookFuncRva(0x11a000, HK_GetMovieID, &backup_GetMovieID);
 	HookFuncRva(0xeae5a0, HK_PackFile_c, &backup_PackFile_c);
 }

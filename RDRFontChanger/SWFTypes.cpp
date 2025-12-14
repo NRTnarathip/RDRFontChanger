@@ -79,3 +79,55 @@ fuiMovie* TryGetMovieFromID(FlashManager* mgr, uint8_t id)
 	fuiMovie** array = (fuiMovie**)&mgr->movieArray;
 	return array[index];
 }
+
+typedef void* (*fnGetPackFileProps)(PackFileIndex_c* packFileIndex, PackFileProperty* propsOut, uint32_t hash);
+void* GetPackFileProps(PackFileIndex_c* packFileIndex, PackFileProperty* propsOut, uint32_t hash) {
+	static fnGetPackFileProps fnPtr = 0;
+	if (fnPtr == nullptr)
+		fnPtr = (fnGetPackFileProps)GetAddressFromRva(0xeb6930);
+	return fnPtr(packFileIndex, propsOut, hash);
+}
+
+PackFilePropertyKeyPair* PackFileEntryHashMap::Find(uint32_t findKey)
+{
+	// simple logic, 
+	// !pool optimize
+	PackFileEntryHashMap* map = this;
+	for (size_t i = 0; i < map->count; ++i) {
+		auto entry = &map->data[i];
+		if (entry->key == findKey)
+			return entry;
+	}
+
+	return nullptr;
+}
+
+void DumpPackFile(PackFile_c* p)
+{
+	cw("try dump pack file= %p", p);
+	auto fileIndex = p->fileIndex;
+	cw("file index: %p", fileIndex);
+	cw("pack file name: %s", fileIndex->packFileName);
+	cw("total files: %d", fileIndex->totalFiles);
+	cw("files capacity: %d", fileIndex->fileHashCapacity);
+	auto map = &fileIndex->hashMap;
+	for (int i = 0;i < fileIndex->totalFiles;i++) {
+		cw("index: %d", i);
+		auto currentHash = fileIndex->fileHashVector[i];
+		cw("current hash: 0x%x", currentHash);
+		PackFileProperty packFileProps;
+		auto result = GetPackFileProps(fileIndex, &packFileProps, currentHash);
+		cw("v0: 0x%x", packFileProps.v0);
+		cw("v1: 0x%x", packFileProps.v1);
+		cw("v2: 0x%x", packFileProps.v2);
+	}
+}
+
+uint32_t Hash(const void* data, size_t len, uint32_t seed = FNV_OFFSET_BASIS_32)
+{
+	const uint8_t* p = (const uint8_t*)data;
+	uint32_t hash = seed;
+	for (size_t i = 0; i < len; ++i)
+		hash = (hash * 16777619u) ^ p[i];
+	return hash;
+}

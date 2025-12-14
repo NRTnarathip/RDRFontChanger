@@ -92,9 +92,60 @@ void* FindFont(swfFile* mainFile, const char* p1_fontName);
 fuiMovie* TryGetMovieFromID(FlashManager* mgr, uint8_t id);
 
 
-// size 0x30!!
-struct PackFile_c {
-
+struct PackFileProperty {
+	uint32_t v0;
+	uint32_t v1;
+	uint32_t v2;
 };
 
+struct PackFilePropertyKeyPair {
+	uint32_t key;        // +0x00  (fileHash)
+	PackFileProperty value;  // +0x04  PackfileFileProperties_s
+	uint32_t hash;       // +0x10  (key & 0xfffffffd)
+};
+static_assert(sizeof(PackFilePropertyKeyPair) == 0x14, "");
 
+
+// size 0x10?
+struct PackFileEntryHashMap {
+	PackFilePropertyKeyPair* data; // x0 -> x8
+	int count; // x8 -> c
+	int capacity; // xc -> x10
+
+	PackFilePropertyKeyPair* Find(uint32_t key);
+};
+CHECK_OFFSET(PackFileEntryHashMap, capacity, 0xc);
+
+
+// confirm size x60 android
+// pc size 0x60?
+struct PackFileIndex_c {
+	const char* packFileName;
+	char pad1[0x28];
+	uint32_t* fileHashVector; // x30 -> x38
+	int totalFiles; // x38 -> x3C
+	int fileHashCapacity; //x3C -> x40
+	PackFileEntryHashMap hashMap;
+};
+
+CHECK_OFFSET(PackFileIndex_c, packFileName, 0x0);
+CHECK_OFFSET(PackFileIndex_c, fileHashVector, 0x30);
+CHECK_OFFSET(PackFileIndex_c, totalFiles, 0x38);
+CHECK_OFFSET(PackFileIndex_c, fileHashCapacity, 0x3C);
+CHECK_OFFSET(PackFileIndex_c, hashMap, 0x40);
+
+
+// size 0x30?
+struct PackFile_c {
+	char x20[0x20];
+	PackFileIndex_c* fileIndex; // 0x20
+};
+
+CHECK_OFFSET(PackFile_c, fileIndex, 0x20);
+
+
+void DumpPackFile(PackFile_c* packfile);
+
+// default seed for hash
+#define FNV_OFFSET_BASIS_32 0x811C9DC5
+uint32_t Hash(const void* data, size_t len, uint32_t seed);
