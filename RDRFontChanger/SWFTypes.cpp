@@ -143,7 +143,16 @@ uint32_t RageHashFNV(const void* data, size_t len)
 	return hash;
 }
 
-void* GetGrcImageFactory() {
-	return *(void**)GetAddressFromRva(0x2ac0a28);
-}
+bool swfSheet::IsTextureExist(const char* findName)
+{
+	if (this->textureCount == 0)
+		return false;
 
+	for (int i = 0;i < this->textureCount;i++) {
+		auto name = textureNameArray[i];
+		if (name && strcmp(name, findName) == 0)
+			return true;
+	}
+
+	return false;
+}

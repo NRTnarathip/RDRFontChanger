@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <cstddef>
+#include "grcImage.h"
 
 #define CHECK_OFFSET(type, field, offset) \
     static_assert(offsetof(type, field) == offset, "Bad offset")
@@ -98,9 +99,6 @@ struct swfGlyph {
 static_assert(sizeof(swfGlyph) == 0x20, "Assert Size");
 
 
-struct grcImage {
-
-};
 struct swfSheet {
 	grcImage** textureArray;
 	swfGlyph* cellArray; // 0x8 -> 0x10
@@ -110,6 +108,7 @@ struct swfSheet {
 	const char** textureNameArray;
 	void* x28;
 	int textureCount; // 0x30
+	bool IsTextureExist(const char* name);
 };
 CHECK_OFFSET(swfSheet, size, 0x10);
 CHECK_OFFSET(swfSheet, cellCount, 0x12);
@@ -274,4 +273,3 @@ uint32_t RageHashFNV(const void* data, size_t len);
 // 6 -> 12
 // ko, pl, pt, pt-br, ru, es, es-mx
 
-void* GetGrcImageFactory();

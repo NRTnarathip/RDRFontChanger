@@ -62,7 +62,7 @@ void TryDumpSwfFont(swfFont* font, const char* prefixFileName) {
 	logFormat("dump success for font file name: %s", fileNameStr.c_str());
 }
 
-const float swfFontUnitSize = 1024.0f;
+const float k_swfFontUnitSize = 1024.0f;
 
 CustomFont::CustomFont(swfFont* originalFont)
 {
@@ -77,7 +77,7 @@ BitmapFont* CustomFont::GetThaiFont()
 	return &font;
 }
 
-void CustomFont::RegisterGlyph(swfFont* font, const BitmapFont::Glyph& newGlyph)
+void CustomFont::ReplaceGlyph(swfFont* font, const BitmapFont::Glyph& newGlyph)
 {
 	cw("try replace glyph id: %d", newGlyph.id);
 
@@ -102,7 +102,8 @@ void CustomFont::RegisterGlyph(swfFont* font, const BitmapFont::Glyph& newGlyph)
 	int fontHeight = sheet->size; // or font height size
 	cw("sheet size: %d", sheet->size);
 
-	float fontScaleEM = fontHeight / swfFontUnitSize;
+	auto thaiFont = this->GetThaiFont();
+	float fontScaleEM = k_swfFontUnitSize / thaiFont->size;
 	cw("font scale em: %.2f", fontScaleEM);
 
 	// setup min, max bound on swf font size em
@@ -110,7 +111,7 @@ void CustomFont::RegisterGlyph(swfFont* font, const BitmapFont::Glyph& newGlyph)
 	float yoffset = newGlyph.yoffset;
 
 	float minX = newGlyph.xoffset * fontScaleEM;
-	float maxX = minX + newGlyph.width * fontScaleEM;
+	float maxX = (newGlyph.xoffset + newGlyph.width) * fontScaleEM;
 
 	float minY = -(yoffset + newGlyph.height) * fontScaleEM;
 	float maxY = -yoffset * fontScaleEM;
@@ -130,8 +131,8 @@ void CustomFont::RegisterGlyph(swfFont* font, const BitmapFont::Glyph& newGlyph)
 
 
 	// update glyph advanceX array
-	float* advanceArray = (float*)font->advanceFirstItem;
 	float advanceX = newGlyph.xadvance * fontScaleEM;
+	float* advanceArray = (float*)font->advanceFirstItem;
 	advanceArray[glyphIndex] = advanceX;
 	cw("advanceX: %.2f", advanceX);
 
@@ -149,17 +150,37 @@ void CustomFont::RegisterGlyph(swfFont* font, const BitmapFont::Glyph& newGlyph)
 
 }
 
+#include "grcImage.h"
+
 void CustomFont::ReplaceTexture(int replaceTextureIndex, std::string newTextureFilePath)
 {
-	cw("try replace font texture index: %d, path: %s", replaceTextureIndex, newTextureFilePath.c_str());
+	cw("try ReplaceTexture index: %d, path: %s", replaceTextureIndex, newTextureFilePath.c_str());
 	auto sheet = font->sheetArrayPtr;
-	cw("texture name array: %p", sheet->textureNameArray);
-	for (int i = 0; i < sheet->textureCount;i++) {
-		cw("try check texture index: %d", i);
-		grcImage* texture = sheet->textureArray[i];
-		const char* name = sheet->textureNameArray[i];
-		cw("texture: %p, name: %s", texture, name);
+	if (replaceTextureIndex >= sheet->textureCount) {
+		cw("texture index is over than texture count");
+		return;
 	}
+
+	auto i = replaceTextureIndex;
+	grcImage* originalTexture = sheet->textureArray[i];
+	const char* originalName = sheet->textureNameArray[i];
+	// backup it before change!
+	this->backupTextureArray.push_back(originalTexture);
+	this->backupTextureNameArray.push_back(originalName);
+	cw("texture original: %p, name: %s", originalTexture, originalName);
+
+	// change it!!
+	auto imgFactory = grcImageFactory::GetGrcImageFactory();
+	grcImage* newTexture = imgFactory->CreateTexture(newTextureFilePath.c_str(), 0);
+	cw("create new texture: %p", newTexture);
+	this->newTextures.push_back(newTexture);
+	this->newTextureFileNames.push_back(newTextureFilePath);
+	sheet->textureArray[i] = newTexture;
+	auto newTextureNameObj = &this->newTextureFileNames[i];
+	sheet->textureNameArray[i] = newTextureNameObj->c_str();
+	cw("texture after replace: %p, name: %s",
+		sheet->textureArray[i],
+		sheet->textureNameArray[i]);
 }
 
 void CustomFont::TryReplaceSwfFontToThaiFont(swfFont* font) {
@@ -170,6 +191,12 @@ void CustomFont::TryReplaceSwfFontToThaiFont(swfFont* font) {
 		return;
 	}
 
+	// debug
+	// support only main font!
+	if (sheet->IsTextureExist("RDR2Narrow.charset_0.dds") == false)
+		return;
+
+
 	if (g_registeredFonts.contains(font) == false) {
 		// create new custom font
 		auto customFont = new CustomFont(font);
@@ -179,12 +206,11 @@ void CustomFont::TryReplaceSwfFontToThaiFont(swfFont* font) {
 		auto thaiFont = GetThaiFont();
 		for (int i = 0;i < thaiFont->glyphs.size();i++) {
 			auto& newGlyph = thaiFont->glyphs[i];
-			customFont->RegisterGlyph(font, newGlyph);
+			customFont->ReplaceGlyph(font, newGlyph);
 		}
 
 		// replace font textures
-		customFont->ReplaceTexture(0, "thai_0.png");
-
+		customFont->ReplaceTexture(0, "fonts/thai_0.dds");
 
 
 		logFormat("registered font glyphs for: %p", font);

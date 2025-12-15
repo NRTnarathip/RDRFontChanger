@@ -91,6 +91,7 @@
     <ClInclude Include="CustomFont.h" />
     <ClInclude Include="dllmain.h" />
     <ClInclude Include="FileSystemHook.h" />
+    <ClInclude Include="grcImage.h" />
     <ClInclude Include="HookLib.h" />
     <ClInclude Include="Hooks.h" />
     <ClInclude Include="Logger.h" />
@@ -102,6 +103,7 @@
     <ClCompile Include="CustomFont.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="FileSystemHook.cpp" />
+    <ClCompile Include="grcImage.cpp" />
     <ClCompile Include="HookLib.cpp" />
     <ClCompile Include="Hooks.cpp" />
     <ClCompile Include="Logger.cpp" />
