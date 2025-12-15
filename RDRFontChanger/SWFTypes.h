@@ -16,15 +16,42 @@ enum SWFTypeEnum {
 	MorphShape = 9,
 };
 
-struct swfEDITFONT {
-	void* offset1;
-	void* offset2;
-	void* offset3;
-	// 0x18
-	const char* string;
-	const char* varName;
-	int64_t stringSize;
+struct swfEditText {
+	void* _x0; // 0x0
+	void* _x8; // 0x8
+	void* _x10; // 0x10
+	const char* string; // 0x18
+	const char* varName; // x20
+	unsigned short stringSize; // x28 -> x2a
+	unsigned short leading; // x2a -> x2c
+	uint32_t color; // x2c -> x30
+	unsigned short fontID; // x30 -> x32
+	unsigned short fontHeight; // x32 -> x34
+	float width, height; // x34 -> x3c
+	float offsetX, offsetY; // x3c -> x44
+	unsigned char html, align; // x44 -> x46
+	float boundX;// x48 -> x4c
+	float boundY;// x4c -> x50
+	float unkx50;
+	struct Bound {
+		float x, y, width, height;
+	};
+	Bound GetBound()
+	{
+		float scale = fontHeight / 1024.0f;
+		float scaledOffsetX = offsetX * scale;
+		Bound bounds;
+		bounds.x = scaledOffsetX;
+		bounds.y = 0;
+		bounds.width = this->width * scale + scaledOffsetX;
+		bounds.height = (this->height + (float)this->leading) * scale;
+		return bounds;
+	}
 };
+
+CHECK_OFFSET(swfEditText, fontID, 0x30);
+CHECK_OFFSET(swfEditText, width, 0x34);
+CHECK_OFFSET(swfEditText, align, 0x45);
 
 
 struct SWFText {
@@ -71,13 +98,16 @@ struct swfGlyph {
 static_assert(sizeof(swfGlyph) == 0x20, "Assert Size");
 
 
+struct grcImage {
+
+};
 struct swfSheet {
-	void* unk0x0;
+	grcImage** textureArray;
 	swfGlyph* cellArray; // 0x8 -> 0x10
 	unsigned short size; // 0x10
 	unsigned short cellCount; // 0x12
 	void* indeiceArray;
-	void* x20;
+	const char** textureNameArray;
 	void* x28;
 	int textureCount; // 0x30
 };
@@ -110,6 +140,30 @@ static_assert(offsetof(swfFont, glyphCount) == 0xb8, "Assert It");
 static_assert(offsetof(swfFont, langCode) == 0xbb, "Assert It");
 static_assert(offsetof(swfFont, sheetArrayPtr) == 0xc0, "Assert It");
 static_assert(offsetof(swfFont, codeToGlyph) == 0x30, "Assert It");
+
+#define byte unsigned char
+
+struct swfEditTextDrawColor {
+	unsigned char r, g, b, a;
+
+	static	swfEditTextDrawColor Decode(uint32_t value) {
+		swfEditTextDrawColor newColor;
+		newColor.a = (value >> 24) & 0xFF;
+		newColor.r = (value >> 16) & 0xFF;
+		newColor.g = (value >> 8) & 0xFF;
+		newColor.b = (value >> 0) & 0xFF;
+		return newColor;
+	}
+
+	static uint32_t Encode(swfEditTextDrawColor c) {
+		uint32_t result =
+			(uint32_t(c.a) << 24) |
+			(uint32_t(c.r) << 16) |
+			(uint32_t(c.g) << 8) |
+			(uint32_t(c.b));
+		return result;
+	}
+};
 
 
 
@@ -219,3 +273,5 @@ uint32_t RageHashFNV(const void* data, size_t len);
 // ja = 5
 // 6 -> 12
 // ko, pl, pt, pt-br, ru, es, es-mx
+
+void* GetGrcImageFactory();

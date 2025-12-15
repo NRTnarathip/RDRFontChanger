@@ -90,11 +90,10 @@
   <ItemGroup>
     <ClInclude Include="CustomFont.h" />
     <ClInclude Include="dllmain.h" />
+    <ClInclude Include="FileSystemHook.h" />
     <ClInclude Include="HookLib.h" />
     <ClInclude Include="Hooks.h" />
-    <ClInclude Include="keyboard.h" />
     <ClInclude Include="Logger.h" />
-    <ClInclude Include="script.h" />
     <ClInclude Include="StringHooks.h" />
     <ClInclude Include="SWFTypes.h" />
     <ClInclude Include="XMem.h" />
@@ -102,11 +101,10 @@
   <ItemGroup>
     <ClCompile Include="CustomFont.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="FileSystemHook.cpp" />
     <ClCompile Include="HookLib.cpp" />
     <ClCompile Include="Hooks.cpp" />
-    <ClCompile Include="keyboard.cpp" />
     <ClCompile Include="Logger.cpp" />
-    <ClCompile Include="script.cpp" />
     <ClCompile Include="StringHooks.cpp" />
     <ClCompile Include="SWFTypes.cpp" />
     <ClCompile Include="XMem.cpp" />

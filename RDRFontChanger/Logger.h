@@ -12,6 +12,8 @@ public:
 		return &instance;
 	}
 	void LogFormat(const char* format, ...);
+	void AddTab();
+	void UnTab();
 
 	// static utils
 	static std::string GetTimeNowMsString();
@@ -24,3 +26,5 @@ private:
 
 #define cw Logger::Instance()->LogFormat
 #define logFormat Logger::Instance()->LogFormat
+#define addTab Logger::Instance()->AddTab
+#define unTab Logger::Instance()->UnTab

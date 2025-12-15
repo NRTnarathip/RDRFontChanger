@@ -4,8 +4,10 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include "SWFTypes.h"
 
-std::unordered_map<void*, int> CustomFont::g_registeredFontGlyphs;
+std::unordered_map<swfFont*, CustomFont*> CustomFont::g_registeredFonts;
+
 
 static std::unordered_set<std::string> g_dumpFonts;
 void TryDumpSwfFont(swfFont* font, const char* prefixFileName) {
@@ -31,6 +33,9 @@ void TryDumpSwfFont(swfFont* font, const char* prefixFileName) {
 	}
 
 	cw("cell count: 5d", sheet->cellCount);
+	stream << std::format("sheet size count= {}\n", sheet->size);
+	stream << std::format("sheet cell count= {}\n", sheet->cellCount);
+	stream << std::format("sheet texture count= {}\n", sheet->textureCount);
 
 	auto glyphArrayFirstElement = (swfGlyph**)sheet->cellArray;
 
@@ -57,67 +62,132 @@ void TryDumpSwfFont(swfFont* font, const char* prefixFileName) {
 	logFormat("dump success for font file name: %s", fileNameStr.c_str());
 }
 
-void CustomFont::RegisterGlyph(swfFont* font, BitmapFont& bitmapFont, BitmapFont::Glyph& bitmapGlyph)
+const float swfFontUnitSize = 1024.0f;
+
+CustomFont::CustomFont(swfFont* originalFont)
 {
-	// init
-	if (g_registeredFontGlyphs.contains(font) == false) {
-		g_registeredFontGlyphs[font] = 0;
+	this->font = originalFont;
+}
+
+BitmapFont* CustomFont::GetThaiFont()
+{
+	static BitmapFont font;
+	if (font.isLoaded == false)
+		font.Load("thai.fnt");
+	return &font;
+}
+
+void CustomFont::RegisterGlyph(swfFont* font, const BitmapFont::Glyph& newGlyph)
+{
+	cw("try replace glyph id: %d", newGlyph.id);
+
+	// assert
+	if (newGlyph.id < 0 || newGlyph.id > 0xFFFF) {
+		cw("bitmap glyph charCode overflow unsigned short");
+		return;
 	}
 
-	int glyphIndex = g_registeredFontGlyphs[font];
-	if (glyphIndex == font->glyphCount - 1)
+	auto sheet = font->sheetArrayPtr;
+	if (sheet == nullptr) {
+		cw("sheet font is null!");
 		return;
-	g_registeredFontGlyphs[font] += 1;
+	}
 
-	// update x advance
+	auto glyphIndex = this->replaceGlyphCount;
+	if (glyphIndex == font->glyphCount - 1) {
+		cw("glyph count is full!");
+		return;
+	}
+
+	int fontHeight = sheet->size; // or font height size
+	cw("sheet size: %d", sheet->size);
+
+	float fontScaleEM = fontHeight / swfFontUnitSize;
+	cw("font scale em: %.2f", fontScaleEM);
+
+	// setup min, max bound on swf font size em
+	float xoffset = newGlyph.xoffset;
+	float yoffset = newGlyph.yoffset;
+
+	float minX = newGlyph.xoffset * fontScaleEM;
+	float maxX = minX + newGlyph.width * fontScaleEM;
+
+	float minY = -(yoffset + newGlyph.height) * fontScaleEM;
+	float maxY = -yoffset * fontScaleEM;
+
+
+	// change it!
+	swfGlyph* glyphArray = (swfGlyph*)sheet->cellArray;
+	swfGlyph* g = glyphArray + glyphIndex;
+	g->left = newGlyph.x;
+	g->top = newGlyph.y;
+	g->width = newGlyph.width;
+	g->height = newGlyph.height;
+	g->minX = minX;
+	g->minY = minY;
+	g->maxX = maxX;
+	g->maxY = maxY;
+
+
+	// update glyph advanceX array
 	float* advanceArray = (float*)font->advanceFirstItem;
-
-	float advanceScale = 1.0;
-	advanceArray[glyphIndex] = bitmapGlyph.xadvance * advanceScale;
+	float advanceX = newGlyph.xadvance * fontScaleEM;
+	advanceArray[glyphIndex] = advanceX;
+	cw("advanceX: %.2f", advanceX);
 
 	// update glyphToCode 
 	unsigned short* glyphToCodeArray = font->glyphToCodeArrayFirstItem;
-	glyphToCodeArray[glyphIndex] = (unsigned short)bitmapGlyph.id;
+	glyphToCodeArray[glyphIndex] = (unsigned short)newGlyph.id;
 
-	// replace glyph with custom
-	auto sheet = font->sheetArrayPtr;
-	swfGlyph* glyphArray = (swfGlyph*)sheet->cellArray;
-	swfGlyph* g = glyphArray + glyphIndex;
-	g->left = bitmapGlyph.x;
-	g->top = bitmapGlyph.y;
-	g->width = bitmapGlyph.width;
-	g->height = bitmapGlyph.height;
-	float baseline = bitmapFont.baseline;
-	float xoffset = bitmapGlyph.xoffset;
-	float yoffset = bitmapGlyph.yoffset;
-	// Formula (Y-up coordinate)
-	float bmY_top = baseline - yoffset - bitmapFont.lineHeight;
-	float bmY_bot = baseline - yoffset;
+	// counter glyph replace!
+	this->replaceGlyphCount++;
 
-	float bearingX = xoffset;
-	float bearingY = bitmapFont.lineHeight - yoffset - g->height;
 
-	float unkScale = 1;
-	//g->u0x10 = bearingX * unkScale;
-	//g->u0x14 = -bearingY * unkScale;
-	//g->u0x18 = (g->left + g->width) * unkScale;
-	//g->u0x1C = (g->top + g->height) * unkScale;
-	logFormat("reigstered font: x:%d, y:%d, w:%d, h:%d", (int)g->left, (int)g->top, (int)g->width, (int)g->height);
-	//logFormat("unk info: a:%d, b:%d, c:%d, d:%d", (int)g->u0x10, (int)g->u0x14, (int)g->u0x18, (int)g->u0x1C);
+	cw("info: x:%d, y:%d, w:%d, h:%d", (int)g->left, (int)g->top, (int)g->width, (int)g->height);
+	cw("bound: minX:%.2f, minY:%.2f, maxX:%.2f, maxY:%.2f", g->minX, g->minY, g->maxX, g->maxY);
+	cw("Registered replace font: %p", font);
+
 }
 
-void CustomFont::TryRegisterThaiFontGlyphs(swfFont* font) {
-	if (g_registeredFontGlyphs.contains(font) == false) {
-		static BitmapFont thaiBitmapFont;
-		if (thaiBitmapFont.isLoaded == false) {
-			thaiBitmapFont.Load("thai.fnt");
+void CustomFont::ReplaceTexture(int replaceTextureIndex, std::string newTextureFilePath)
+{
+	cw("try replace font texture index: %d, path: %s", replaceTextureIndex, newTextureFilePath.c_str());
+	auto sheet = font->sheetArrayPtr;
+	cw("texture name array: %p", sheet->textureNameArray);
+	for (int i = 0; i < sheet->textureCount;i++) {
+		cw("try check texture index: %d", i);
+		grcImage* texture = sheet->textureArray[i];
+		const char* name = sheet->textureNameArray[i];
+		cw("texture: %p, name: %s", texture, name);
+	}
+}
+
+void CustomFont::TryReplaceSwfFontToThaiFont(swfFont* font) {
+	// assert
+	auto sheet = font->sheetArrayPtr;
+	if (sheet == nullptr) {
+		cw("font sheet is null!");
+		return;
+	}
+
+	if (g_registeredFonts.contains(font) == false) {
+		// create new custom font
+		auto customFont = new CustomFont(font);
+		g_registeredFonts[font] = customFont;
+
+		// replace all glyph
+		auto thaiFont = GetThaiFont();
+		for (int i = 0;i < thaiFont->glyphs.size();i++) {
+			auto& newGlyph = thaiFont->glyphs[i];
+			customFont->RegisterGlyph(font, newGlyph);
 		}
 
+		// replace font textures
+		customFont->ReplaceTexture(0, "thai_0.png");
+
+
+
 		logFormat("registered font glyphs for: %p", font);
-		for (int i = 0;i < thaiBitmapFont.glyphs.size();i++) {
-			auto g = thaiBitmapFont.glyphs[i];
-			RegisterGlyph(font, thaiBitmapFont, g);
-		}
 	}
 }
 

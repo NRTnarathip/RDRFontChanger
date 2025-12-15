@@ -33,10 +33,16 @@ public:
 class CustomFont
 {
 public:
+	CustomFont(swfFont* font);
+	swfFont* font;
+	static BitmapFont* GetThaiFont();
+	int replaceGlyphCount;
+
 	// glyphs count per font
-	static std::unordered_map<void*, int> g_registeredFontGlyphs;
-	static void RegisterGlyph(swfFont* font, BitmapFont& bitmapFont, BitmapFont::Glyph& bitmapGlyph);
-	static void TryRegisterThaiFontGlyphs(swfFont* font);
+	static std::unordered_map<swfFont*, CustomFont*> g_registeredFonts;
+	void RegisterGlyph(swfFont* font, const BitmapFont::Glyph& bitmapGlyph);
+	void ReplaceTexture(int index, std::string newTextureFilePath);
+	static void TryReplaceSwfFontToThaiFont(swfFont* font);
 };
 
 

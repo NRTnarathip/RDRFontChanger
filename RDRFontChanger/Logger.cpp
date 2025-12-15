@@ -10,7 +10,7 @@
 #include <cstdarg>
 #include <sstream>
 
-
+std::string tabString;
 std::string Logger::GetTimeNowMsString() {
 	std::stringstream ss;
 	auto now = std::chrono::system_clock::now();
@@ -51,6 +51,7 @@ void Logger::LogFormat(const char* format, ...)
 
 	DWORD tid = GetCurrentThreadId();
 	sstream << "[TID:" << tid << "] ";
+	sstream << tabString;
 
 	sstream << buffer << std::endl;
 
@@ -59,5 +60,15 @@ void Logger::LogFormat(const char* format, ...)
 
 	m_logStream << sstream.str();
 	m_logStream.flush();
+}
+
+void Logger::AddTab()
+{
+	tabString += ">>> ";
+}
+
+void Logger::UnTab()
+{
+	tabString.erase(tabString.size() - 4);
 }
 

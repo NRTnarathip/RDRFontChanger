@@ -22,6 +22,10 @@ void HookLib::Init()
 	}
 }
 
+void HookLib::DisableHooks() {
+	MH_DisableHook(MH_ALL_HOOKS);
+}
+
 bool HookLib::HookFuncAddr(void* targetFunc, void* detour, void* ppBackupFunc) {
 	auto it = g_hookMap.find(targetFunc);
 	// already hooked at target func
@@ -64,4 +68,11 @@ bool HookLib::HookFuncAddr(void* targetFunc, void* detour, void* ppBackupFunc) {
 
 bool HookLib::HookFuncRva(uintptr_t funcRva, void* detour, void* ppBackup) {
 	return HookFuncAddr(GetAddressFromRva(funcRva), detour, ppBackup);
+}
+
+bool HookLib::HookFuncImport(const wchar_t* moduleName, const char* importName, void* detour, void* ppBackup)
+{
+	HMODULE hKernelBase = GetModuleHandleW(moduleName);
+	auto target = GetProcAddress(hKernelBase, importName);
+	return HookLib::HookFuncAddr((void*)target, detour, ppBackup);
 }

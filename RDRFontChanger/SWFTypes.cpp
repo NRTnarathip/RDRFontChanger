@@ -142,3 +142,8 @@ uint32_t RageHashFNV(const void* data, size_t len)
 		hash = (hash * 16777619u) ^ p[i];
 	return hash;
 }
+
+void* GetGrcImageFactory() {
+	return *(void**)GetAddressFromRva(0x2ac0a28);
+}
+

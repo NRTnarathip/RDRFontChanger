@@ -18,45 +18,36 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="dllmain.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="script.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="keyboard.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Logger.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CustomFont.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="XMem.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Hooks.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="SWFTypes.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="StringHooks.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="CustomFont.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dllmain.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FileSystemHook.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="HookLib.h">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StringHooks.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="XMem.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="script.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="keyboard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Hooks.cpp">
@@ -78,6 +69,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="HookLib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FileSystemHook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
