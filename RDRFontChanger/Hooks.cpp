@@ -1,7 +1,5 @@
 #include "Hooks.h"
 #include "script.h"
-#include "MinHook.h"
-#pragma comment(lib, "libMinHook.x64.lib")
 #include <unordered_map>
 #include "Logger.h"
 #include <string>
@@ -9,28 +7,10 @@
 #include "CustomFont.h"
 #include "SWFTypes.h"
 #include "XMem.h"
+#include "HookLib.h"
 
 using namespace XMem;
-
-std::string GetModuleNameFromAddress(void* addr)
-{
-	MEMORY_BASIC_INFORMATION mbi{};
-	if (!VirtualQuery(addr, &mbi, sizeof(mbi)))
-		return "";
-
-	HMODULE hMod = (HMODULE)mbi.AllocationBase;
-
-	char path[MAX_PATH]{};
-	if (!GetModuleFileNameA(hMod, path, sizeof(path)))
-		return "";
-
-	// ตัด path เหลือแค่ชื่อไฟล์
-	const char* filename = strrchr(path, '\\');
-	if (filename)
-		return filename + 1;
-
-	return path;
-}
+using namespace HookLib;
 
 void PrintStackRva()
 {
@@ -42,63 +22,6 @@ void PrintStackRva()
 	logFormat("image base: %llx", GetImageBase());
 	logFormat("\n%s", stackString.c_str());
 }
-
-struct HookInfo {
-	void* target;
-	void* detour;
-	void* backup;
-};
-std::unordered_map<void*, HookInfo*> g_hookMap;
-bool HookFuncAddr(void* targetFunc, void* detour, void* ppBackupFunc) {
-	auto it = g_hookMap.find(targetFunc);
-	// already hooked at target func
-	if (it != g_hookMap.end()) {
-		auto hook = it->second;
-		if (detour != hook->detour) {
-			MessageBoxA(NULL, "Failed to hook. different detour at same target func", "Error", MB_OK | MB_ICONERROR);
-			return false;
-		}
-
-		*(void**)ppBackupFunc = hook->backup;
-		//log("already hook: %p", targetFunc);
-		//log("detour: %p", hook->detour);
-		//log("backup: %p", hook->backup);
-		return true;
-	}
-
-	if (MH_CreateHook(targetFunc, detour, (void**)ppBackupFunc) != MH_OK) {
-		MessageBoxA(NULL, "Failed to create hook", "Error", MB_OK | MB_ICONERROR);
-		return false;
-	}
-
-	if (MH_EnableHook(targetFunc) != MH_OK)
-	{
-		MessageBoxA(NULL, "Failed to enable hook", "Error", MB_OK | MB_ICONERROR);
-		return false;
-	}
-
-	auto hook = new HookInfo();
-	hook->target = targetFunc;
-	hook->backup = *(void**)ppBackupFunc;
-	hook->detour = detour;
-	g_hookMap[targetFunc] = hook;
-	logFormat("hooked func addr: 0x%llx", (uintptr_t)targetFunc);
-	logFormat("  detour: %p", hook->detour);
-	logFormat("  backup: %p", hook->backup);
-	return true;
-}
-
-
-bool HookFuncRva(uintptr_t funcRva, void* detour, void* ppBackup) {
-	return HookFuncAddr(GetAddressFromRva(funcRva), detour, ppBackup);
-}
-bool HookFuncVTable(void* obj, int index, LPVOID detour, void* ppBackup) {
-	void** vtable = *(void***)obj;
-	return HookFuncAddr(vtable[index], detour, ppBackup);
-}
-
-typedef unsigned char U8;
-typedef unsigned short U16;
 
 typedef uint(*GetGlyphFromChar_Fn)(swfFont* p1_font, unsigned char p2_char);
 GetGlyphFromChar_Fn backup_GetGlyphFromChar;
@@ -176,22 +99,21 @@ typedef void (*HK_DrawTextWithFont_TypeDef)(
 	LONGLONG p5, LONGLONG p6, LONGLONG p7);
 HK_DrawTextWithFont_TypeDef backup_DrawTextWithFont;
 static void HK_DrawTextWithFont(
-	swfEDITFONT* p1, const char* p2_text, swfFont* p3_font, LONGLONG p4,
+	swfEDITFONT* p1, const char* p2_text, swfFont* font, LONGLONG p4,
 	LONGLONG p5, LONGLONG p6, LONGLONG p7) {
 	logFormat("HK_DrawTextWithFont!!");
 	logFormat("draw text: %s", (const char*)p2_text);
-	cw("font: %p", p3_font);
-	logFormat("p3->glyphCount: %d", p3_font->glyphCount);
+	cw("font: %p", font);
+	logFormat("p3->glyphCount: %d", font->glyphCount);
 
-	// check fui flash manager
-	auto flashMgr = GetFlashManager();
-	cw("flash mgr: %p", flashMgr);
-	cw("langName: %s", flashMgr->langName);
-	cw("movie id count: %d", flashMgr->movieCount);
+	auto sheet = font->sheetArrayPtr;
+	cw("sheet: %p", sheet);
+	cw("size: %d", sheet->size);
+	cw("cell count: %d", sheet->cellCount);
+	cw("texture count: %d", sheet->textureCount);
 
+	TryDumpSwfFont(font, "onDrawText");
 
-
-	auto font = p3_font;
 
 	std::string replaceString = "";
 	if (p2_text != nullptr)
@@ -203,7 +125,7 @@ static void HK_DrawTextWithFont(
 	//	replaceString = TranslateThaiText(font, replaceString);
 
 
-	backup_DrawTextWithFont(p1, replaceString.c_str(), p3_font, p4, p5, p6, p7);
+	backup_DrawTextWithFont(p1, replaceString.c_str(), font, p4, p5, p6, p7);
 }
 
 typedef void* (*LoadFlashFile_Fn)(const char* p1);
@@ -237,6 +159,7 @@ void* swfFontDeclareStruct(swfFont* self, void* p1) {
 	logFormat("self: %p", self);
 	logFormat("p1: %p", p1);
 	auto result = backup_swfFontDeclareStruct(self, p1);
+	TryDumpSwfFont(self, "swfFontDeclareStructAfter");
 	logFormat("result: %p", result);
 	return result;
 }
@@ -252,14 +175,32 @@ void* HK_swfFont_VF0(void* p1, void* p2) {
 	logFormat("result: %p", result);
 	return result;
 }
+
+void* (*fnGrcImageCreate)(void*, void*, void*);
+void* HK_GrcImageCreate(void* p1, void* p2, void* p3) {
+	cw("BeginHook HK_GrcImageCreate");
+	cw("p1: %p, p3: %p", p1, p3);
+	cw("img name: %s", (char*)p2);
+	auto r = fnGrcImageCreate(p1, p2, p3);
+	cw("result: %p", r);
+	cw("EndHook HK_GrcImageCreate");
+	return r;
+}
+
 void* (*backup_swfSomeFactory)(int p1);
 void* HK_swfSomeFactory(int p1) {
 	logFormat("HK_swfSomeFactory");
+
+
 	int fileType = p1;
 	logFormat("file type: %s", GetSWFTypeName(p1));
 
 	auto result = backup_swfSomeFactory(p1);
 	logFormat("result: %p", result);
+	//if (fileType == SWFTypeEnum::Font) {
+	//	auto font = (swfFont*)result;
+	//	TryDumpSwfFont(font, "swfObjFactory");
+	//}
 
 	logFormat("EndHook: HK_swfSomeFactory");
 
@@ -353,20 +294,33 @@ void* HK_PackFile_c(PackFile_c* self, void* p1, void* p2, void* p3) {
 	return r;
 }
 
+void* (*fn_swfFileNew)(void* p1, void* p2);
+void* HK_swfFileNew(void* p1, void* p2) {
+	cw("BeginHook HK_swfFileNew");
+	cw("p1: %p", p1);
+	auto r = fn_swfFileNew(p1, p2);
+	cw("result= %p", r);
+	auto file = (swfFile*)r;
+	cw("swf magic: 0x%x", file->magic);
+	cw("EndHook HK_swfFileNew");
+	return r;
+}
+
+void* GetGrcImageFactory() {
+	auto addr = GetAddressFromRva(0x2ac0a28);
+	return *(void**)addr;
+}
+
+#include "StringHooks.h"
 void Hooks::SetupHooks()
 {
-	// hooks
-	if (MH_Initialize() != MH_OK) {
-		logFormat("minhook initialization failed");
-	}
-
 	// HookFuncRva(0x1979c0, HK_DrawTextWithFont, &backup_DrawTextWithFont);
 	// HookFuncRva(0x1fced0, LoadFlashFile, &backup_LoadFlashFile);
 	// HookFuncRva(0xc7510, rage_swfCONTEXT_GetGlobal, &backup_rage_swfCONTEXT_GetGlobal);
 	// HookFuncRva(0x19b9e0, swfFontDeclareStruct, &backup_swfFontDeclareStruct);
 	// HookFuncRva(0x196860, HK_GetGlyphFromChar, &backup_GetGlyphFromChar);
 	// HookFuncRva(0x195980, HK_swfFont_VF0, &backup_swfFont_VF0);
-	// HookFuncRva(0x194d10, HK_swfSomeFactory, &backup_swfSomeFactory);
+	HookFuncRva(0x194d10, HK_swfSomeFactory, &backup_swfSomeFactory);
 	// HookFuncRva(0xc95c0, PushFolder, &backup_PushFolder);
 	// HookFuncRva(0xc9140, fiAssetManager_Open, &backup_fiAssetManager_Open);
 	// HookFuncRva(0xc98b0, fiAssetManager_Open2, &backup_fiAssetManager_Open2);
@@ -374,5 +328,8 @@ void Hooks::SetupHooks()
 	// HookFuncRva(0x60e080, CreateAndMountRedemptionPackfile, &g_CreateAndMountRedemptionPackfile);
 	// HookFuncRva(0x88fb70, txtFontTex_Load, &backup_txtFontTex_Load);
 	// HookFuncRva(0x11a000, HK_GetMovieID, &backup_GetMovieID);
-	HookFuncRva(0xeae5a0, HK_PackFile_c, &backup_PackFile_c);
+	// HookFuncRva(0xeae5a0, HK_PackFile_c, &backup_PackFile_c);
+	// SetupStringHooks();
+	HookFuncRva(0x183eb0, HK_swfFileNew, &fn_swfFileNew);
+	HookFuncRva(0x157480, HK_GrcImageCreate, &fnGrcImageCreate);
 }

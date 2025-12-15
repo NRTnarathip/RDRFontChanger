@@ -42,6 +42,12 @@
     <ClInclude Include="SWFTypes.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="StringHooks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HookLib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -66,6 +72,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="XMem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StringHooks.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HookLib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

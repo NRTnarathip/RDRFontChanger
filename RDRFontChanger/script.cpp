@@ -32,8 +32,11 @@ void printMessage(std::string msg) {
 	HUD::PRINT_OBJECTIVE_B(msg.c_str(), 2.0f, true, 2, 1, 0, 0, 0);
 }
 
-
+#include "HookLib.h"
 void SetupOnDllMain(HMODULE hInstance) {
+	// init libs
+	HookLib::Init();
+
 	Logger::Instance();
 
 	// scriptRegister(hInstance, ScriptMain);

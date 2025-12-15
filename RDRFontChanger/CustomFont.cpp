@@ -7,39 +7,54 @@
 
 std::unordered_map<void*, int> CustomFont::g_registeredFontGlyphs;
 
-static std::unordered_set<void*> g_dumpFonts;
-void TryDumpSwfFont(swfFont* font) {
+static std::unordered_set<std::string> g_dumpFonts;
+void TryDumpSwfFont(swfFont* font, const char* prefixFileName) {
 	// dump font
-	if (g_dumpFonts.contains(font) == false) {
-		g_dumpFonts.insert(font);
-		std::string fileNameStr = std::format("font_{}.txt", (void*)font);
-		logFormat("try dump font to file: %s", fileNameStr.c_str());
+	std::string fileNameStr = std::format("{}_{}.txt", prefixFileName, (void*)font);
+	if (g_dumpFonts.contains(fileNameStr))
+		return;
 
-		std::ofstream stream(fileNameStr.c_str(), std::ios::out | std::ios::trunc);
-		logFormat("opened stream file!");
+	g_dumpFonts.insert(fileNameStr);
+	logFormat("try dump font to file: %s", fileNameStr.c_str());
 
-		stream << std::format("font address={}", (void*)font) << "\n";
+	std::ofstream stream(fileNameStr.c_str(), std::ios::out | std::ios::trunc);
+	logFormat("open stream file!");
 
-		auto sheet = font->sheetArrayPtr;
-		auto glyphArrayFirstElement = (swfGlyph**)sheet->glyphArrayFirstItem;
-		for (int i = 0;i < font->glyphCount;i++)
-		{
-			unsigned short currentCode = font->glyphToCodeArrayFirstItem[i];
-			auto gAddress = (uintptr_t)glyphArrayFirstElement + i * sizeof(swfGlyph);
-			auto g = (swfGlyph*)gAddress;
-			auto line = std::format("index={}, char={}, left={:.2f}, top={:.2f}, width={:.2f}, height={:.2f}, a={:.2f}, b={:.2f}, c={:.2f}, d={:.2f}",
-				i, currentCode,
-				g->left, g->top, g->width, g->height,
-				g->u0x10, g->u0x14, g->u0x18, g->u0x1C);
-			stream << line.c_str() << "\n";
-			float advance = *((float*)font->advanceFirstItem + i);
-			auto line2 = std::format("advance={}\n", advance);
-			stream << line2;
-		}
+	stream << std::format("font address={}\n", (void*)font);
+
+	auto sheet = font->sheetArrayPtr;
+	cw("sheet: %p", sheet);
+	if (sheet == nullptr) {
+		cw("sheet is null!");
 		stream.close();
-		logFormat("dump success for font file name: %s", fileNameStr.c_str());
+		return;
 	}
 
+	cw("cell count: 5d", sheet->cellCount);
+
+	auto glyphArrayFirstElement = (swfGlyph**)sheet->cellArray;
+
+	for (int i = 0;i < font->glyphCount;i++)
+	{
+		unsigned short currentCode = font->glyphToCodeArrayFirstItem[i];
+		auto gAddress = (uintptr_t)glyphArrayFirstElement + i * sizeof(swfGlyph);
+		auto g = (swfGlyph*)gAddress;
+		auto line = std::format(
+			"index={}, char={}, left={:.2f}, top={:.2f}, width={:.2f}, height={:.2f}",
+			i, currentCode, g->left, g->top, g->width, g->height);
+
+		line += std::format(
+			", minX={:.2f}, minY={:.2f}, maxX={:.2f}, maxY={:.2f}",
+			g->minX, g->minY, g->maxX, g->maxY);
+
+		stream << line.c_str() << "\n";
+
+		float advance = *((float*)font->advanceFirstItem + i);
+		auto line2 = std::format("advance={}\n", advance);
+		stream << line2;
+	}
+	stream.close();
+	logFormat("dump success for font file name: %s", fileNameStr.c_str());
 }
 
 void CustomFont::RegisterGlyph(swfFont* font, BitmapFont& bitmapFont, BitmapFont::Glyph& bitmapGlyph)
@@ -50,19 +65,13 @@ void CustomFont::RegisterGlyph(swfFont* font, BitmapFont& bitmapFont, BitmapFont
 	}
 
 	int glyphIndex = g_registeredFontGlyphs[font];
-
-	// can't register max char
 	if (glyphIndex == font->glyphCount - 1)
 		return;
-
-	// increement
 	g_registeredFontGlyphs[font] += 1;
-
 
 	// update x advance
 	float* advanceArray = (float*)font->advanceFirstItem;
 
-	// img size / font size
 	float advanceScale = 1.0;
 	advanceArray[glyphIndex] = bitmapGlyph.xadvance * advanceScale;
 
@@ -72,7 +81,7 @@ void CustomFont::RegisterGlyph(swfFont* font, BitmapFont& bitmapFont, BitmapFont
 
 	// replace glyph with custom
 	auto sheet = font->sheetArrayPtr;
-	swfGlyph* glyphArray = (swfGlyph*)sheet->glyphArrayFirstItem;
+	swfGlyph* glyphArray = (swfGlyph*)sheet->cellArray;
 	swfGlyph* g = glyphArray + glyphIndex;
 	g->left = bitmapGlyph.x;
 	g->top = bitmapGlyph.y;
@@ -89,12 +98,12 @@ void CustomFont::RegisterGlyph(swfFont* font, BitmapFont& bitmapFont, BitmapFont
 	float bearingY = bitmapFont.lineHeight - yoffset - g->height;
 
 	float unkScale = 1;
-	g->u0x10 = bearingX * unkScale;
-	g->u0x14 = -bearingY * unkScale;
-	g->u0x18 = (g->left + g->width) * unkScale;
-	g->u0x1C = (g->top + g->height) * unkScale;
+	//g->u0x10 = bearingX * unkScale;
+	//g->u0x14 = -bearingY * unkScale;
+	//g->u0x18 = (g->left + g->width) * unkScale;
+	//g->u0x1C = (g->top + g->height) * unkScale;
 	logFormat("reigstered font: x:%d, y:%d, w:%d, h:%d", (int)g->left, (int)g->top, (int)g->width, (int)g->height);
-	logFormat("unk info: a:%d, b:%d, c:%d, d:%d", (int)g->u0x10, (int)g->u0x14, (int)g->u0x18, (int)g->u0x1C);
+	//logFormat("unk info: a:%d, b:%d, c:%d, d:%d", (int)g->u0x10, (int)g->u0x14, (int)g->u0x18, (int)g->u0x1C);
 }
 
 void CustomFont::TryRegisterThaiFontGlyphs(swfFont* font) {

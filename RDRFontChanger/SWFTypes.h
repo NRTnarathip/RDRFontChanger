@@ -38,7 +38,10 @@ const char* GetSWFTypeName(int e);
 
 // size 0x181?
 struct swfFile {
-	char x30[0x30];
+	void* x0;
+	void* x8;
+	uint32_t magic;
+	char x30[0x1c];
 	void* files; // x30
 	void* x38;
 	void* x40;
@@ -53,6 +56,61 @@ CHECK_OFFSET(swfFile, files, 0x30);
 // CHECK_OFFSET(swfFile, totalFiles, 0x4e);
 CHECK_OFFSET(swfFile, x50, 0x50);
 CHECK_OFFSET(swfFile, name, 0x180);
+
+
+struct swfGlyph {
+	float left;
+	float top;
+	float width;
+	float height;
+	float minX;
+	float minY;
+	float maxX;
+	float maxY;
+};
+static_assert(sizeof(swfGlyph) == 0x20, "Assert Size");
+
+
+struct swfSheet {
+	void* unk0x0;
+	swfGlyph* cellArray; // 0x8 -> 0x10
+	unsigned short size; // 0x10
+	unsigned short cellCount; // 0x12
+	void* indeiceArray;
+	void* x20;
+	void* x28;
+	int textureCount; // 0x30
+};
+CHECK_OFFSET(swfSheet, size, 0x10);
+CHECK_OFFSET(swfSheet, cellCount, 0x12);
+CHECK_OFFSET(swfSheet, textureCount, 0x30);
+
+
+struct swfFont
+{
+	void** vftable; // 0x0 -> 0x8
+	void* _0x8;
+	void* _0x10;
+	void* _0x18; // 0x18 -> 0x20
+	unsigned short* glyphToCodeArrayFirstItem; //0x20 - > 0x28
+	void* advanceFirstItem;
+	char codeToGlyph[0x80]; // 0x30 -> 0xb0
+	short sheetCount; // 0xb0
+	short ascent;  // 0xb2
+	short desent; // 0xb4
+	short leading; // 0xb6
+	unsigned short glyphCount;  // 0xb8
+	unsigned char flags;
+	unsigned char langCode;
+	swfSheet* sheetArrayPtr;
+};
+static_assert(offsetof(swfFont, glyphToCodeArrayFirstItem) == 0x20, "Assert It");
+static_assert(offsetof(swfFont, sheetCount) == 0xb0, "Assert It");
+static_assert(offsetof(swfFont, glyphCount) == 0xb8, "Assert It");
+static_assert(offsetof(swfFont, langCode) == 0xbb, "Assert It");
+static_assert(offsetof(swfFont, sheetArrayPtr) == 0xc0, "Assert It");
+static_assert(offsetof(swfFont, codeToGlyph) == 0x30, "Assert It");
+
 
 
 // size 0x298!
@@ -125,7 +183,9 @@ struct PackFileIndex_c {
 	uint32_t* fileHashVector; // x30 -> x38
 	int totalFiles; // x38 -> x3C
 	int fileHashCapacity; //x3C -> x40
-	PackFileEntryHashMap hashMap;
+	PackFileEntryHashMap hashMap; // x40 -> x50
+	void* unkStringx50;
+	void* unkStringx58;
 };
 
 CHECK_OFFSET(PackFileIndex_c, packFileName, 0x0);
@@ -148,4 +208,14 @@ void DumpPackFile(PackFile_c* packfile);
 
 // default seed for hash
 #define FNV_OFFSET_BASIS_32 0x811C9DC5
-uint32_t Hash(const void* data, size_t len, uint32_t seed);
+uint32_t RageHashFNV(const void* data, size_t len);
+
+// lang code
+// error = -1
+// en = 1
+// fr = 2
+// de = 3
+// it = 4
+// ja = 5
+// 6 -> 12
+// ko, pl, pt, pt-br, ru, es, es-mx

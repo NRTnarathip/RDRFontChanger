@@ -2,6 +2,9 @@
 #include "Logger.h"
 #include <vector>
 #include <string.h>
+#include <iostream>
+#include <fstream>
+#include <string>
 
 #include "XMem.h"
 using namespace XMem;
@@ -102,6 +105,12 @@ PackFilePropertyKeyPair* PackFileEntryHashMap::Find(uint32_t findKey)
 	return nullptr;
 }
 
+typedef bool (*fnDoesFileExist)(PackFile_c* packFile, const char* name);
+bool DoesFileExist(PackFile_c* packFile, const char* name) {
+	static fnDoesFileExist fn = (fnDoesFileExist)GetAddressFromRva(0xeae670);
+	return fn(packFile, name);
+}
+
 void DumpPackFile(PackFile_c* p)
 {
 	cw("try dump pack file= %p", p);
@@ -110,23 +119,25 @@ void DumpPackFile(PackFile_c* p)
 	cw("pack file name: %s", fileIndex->packFileName);
 	cw("total files: %d", fileIndex->totalFiles);
 	cw("files capacity: %d", fileIndex->fileHashCapacity);
-	auto map = &fileIndex->hashMap;
-	for (int i = 0;i < fileIndex->totalFiles;i++) {
-		cw("index: %d", i);
-		auto currentHash = fileIndex->fileHashVector[i];
-		cw("current hash: 0x%x", currentHash);
-		PackFileProperty packFileProps;
-		auto result = GetPackFileProps(fileIndex, &packFileProps, currentHash);
-		cw("v0: 0x%x", packFileProps.v0);
-		cw("v1: 0x%x", packFileProps.v1);
-		cw("v2: 0x%x", packFileProps.v2);
+	// file index static rva: RDR.exe+74357C0 
+
+	std::ifstream file("ImportedFileNames.txt");
+	std::string name;
+	while (std::getline(file, name)) {
+		auto len = name.size();
+		auto hash = RageHashFNV((void*)name.c_str(), len);
+		cw("try to find name: %s, hash: 0x%x", name.c_str(), hash);
+		if (DoesFileExist(p, name.c_str()))
+			cw("found!!");
 	}
+
+	file.close();
 }
 
-uint32_t Hash(const void* data, size_t len, uint32_t seed = FNV_OFFSET_BASIS_32)
+uint32_t RageHashFNV(const void* data, size_t len)
 {
 	const uint8_t* p = (const uint8_t*)data;
-	uint32_t hash = seed;
+	uint32_t hash = FNV_OFFSET_BASIS_32;
 	for (size_t i = 0; i < len; ++i)
 		hash = (hash * 16777619u) ^ p[i];
 	return hash;

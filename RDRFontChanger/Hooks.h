@@ -6,3 +6,4 @@ public:
 	static void SetupHooks();
 };
 
+void* GetGrcImageFactory();

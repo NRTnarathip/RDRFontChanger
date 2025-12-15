@@ -4,47 +4,8 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include "SWFTypes.h"
 
-struct swfGlyph {
-	float left;
-	float top;
-	float width;
-	float height;
-	float u0x10;
-	float u0x14;
-	float u0x18;
-	float u0x1C;
-};
-static_assert(sizeof(swfGlyph) == 0x20, "Assert Size");
-struct swfSheet {
-	void* unk0x0;
-	swfGlyph* glyphArrayFirstItem;
-};
-struct swfFont
-{
-	void** vftable; // 0x0 -> 0x8
-	void* _0x8;
-	void* _0x10;
-	void* _0x18; // 0x18 -> 0x20
-	unsigned short* glyphToCodeArrayFirstItem; //0x20 - > 0x28
-	void* advanceFirstItem;
-	char codeToGlyph[0x80]; // 0x30 -> 0xb0
-	short sheetCount; // 0xb0
-	short ascent;  // 0xb2
-	short desent; // 0xb4
-	short leading; // 0xb6
-	unsigned short glyphCount;  // 0xb8
-	unsigned char flags;
-	unsigned char langCode;
-	swfSheet* sheetArrayPtr;
-};
-
-static_assert(offsetof(swfFont, glyphToCodeArrayFirstItem) == 0x20, "Assert It");
-static_assert(offsetof(swfFont, sheetCount) == 0xb0, "Assert It");
-static_assert(offsetof(swfFont, glyphCount) == 0xb8, "Assert It");
-static_assert(offsetof(swfFont, langCode) == 0xbb, "Assert It");
-static_assert(offsetof(swfFont, sheetArrayPtr) == 0xc0, "Assert It");
-static_assert(offsetof(swfFont, codeToGlyph) == 0x30, "Assert It");
 
 
 class BitmapFont {
@@ -106,3 +67,5 @@ public:
 
 static_assert(offsetof(Fonttext, CharHeight) == 0x50, "assert");
 static_assert(offsetof(Fonttext, NumGlyphs) == 0x98, "assert");
+
+void TryDumpSwfFont(swfFont* font, const char* prefixFileName);
