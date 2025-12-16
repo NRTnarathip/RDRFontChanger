@@ -65,16 +65,16 @@ const char* GetSWFTypeName(int e);
 // size 0x181?
 struct swfFile {
 	void* x0;
-	void* x8;
-	uint32_t magic;
-	char x30[0x1c];
+	void* x8; // x8 -> x10
+	uint32_t magic; // x10 -> x14
+	char x14[0x1c];
 	void* files; // x30
 	void* x38;
 	void* x40;
 	int x48;//0x48 -> x4c
 	char x4c[0x2];
-	// unsigned short totalFiles; // 0x4E
-	unsigned short unk0x4E;
+	unsigned short totalFiles; // 0x4E
+	//unsigned short unk0x4E;
 	char x50[0x130];
 	const char* name;
 };
@@ -167,9 +167,13 @@ struct swfEditTextDrawColor {
 // size 0x298!
 struct swfContext {
 	char _0x48[0x48];
-	swfFile* file;
+	swfFile* file; // 0x48 -> x50
+	char x50[0x220];
+	const char* fileName;
 };
 CHECK_OFFSET(swfContext, file, 0x48);
+CHECK_OFFSET(swfContext, fileName, 0x270);
+
 
 // size 0x68!
 struct fuiMovie {

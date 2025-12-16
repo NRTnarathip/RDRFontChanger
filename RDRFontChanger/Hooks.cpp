@@ -20,6 +20,7 @@ using namespace HookLib;
 
 
 std::vector<swfFile*> g_swfFiles;
+std::vector<swfContext*> g_allSwfContext;
 
 void PrintStackRva()
 {
@@ -128,6 +129,31 @@ static void HK_DrawTextWithFont(
 	cw("bound width: %.2f, height: %.2f", bound.width, bound.height);
 	CustomFont::TryReplaceSwfFontToThaiFont(font);
 
+	// try debug all swf context
+	for (int ctxIndex = 0;ctxIndex < g_allSwfContext.size();ctxIndex++) {
+		auto ctx = g_allSwfContext[ctxIndex];
+		cw("ctx: %p", ctx);
+		cw("ctx name: %s", ctx->fileName);
+		cw("try dump all files...");
+		auto ctxFile = (swfFile*)ctx->file;
+		cw("total file: %d", ctxFile->totalFiles);
+		cw("magic: 0x%x", ctxFile->magic);
+		auto directory = (void**)ctxFile->files;
+		cw("files: %p", directory);
+		for (int fileIndex = 0; fileIndex < ctx->file->totalFiles; fileIndex++) {
+			auto file = (swfFile*)directory[fileIndex];
+			cw("[%d] file: %p", fileIndex, file);
+			if (file == nullptr)
+				continue;
+
+			//cw("name: %s", file->name);
+			cw("magic: 0x%x", file->magic);
+			auto fileType = (byte)file->magic;
+			cw("file type: typeName: %s", GetSWFTypeName(fileType));
+			cw("total files: %d", file->totalFiles);
+		}
+	}
+
 
 	auto sheet = font->sheetArrayPtr;
 	cw("sheet: %p", sheet);
@@ -213,6 +239,14 @@ grcTextureD11* HK_grcTextureFactoryD11_Create(void* p1, const char* name, void* 
 	cw("img name: %s", name);
 	grcTextureD11* r = fn_grcTextureFactoryD11_Create(p1, name, p3);
 	cw("result: %p", r);
+	auto resource = r->texturePtr;
+	cw("resourec: %p", resource);
+	cw("resource name: %s", r->name);
+	if (resource) {
+		cw("width: %d, height: %d", resource->width, resource->height);
+		cw("depth: %d", resource->depth);
+	}
+
 	cw("EndHook HK_grcTextureFactoryD11_Create");
 	unTab();
 	return r;
@@ -226,6 +260,22 @@ grcTextureD11* HK_grcTextureD11_Construct(grcTextureD11* self, const char* name,
 	auto r = fn_grcTextureD11_Construct(self, name, p3);
 	cw("result: %p", r);
 	cw("EndHook HK_grcTextureD11_Construct");
+	unTab();
+	return r;
+}
+
+grcTextureD11* (*fn_grcTextureD11_Construct2)(grcTextureD11* self, int allocSize);
+grcTextureD11* HK_grcTextureD11_Construct2(grcTextureD11* self, int allocSize) {
+	addTab();
+	cw("BeginHook HK_grcTextureD11_Construct2");
+	cw("allocSize: %d", allocSize);
+	auto r = fn_grcTextureD11_Construct2(self, allocSize);
+	cw("result: %p, rva: 0x%x", r, GetRvaFromAddress(r));
+	if ((uintptr_t)r == 0x00007FF6C1EB9FA0) {
+		// it's img rdr2narrow
+		PrintStackRva();
+	}
+	cw("EndHook HK_grcTextureD11_Construct2");
 	unTab();
 	return r;
 }
@@ -286,12 +336,12 @@ void* fiAssetManager_Open2(void* self, char* p1, char* p2, uint64_t p3, uint64_t
 	return res;
 }
 
-void* (*backup_PackFileInit)(void* p1, void* p2, void* p3, void* p4);
-void* PackFileInit(void* p1, char* p2, void* p3, void* p4) {
+PackFile_c* (*fn_PackFileInit)(void* p1, const char* p2, void* p3, void* p4);
+PackFile_c* HK_PackFileInit(PackFile_c* self, const char* p2, void* p3, void* p4) {
 	logFormat("Hook PackFileInit");
-	std::string fileName = p2;
-	logFormat("packFileName: %s", fileName.c_str());
-	auto res = backup_PackFileInit(p1, p2, p3, p4);
+	logFormat("packFileName: %s", p2);
+	auto res = fn_PackFileInit(self, p2, p3, p4);
+	DumpPackFile(self);
 	logFormat("EndHook PackFileInit");
 	return res;
 }
@@ -391,6 +441,40 @@ void* HK_LookupTextureReference(void* self, const char* name) {
 	return r;
 }
 
+swfContext* (*fn_swfContext_Construct)(swfContext* self, uint32_t allocSize);
+swfContext* HK_swfContext_Construct(swfContext* self, uint32_t allocSize) {
+	addTab();
+	cw("BeginHook HK_swfContext_Construct");
+	cw("self: %p", self);
+	cw("alloc size: %d", allocSize);
+	auto r = fn_swfContext_Construct(self, allocSize);
+	cw("EndHook HK_swfContext_Construct");
+	unTab();
+
+	g_allSwfContext.push_back(self);
+	return r;
+}
+
+bool (*fnDoesFileExist)(PackFile_c* packFile, const char* name);
+bool HK_PackFile_DoesFileExist(PackFile_c* packFile, const char* name) {
+	cw("BeginHook HK_PackFile_DoesFileExist");
+	cw("name: %s", name);
+	bool r = fnDoesFileExist(packFile, name);
+	cw("result: %d", r);
+	cw("EndHook HK_PackFile_DoesFileExist");
+	return r;
+}
+
+void* (*fn_PackFile_OpenForRead)(PackFile_c* packFile, const char* name);
+void* HK_PackFile_OpenForRead(PackFile_c* packFile, const char* name) {
+	cw("BeginHook HK_PackFile_OpenForRead");
+	cw("name: %s", name);
+	auto r = fn_PackFile_OpenForRead(packFile, name);
+	cw("result: %p", r);
+	cw("EndHook HK_PackFile_OpenForRead");
+	return r;
+}
+
 void Hooks::OnDetachDLL() {
 	HookLib::DisableHooks();
 }
@@ -409,7 +493,9 @@ void Hooks::SetupHooks()
 	// HookFuncRva(0xc95c0, PushFolder, &backup_PushFolder);
 	// HookFuncRva(0xc9140, fiAssetManager_Open, &backup_fiAssetManager_Open);
 	// HookFuncRva(0xc98b0, fiAssetManager_Open2, &backup_fiAssetManager_Open2);
-	// HookFuncRva(0xeae740, PackFileInit, &backup_PackFileInit);
+	HookFuncRva(0xeae740, HK_PackFileInit, &fn_PackFileInit);
+	HookFuncRva(0xeae670, HK_PackFile_DoesFileExist, &fnDoesFileExist);
+	HookFuncRva(0xeaebe0, HK_PackFile_OpenForRead, &fn_PackFile_OpenForRead);
 	// HookFuncRva(0x60e080, CreateAndMountRedemptionPackfile, &g_CreateAndMountRedemptionPackfile);
 	// HookFuncRva(0x88fb70, txtFontTex_Load, &backup_txtFontTex_Load);
 	// HookFuncRva(0x11a000, HK_GetMovieID, &backup_GetMovieID);
@@ -421,7 +507,8 @@ void Hooks::SetupHooks()
 
 	HookFuncRva(0x157480, HK_grcTextureFactoryD11_Create, &fn_grcTextureFactoryD11_Create);
 	HookFuncRva(0x15da80, HK_grcImageLoad, &fn_grcImageLoad);
-	HookFuncRva(0x154bf0, HK_grcTextureD11_Construct, &fn_grcTextureD11_Construct);
 	HookFuncRva(0x140fc0, HK_LookupTextureReference, &fn_LookupTextureReference);
-
+	HookFuncRva(0x154bf0, HK_grcTextureD11_Construct, &fn_grcTextureD11_Construct);
+	HookFuncRva(0x154260, HK_grcTextureD11_Construct2, &fn_grcTextureD11_Construct2);
+	HookFuncRva(0x180b30, HK_swfContext_Construct, &fn_swfContext_Construct);
 }

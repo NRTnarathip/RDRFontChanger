@@ -106,32 +106,35 @@ PackFilePropertyKeyPair* PackFileEntryHashMap::Find(uint32_t findKey)
 }
 
 typedef bool (*fnDoesFileExist)(PackFile_c* packFile, const char* name);
-bool DoesFileExist(PackFile_c* packFile, const char* name) {
+bool PackFile_DoesFileExist(PackFile_c* packFile, const char* name) {
 	static fnDoesFileExist fn = (fnDoesFileExist)GetAddressFromRva(0xeae670);
 	return fn(packFile, name);
 }
 
-void DumpPackFile(PackFile_c* p)
+#include <unordered_map>
+void DumpPackFile(PackFile_c* packFile)
 {
-	cw("try dump pack file= %p", p);
-	auto fileIndex = p->fileIndex;
+	cw("try dump pack file= %p", packFile);
+	auto fileIndex = packFile->fileIndex;
 	cw("file index: %p", fileIndex);
 	cw("pack file name: %s", fileIndex->packFileName);
 	cw("total files: %d", fileIndex->totalFiles);
 	cw("files capacity: %d", fileIndex->fileHashCapacity);
 	// file index static rva: RDR.exe+74357C0 
 
-	std::ifstream file("ImportedFileNames.txt");
+	std::ifstream fileNameStream("ImportedFileNames.txt");
 	std::string name;
-	while (std::getline(file, name)) {
+	std::unordered_map<uint32_t, std::string> fileNameMap;
+	while (std::getline(fileNameStream, name)) {
 		auto len = name.size();
-		auto hash = RageHashFNV((void*)name.c_str(), len);
-		cw("try to find name: %s, hash: 0x%x", name.c_str(), hash);
-		if (DoesFileExist(p, name.c_str()))
-			cw("found!!");
+		auto hash = RageHashFNV(name.data(), len);
+		fileNameMap[hash] = name;
+		if (PackFile_DoesFileExist(packFile, name.c_str())) {
+			cw("found file!!: %s", name.c_str());
+		}
 	}
 
-	file.close();
+	fileNameStream.close();
 }
 
 uint32_t RageHashFNV(const void* data, size_t len)

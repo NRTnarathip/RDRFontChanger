@@ -13,6 +13,11 @@ uintptr_t XMem::GetRvaFromAddress(uintptr_t addr)
 	return (uintptr_t)(addr - GetImageBase());
 }
 
+uintptr_t XMem::GetRvaFromAddress(void* addr)
+{
+	return (uintptr_t)addr - GetImageBase();
+}
+
 void* XMem::GetAddressFromRva(int rva) {
 	return (void*)(GetImageBase() + rva);
 }

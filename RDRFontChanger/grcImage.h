@@ -10,8 +10,17 @@ struct grcImage {
 
 
 struct TexturePtr {
-	const char* name;
+	void* x0;
+	char x8[0x40];
+	void* unk48;
+	int width, height;
+	char x58[0x14];
+	int depth;
 };
+
+CHECK_OFFSET(TexturePtr, width, 0x50);
+CHECK_OFFSET(TexturePtr, height, 0x54);
+CHECK_OFFSET(TexturePtr, depth, 0x6C);
 
 // size 0x80 on android
 // pc size 0x88!!
@@ -20,12 +29,12 @@ struct grcTextureD11 {
 	void* x8;
 	int x10, x14;
 	char x18[0x18];
-	TexturePtr* texturePtr;
+	const char* name; // 
+	TexturePtr* texturePtr; // x38
 	int refCounter;
 };
 
-CHECK_OFFSET(grcTextureD11, texturePtr, 0x30);
-CHECK_OFFSET(grcTextureD11, refCounter, 0x38);
+CHECK_OFFSET(grcTextureD11, texturePtr, 0x38);
 
 
 struct grcTextureFactory {
