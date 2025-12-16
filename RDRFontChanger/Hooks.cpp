@@ -137,7 +137,7 @@ static void HK_DrawTextWithFont(
 	cw("sheet cell array ptr: %p", sheet->cellArray);
 	cw("font glyph array ptr: %p", font->glyphToCodeArrayFirstItem);
 
-	TryDumpSwfFont(font, "onDrawText");
+	// TryDumpSwfFont(font, "onDrawText");
 
 	//cw("total swf files: %d", g_swfFiles.size());
 	//for (int i = 0;i < g_swfFiles.size();i++) {
@@ -206,15 +206,26 @@ void* HK_swfFont_VF0(void* p1, void* p2) {
 	return result;
 }
 
-void* (*fnGrcImageCreate)(void*, void*, void*);
-void* HK_GrcImageCreate(void* p1, void* p2, void* p3) {
+grcTextureD11* (*fn_grcTextureFactoryD11_Create)(void*, const char*, void*);
+grcTextureD11* HK_grcTextureFactoryD11_Create(void* p1, const char* name, void* p3) {
 	addTab();
-	cw("BeginHook HK_GrcImageCreate");
-	cw("p1: %p, p3: %p", p1, p3);
-	cw("img name: %s", (char*)p2);
-	auto r = fnGrcImageCreate(p1, p2, p3);
+	cw("BeginHook HK_grcTextureFactoryD11_Create");
+	cw("img name: %s", name);
+	grcTextureD11* r = fn_grcTextureFactoryD11_Create(p1, name, p3);
 	cw("result: %p", r);
-	cw("EndHook HK_GrcImageCreate");
+	cw("EndHook HK_grcTextureFactoryD11_Create");
+	unTab();
+	return r;
+}
+
+grcTextureD11* (*fn_grcTextureD11_Construct)(grcTextureD11* self, const char* name, void* p3);
+grcTextureD11* HK_grcTextureD11_Construct(grcTextureD11* self, const char* name, void* p3) {
+	addTab();
+	cw("BeginHook HK_grcTextureD11_Construct");
+	cw("name: %s", name);
+	auto r = fn_grcTextureD11_Construct(self, name, p3);
+	cw("result: %p", r);
+	cw("EndHook HK_grcTextureD11_Construct");
 	unTab();
 	return r;
 }
@@ -356,6 +367,29 @@ uint64_t HK_Hash(void* data, uint64_t len, uint64_t seed) {
 	return r;
 }
 
+grcImage* (*fn_grcImageLoad)(const char* name);
+grcImage* HK_grcImageLoad(const char* name) {
+	cw("BeginHook HK_grcImageLoad");
+	cw("name: %s", name);
+	auto r = fn_grcImageLoad(name);
+	cw("result: %p", r);
+	cw("format: 0x%x", r->format);
+	cw("width: %d, height: %d", r->width, r->height);
+	cw("EndHook HK_grcImageLoad");
+	return r;
+}
+
+void* (*fn_LookupTextureReference)(void* self, const char* name);
+void* HK_LookupTextureReference(void* self, const char* name) {
+	addTab();
+	cw("BeginHook LookupTextureReference");
+	cw("name: %s", name);
+	auto r = fn_LookupTextureReference(self, name);
+	cw("result: %p", r);
+	cw("EndHook LookupTextureReference");
+	unTab();
+	return r;
+}
 
 void Hooks::OnDetachDLL() {
 	HookLib::DisableHooks();
@@ -381,8 +415,13 @@ void Hooks::SetupHooks()
 	// HookFuncRva(0x11a000, HK_GetMovieID, &backup_GetMovieID);
 	// HookFuncRva(0xeae5a0, HK_PackFile_c, &backup_PackFile_c);
 	// SetupStringHooks();
-	HookFuncRva(0x183eb0, HK_swfFileNew, &fn_swfFileNew);
-	HookFuncRva(0x157480, HK_GrcImageCreate, &fnGrcImageCreate);
-	SetupFileSystemHook();
-	//HookFuncRva(0xeb6730, HK_Hash, &fnHash);
+	// HookFuncRva(0x183eb0, HK_swfFileNew, &fn_swfFileNew);
+	// SetupFileSystemHook();
+	// HookFuncRva(0xeb6730, HK_Hash, &fnHash);
+
+	HookFuncRva(0x157480, HK_grcTextureFactoryD11_Create, &fn_grcTextureFactoryD11_Create);
+	HookFuncRva(0x15da80, HK_grcImageLoad, &fn_grcImageLoad);
+	HookFuncRva(0x154bf0, HK_grcTextureD11_Construct, &fn_grcTextureD11_Construct);
+	HookFuncRva(0x140fc0, HK_LookupTextureReference, &fn_LookupTextureReference);
+
 }

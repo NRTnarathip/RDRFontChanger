@@ -2,9 +2,7 @@
 #include <iostream>
 #include <cstddef>
 #include "grcImage.h"
-
-#define CHECK_OFFSET(type, field, offset) \
-    static_assert(offsetof(type, field) == offset, "Bad offset")
+#include "AssetLib.h"
 
 enum SWFTypeEnum {
 	Shape = 1,
@@ -100,13 +98,13 @@ static_assert(sizeof(swfGlyph) == 0x20, "Assert Size");
 
 
 struct swfSheet {
-	grcImage** textureArray;
+	grcTextureD11** textureArray;
 	swfGlyph* cellArray; // 0x8 -> 0x10
 	unsigned short size; // 0x10
 	unsigned short cellCount; // 0x12
-	void* indeiceArray;
-	const char** textureNameArray;
-	void* x28;
+	void* indexArray; //x18
+	const char** textureNameArray; // 0x20
+	void* x28; //x28
 	int textureCount; // 0x30
 	bool IsTextureExist(const char* name);
 };

@@ -88,6 +88,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="AssetLib.h" />
     <ClInclude Include="CustomFont.h" />
     <ClInclude Include="dllmain.h" />
     <ClInclude Include="FileSystemHook.h" />

@@ -2,7 +2,7 @@
 #include "XMem.h"
 using namespace XMem;
 
-grcImageFactory* grcImageFactory::GetGrcImageFactory()
+grcTextureFactory* grcTextureFactory::GetInstance()
 {
-	return *(grcImageFactory**)GetAddressFromRva(0x2ac0a28);
+	return *(grcTextureFactory**)GetAddressFromRva(0x2ac0a28);
 }

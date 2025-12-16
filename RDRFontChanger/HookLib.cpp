@@ -76,3 +76,4 @@ bool HookLib::HookFuncImport(const wchar_t* moduleName, const char* importName, 
 	auto target = GetProcAddress(hKernelBase, importName);
 	return HookLib::HookFuncAddr((void*)target, detour, ppBackup);
 }
+

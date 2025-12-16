@@ -46,6 +46,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="grcImage.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AssetLib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

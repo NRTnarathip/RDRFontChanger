@@ -5,6 +5,11 @@
 #include <fstream>
 #include <string>
 #include "SWFTypes.h"
+#include "HookLib.h"
+#include <filesystem>
+
+using namespace HookLib;
+
 
 std::unordered_map<swfFont*, CustomFont*> CustomFont::g_registeredFonts;
 
@@ -152,17 +157,33 @@ void CustomFont::ReplaceGlyph(swfFont* font, const BitmapFont::Glyph& newGlyph)
 
 #include "grcImage.h"
 
+grcTextureD11* rage_grcTextureD11Create(const char* assetName)
+{
+	auto instance = grcTextureFactory::GetInstance();
+	return instance->CreateTexture(assetName, nullptr);
+}
+
+void LogGrcImage(grcImage* img) {
+	cw("LogGrcImage img: %p", img);
+	if (img == nullptr)
+		return;
+
+	cw("format: 0x%x", img->format);
+	cw("w: %d, h: %d", img->width, img->height);
+}
+
 void CustomFont::ReplaceTexture(int replaceTextureIndex, std::string newTextureFilePath)
 {
 	cw("try ReplaceTexture index: %d, path: %s", replaceTextureIndex, newTextureFilePath.c_str());
 	auto sheet = font->sheetArrayPtr;
-	if (replaceTextureIndex >= sheet->textureCount) {
+	if (replaceTextureIndex < 0
+		|| replaceTextureIndex >= sheet->textureCount) {
 		cw("texture index is over than texture count");
 		return;
 	}
 
 	auto i = replaceTextureIndex;
-	grcImage* originalTexture = sheet->textureArray[i];
+	grcTextureD11* originalTexture = sheet->textureArray[i];
 	const char* originalName = sheet->textureNameArray[i];
 	// backup it before change!
 	this->backupTextureArray.push_back(originalTexture);
@@ -170,9 +191,10 @@ void CustomFont::ReplaceTexture(int replaceTextureIndex, std::string newTextureF
 	cw("texture original: %p, name: %s", originalTexture, originalName);
 
 	// change it!!
-	auto imgFactory = grcImageFactory::GetGrcImageFactory();
-	grcImage* newTexture = imgFactory->CreateTexture(newTextureFilePath.c_str(), 0);
+	auto imgFactory = grcTextureFactory::GetInstance();
+	grcTextureD11* newTexture = rage_grcTextureD11Create(newTextureFilePath.c_str());
 	cw("create new texture: %p", newTexture);
+
 	this->newTextures.push_back(newTexture);
 	this->newTextureFileNames.push_back(newTextureFilePath);
 	sheet->textureArray[i] = newTexture;
@@ -181,6 +203,10 @@ void CustomFont::ReplaceTexture(int replaceTextureIndex, std::string newTextureF
 	cw("texture after replace: %p, name: %s",
 		sheet->textureArray[i],
 		sheet->textureNameArray[i]);
+
+
+	// check index
+	cw("sheet index array: %p", sheet->indexArray);
 }
 
 void CustomFont::TryReplaceSwfFontToThaiFont(swfFont* font) {
@@ -196,25 +222,33 @@ void CustomFont::TryReplaceSwfFontToThaiFont(swfFont* font) {
 	if (sheet->IsTextureExist("RDR2Narrow.charset_0.dds") == false)
 		return;
 
+	if (g_registeredFonts.contains(font))
+		return;
 
-	if (g_registeredFonts.contains(font) == false) {
-		// create new custom font
-		auto customFont = new CustomFont(font);
-		g_registeredFonts[font] = customFont;
+	// create new custom font
+	auto customFont = new CustomFont(font);
+	g_registeredFonts[font] = customFont;
 
-		// replace all glyph
-		auto thaiFont = GetThaiFont();
-		for (int i = 0;i < thaiFont->glyphs.size();i++) {
-			auto& newGlyph = thaiFont->glyphs[i];
-			customFont->ReplaceGlyph(font, newGlyph);
-		}
+	auto thaiFont = GetThaiFont();
 
-		// replace font textures
-		customFont->ReplaceTexture(0, "fonts/thai_0.dds");
+	// replace all glyph
+	//for (int i = 0;i < thaiFont->glyphs.size();i++) {
+	//	if (i >= 'A' && i <= 'z') {
+	//		auto& newGlyph = thaiFont->glyphs[i];
+	//		customFont->ReplaceGlyph(font, newGlyph);
+	//	}
+	//}
+
+	// replace font textures
+	// customFont->ReplaceTexture(0, "thai_0.dds");
+	//customFont->ReplaceTexture(0, "D:\\SteamLibrary\\steamapps\\common\\Red Dead Redemption\\thai_0.dds");
+	auto currentDir = std::filesystem::current_path();
+	auto thai_dds_path = (currentDir / "thai_0.dds");
+	auto rdr2narrow_charset_path = (currentDir / "rdr2narrow.charset_0.dds");
+	customFont->ReplaceTexture(0, rdr2narrow_charset_path.string());
 
 
-		logFormat("registered font glyphs for: %p", font);
-	}
+	logFormat("registered font glyphs for: %p", font);
 }
 
 

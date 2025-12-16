@@ -37,9 +37,9 @@ public:
 	swfFont* font;
 
 	// base on calling ReplaceTexture(); !!!
-	std::vector<grcImage*> backupTextureArray;
+	std::vector<grcTextureD11*> backupTextureArray;
 	std::vector<const char*> backupTextureNameArray;
-	std::vector<grcImage*> newTextures;
+	std::vector<grcTextureD11*> newTextures;
 	std::vector<std::string> newTextureFileNames;
 
 	static BitmapFont* GetThaiFont();
