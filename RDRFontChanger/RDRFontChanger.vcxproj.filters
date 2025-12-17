@@ -51,6 +51,12 @@
     <ClInclude Include="AssetLib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DXLib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureChanger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -81,6 +87,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="grcImage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DXLib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureChanger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

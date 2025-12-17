@@ -159,7 +159,7 @@ void CustomFont::ReplaceGlyph(swfFont* font, const BitmapFont::Glyph& newGlyph)
 
 grcTextureD11* rage_grcTextureD11Create(const char* assetName)
 {
-	auto instance = grcTextureFactory::GetInstance();
+	auto instance = grcTextureFactoryD11::GetInstance();
 	return instance->CreateTexture(assetName, nullptr);
 }
 
@@ -191,7 +191,7 @@ void CustomFont::ReplaceTexture(int replaceTextureIndex, std::string newTextureF
 	cw("texture original: %p, name: %s", originalTexture, originalName);
 
 	// change it!!
-	auto imgFactory = grcTextureFactory::GetInstance();
+	auto imgFactory = grcTextureFactoryD11::GetInstance();
 	grcTextureD11* newTexture = rage_grcTextureD11Create(newTextureFilePath.c_str());
 	cw("create new texture: %p", newTexture);
 

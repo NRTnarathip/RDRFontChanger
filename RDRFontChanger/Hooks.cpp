@@ -90,7 +90,7 @@ int HK_GetMovieID(FlashManager* p1, char* p2) {
 			cw("movie file: %p", file);
 
 			if (file) {
-				cw("movie file name: %s", file->name);
+				// cw("movie file name: %s", file->name);
 				//const char* fontName = "font_rdr2narrow";
 				//auto mainFont = FindFont(file, fontName);
 			}
@@ -113,55 +113,40 @@ static void HK_DrawTextWithFont(
 	logFormat("HK_DrawTextWithFont!!");
 	logFormat("draw text: %s", (const char*)p2_text);
 	cw("font: %p", font);
-	cw("font height: %d", p4_fontHeight);
-	auto color = swfEditTextDrawColor::Decode(p5_drawColorInt);
-	cw("draw color: r:%d g:%d b:%d a:%d", color.r, color.g, color.b, color.a);
+	//cw("font height: %d", p4_fontHeight);
+	//auto color = swfEditTextDrawColor::Decode(p5_drawColorInt);
+	//cw("draw color: r:%d g:%d b:%d a:%d", color.r, color.g, color.b, color.a);
 
-	cw("editText fontID: %d", self->fontID);
-	cw("editText string size: %d", self->stringSize);
-	cw("editText string: %s", self->string);
-	cw("editText varName: %s", self->varName);
-	cw("editText leading: %d", self->leading);
-	cw("editText width: %.2f, height: %.2f", self->width, self->height);
-	cw("editText offsetX: %.2f, offsetY: %.2f", self->offsetX, self->offsetY);
-	auto bound = self->GetBound();
-	cw("boundX: %.2f, boundY: %.2f", bound.x, bound.y);
-	cw("bound width: %.2f, height: %.2f", bound.width, bound.height);
-	CustomFont::TryReplaceSwfFontToThaiFont(font);
+	//cw("editText fontID: %d", self->fontID);
+	//cw("editText string size: %d", self->stringSize);
+	//cw("editText string: %s", self->string);
+	//cw("editText varName: %s", self->varName);
+	//cw("editText leading: %d", self->leading);
+	//cw("editText width: %.2f, height: %.2f", self->width, self->height);
+	//cw("editText offsetX: %.2f, offsetY: %.2f", self->offsetX, self->offsetY);
+	//auto bound = self->GetBound();
+	//cw("boundX: %.2f, boundY: %.2f", bound.x, bound.y);
+	//cw("bound width: %.2f, height: %.2f", bound.width, bound.height);
+	//CustomFont::TryReplaceSwfFontToThaiFont(font);
+
 
 	// try debug all swf context
-	for (int ctxIndex = 0;ctxIndex < g_allSwfContext.size();ctxIndex++) {
-		auto ctx = g_allSwfContext[ctxIndex];
-		cw("ctx: %p", ctx);
-		cw("ctx name: %s", ctx->fileName);
-		cw("try dump all files...");
-		auto ctxFile = (swfFile*)ctx->file;
-		cw("total file: %d", ctxFile->totalFiles);
-		cw("magic: 0x%x", ctxFile->magic);
-		auto directory = (void**)ctxFile->files;
-		cw("files: %p", directory);
-		for (int fileIndex = 0; fileIndex < ctx->file->totalFiles; fileIndex++) {
-			auto file = (swfFile*)directory[fileIndex];
-			cw("[%d] file: %p", fileIndex, file);
-			if (file == nullptr)
-				continue;
-
-			//cw("name: %s", file->name);
-			cw("magic: 0x%x", file->magic);
-			auto fileType = (byte)file->magic;
-			cw("file type: typeName: %s", GetSWFTypeName(fileType));
-			cw("total files: %d", file->totalFiles);
-		}
-	}
+	//static bool dumpAllContextYet = false;
+	//if (!dumpAllContextYet) {
+	//	dumpAllContextYet = true;
+	//	for (int ctxIndex = 0;ctxIndex < g_allSwfContext.size();ctxIndex++) {
+	//		DumpSWFContext(g_allSwfContext[ctxIndex]);
+	//	}
+	//}
 
 
 	auto sheet = font->sheetArrayPtr;
-	cw("sheet: %p", sheet);
-	cw("size: %d", sheet->size);
-	cw("cell count: %d", sheet->cellCount);
-	cw("texture count: %d", sheet->textureCount);
-	cw("sheet cell array ptr: %p", sheet->cellArray);
-	cw("font glyph array ptr: %p", font->glyphToCodeArrayFirstItem);
+	//cw("sheet: %p", sheet);
+	//cw("size: %d", sheet->size);
+	//cw("cell count: %d", sheet->cellCount);
+	//cw("texture count: %d", sheet->textureCount);
+	//cw("sheet cell array ptr: %p", sheet->cellArray);
+	//cw("font glyph array ptr: %p", font->glyphToCodeArrayFirstItem);
 
 	// TryDumpSwfFont(font, "onDrawText");
 
@@ -187,13 +172,25 @@ static void HK_DrawTextWithFont(
 
 typedef void* (*LoadFlashFile_Fn)(const char* p1);
 LoadFlashFile_Fn backup_LoadFlashFile;
-void* LoadFlashFile(const char* p1) {
-	logFormat("Hook LoadFlashFile, path: %s", p1);
+void* HK_LoadFlashFile(const char* p1) {
+	logFormat("Hook HK_LoadFlashFile, path: %s", p1);
 	auto result = backup_LoadFlashFile(p1);
 	logFormat("loaded flash file: result: %p", result);
-	// PrintStackRva();
-	logFormat("EndHook LoadFlashFile()!");
+	logFormat("EndHook HK_LoadFlashFile()!");
 	return result;
+}
+
+void* (*fn_pgRscBuilder_LoadFlash)(swfContext* ctx, char* p2, char* p3, char* p4, char* p5);
+void* HK_pgRscBuilder_LoadFlash(swfContext* ctx, char* p2, char* p3, char* p4, char* p5) {
+	logFormat("BeginHook HK_pgRscBuilder_LoadFlash");
+	cw("p2: %s", p2);
+	cw("p3: %s", p3);
+	cw("p4: %s", p4);
+	cw("p5: %s", p5);
+	auto r = fn_pgRscBuilder_LoadFlash(ctx, p2, p3, p4, p5);
+	cw("result: %p", r);
+	logFormat("EndHook HK_pgRscBuilder_LoadFlash");
+	return r;
 }
 
 
@@ -232,22 +229,29 @@ void* HK_swfFont_VF0(void* p1, void* p2) {
 	return result;
 }
 
-grcTextureD11* (*fn_grcTextureFactoryD11_Create)(void*, const char*, void*);
-grcTextureD11* HK_grcTextureFactoryD11_Create(void* p1, const char* name, void* p3) {
+grcTextureD11* (*fn_grcTextureFactoryD11_CreateVF4)(void*, const char*, void*);
+grcTextureD11* HK_grcTextureFactoryD11_CreateVF4(void* p1, const char* name, void* p3) {
 	addTab();
-	cw("BeginHook HK_grcTextureFactoryD11_Create");
+	cw("BeginHook HK_grcTextureFactoryD11_CreateVF4");
 	cw("img name: %s", name);
-	grcTextureD11* r = fn_grcTextureFactoryD11_Create(p1, name, p3);
-	cw("result: %p", r);
-	auto resource = r->texturePtr;
-	cw("resourec: %p", resource);
-	cw("resource name: %s", r->name);
-	if (resource) {
-		cw("width: %d, height: %d", resource->width, resource->height);
-		cw("depth: %d", resource->depth);
-	}
+	grcTextureD11* r = fn_grcTextureFactoryD11_CreateVF4(p1, name, p3);
+	cw("grcTextureFactoryD11_Create result: %p", r);
+	r->LogInfo();
 
-	cw("EndHook HK_grcTextureFactoryD11_Create");
+	cw("EndHook HK_grcTextureFactoryD11_CreateVF4");
+	unTab();
+	return r;
+}
+
+grcTextureD11* (*fn_grcTextureFactoryD11_CreateVF3)(void*, void*, void*);
+grcTextureD11* HK_grcTextureFactoryD11_CreateVF3(grcTextureFactoryD11** self, grcImage* p1_img, void* p2_createParams) {
+	addTab();
+	cw("BeginHook HK_grcTextureFactoryD11_CreateVF3, p1_img: %p", p1_img);
+	p1_img->LogInfo();
+	auto r = fn_grcTextureFactoryD11_CreateVF3(self, p1_img, p2_createParams);
+	cw("HK_grcTextureFactoryD11_CreateVF3 result: %p", r);
+	r->LogInfo();
+	cw("EndHook HK_grcTextureFactoryD11_CreateVF3");
 	unTab();
 	return r;
 }
@@ -258,7 +262,8 @@ grcTextureD11* HK_grcTextureD11_Construct(grcTextureD11* self, const char* name,
 	cw("BeginHook HK_grcTextureD11_Construct");
 	cw("name: %s", name);
 	auto r = fn_grcTextureD11_Construct(self, name, p3);
-	cw("result: %p", r);
+	cw("HK_grcTextureD11_Construct result: %p", r);
+	r->LogInfo();
 	cw("EndHook HK_grcTextureD11_Construct");
 	unTab();
 	return r;
@@ -270,11 +275,12 @@ grcTextureD11* HK_grcTextureD11_Construct2(grcTextureD11* self, int allocSize) {
 	cw("BeginHook HK_grcTextureD11_Construct2");
 	cw("allocSize: %d", allocSize);
 	auto r = fn_grcTextureD11_Construct2(self, allocSize);
-	cw("result: %p, rva: 0x%x", r, GetRvaFromAddress(r));
-	if ((uintptr_t)r == 0x00007FF6C1EB9FA0) {
-		// it's img rdr2narrow
+	cw("HK_grcTextureD11_Construct2 result: %p", r);
+	if (allocSize == 0x88 && (uintptr_t)r == 0x00007FF734279FA0) {
+		cw("it's rdr2narrow texture!");
 		PrintStackRva();
 	}
+	r->LogInfo();
 	cw("EndHook HK_grcTextureD11_Construct2");
 	unTab();
 	return r;
@@ -291,10 +297,10 @@ void* HK_swfSomeFactory(int p1) {
 
 	auto result = backup_swfSomeFactory(p1);
 	logFormat("result: %p", result);
-	//if (fileType == SWFTypeEnum::Font) {
-	//	auto font = (swfFont*)result;
-	//	TryDumpSwfFont(font, "swfObjFactory");
-	//}
+	if ((uintptr_t)result == 0x00007FF67F66D4B0) {
+		cw("like main font?");
+		// PrintStackRva();
+	}
 
 	logFormat("EndHook: HK_swfSomeFactory");
 
@@ -319,7 +325,6 @@ void* fiAssetManager_Open(void* self, char* p2, char* p3, void* p4, void* p5, vo
 	std::string path1(p2);
 	logFormat("path1: %s", path1.c_str());
 	auto res = backup_fiAssetManager_Open(self, p2, p3, p4, p5, p6);
-	//logFormat("res: %p", res);
 	logFormat("EndHook fiAssetManager_Open");
 	return res;
 }
@@ -341,7 +346,6 @@ PackFile_c* HK_PackFileInit(PackFile_c* self, const char* p2, void* p3, void* p4
 	logFormat("Hook PackFileInit");
 	logFormat("packFileName: %s", p2);
 	auto res = fn_PackFileInit(self, p2, p3, p4);
-	DumpPackFile(self);
 	logFormat("EndHook PackFileInit");
 	return res;
 }
@@ -422,10 +426,24 @@ grcImage* HK_grcImageLoad(const char* name) {
 	cw("BeginHook HK_grcImageLoad");
 	cw("name: %s", name);
 	auto r = fn_grcImageLoad(name);
-	cw("result: %p", r);
-	cw("format: 0x%x", r->format);
-	cw("width: %d, height: %d", r->width, r->height);
+	cw("HK_grcImageLoad result: %p", r);
+	r->LogInfo();
 	cw("EndHook HK_grcImageLoad");
+	return r;
+}
+
+grcTextureD11* (*fn_grcTextureD11_Init)(grcTextureD11* self, char* p1_name, grcImage* p2_rawImg, void* p3_params);
+grcTextureD11* HK_grcTextureD11_Init(grcTextureD11* self, char* p1_name, grcImage* p2_rawImg, void* p3_params) {
+	cw("BeginHook HK_grcTextureD11_Init");
+	cw("self: %p, p1_name: %s", self, p1_name);
+	cw("p2 raw img: %p", p2_rawImg);
+	if (strcmp(p1_name, "RDR2Narrow.charset_0.dds") == 0) {
+		cw("try replace pixels...");
+	}
+	auto r = fn_grcTextureD11_Init(self, p1_name, p2_rawImg, p3_params);
+
+	cw("HK_grcTextureD11_Init result: %p", r);
+	cw("EndHook HK_grcTextureD11_Init");
 	return r;
 }
 
@@ -475,6 +493,40 @@ void* HK_PackFile_OpenForRead(PackFile_c* packFile, const char* name) {
 	return r;
 }
 
+void* (*fn_grcTextureD11_Debug1)(void* p1, void* p2);
+void* HK_grcTextureD11_Debug1(void* p1, void* p2) {
+	cw("BeginHook HK_grcTextureD11_Debug1");
+	grcTextureD11* tex = (grcTextureD11*)0x00007FF734279FA0;
+	auto r = fn_grcTextureD11_Debug1(p1, p2);
+
+	cw("after call and recheck texture");
+	tex->LogInfo();
+	cw("EndHook HK_grcTextureD11_Debug1");
+	return r;
+}
+void* (*fn_grcTextureD11_Debug2)(void* p1, void* p2);
+void* HK_grcTextureD11_Debug2(void* p1, void* p2) {
+	cw("BeginHook HK_grcTextureD11_Debug2");
+	auto r = fn_grcTextureD11_Debug2(p1, p2);
+
+	grcTextureD11* tex = (grcTextureD11*)0x00007FF734279FA0;
+	cw("try debug check main texture");
+	tex->LogInfo();
+	cw("EndHook HK_grcTextureD11_Debug2");
+	return r;
+}
+void* (*fn_grcTextureD11_Debug3)(void* p1, void* p2);
+void* HK_grcTextureD11_Debug3(void* p1, void* p2) {
+	cw("BeginHook HK_grcTextureD11_Debug3");
+	auto r = fn_grcTextureD11_Debug3(p1, p2);
+
+	grcTextureD11* tex = (grcTextureD11*)0x00007FF734279FA0;
+	cw("try debug check main texture");
+	tex->LogInfo();
+	cw("EndHook HK_grcTextureD11_Debug3");
+	return r;
+}
+
 void Hooks::OnDetachDLL() {
 	HookLib::DisableHooks();
 }
@@ -484,7 +536,8 @@ void Hooks::SetupHooks()
 	HookLib::Init();
 
 	HookFuncRva(0x1979c0, HK_DrawTextWithFont, &backup_DrawTextWithFont);
-	// HookFuncRva(0x1fced0, LoadFlashFile, &backup_LoadFlashFile);
+	// HookFuncRva(0x1fced0, HK_LoadFlashFile, &backup_LoadFlashFile);
+	// HookFuncRva(0x11b110, HK_pgRscBuilder_LoadFlash, &fn_pgRscBuilder_LoadFlash);
 	// HookFuncRva(0xc7510, rage_swfCONTEXT_GetGlobal, &backup_rage_swfCONTEXT_GetGlobal);
 	// HookFuncRva(0x19b9e0, swfFontDeclareStruct, &backup_swfFontDeclareStruct);
 	// HookFuncRva(0x196860, HK_GetGlyphFromChar, &backup_GetGlyphFromChar);
@@ -493,9 +546,9 @@ void Hooks::SetupHooks()
 	// HookFuncRva(0xc95c0, PushFolder, &backup_PushFolder);
 	// HookFuncRva(0xc9140, fiAssetManager_Open, &backup_fiAssetManager_Open);
 	// HookFuncRva(0xc98b0, fiAssetManager_Open2, &backup_fiAssetManager_Open2);
-	HookFuncRva(0xeae740, HK_PackFileInit, &fn_PackFileInit);
-	HookFuncRva(0xeae670, HK_PackFile_DoesFileExist, &fnDoesFileExist);
-	HookFuncRva(0xeaebe0, HK_PackFile_OpenForRead, &fn_PackFile_OpenForRead);
+	//HookFuncRva(0xeae740, HK_PackFileInit, &fn_PackFileInit);
+	//HookFuncRva(0xeae670, HK_PackFile_DoesFileExist, &fnDoesFileExist);
+	//HookFuncRva(0xeaebe0, HK_PackFile_OpenForRead, &fn_PackFile_OpenForRead);
 	// HookFuncRva(0x60e080, CreateAndMountRedemptionPackfile, &g_CreateAndMountRedemptionPackfile);
 	// HookFuncRva(0x88fb70, txtFontTex_Load, &backup_txtFontTex_Load);
 	// HookFuncRva(0x11a000, HK_GetMovieID, &backup_GetMovieID);
@@ -504,11 +557,16 @@ void Hooks::SetupHooks()
 	// HookFuncRva(0x183eb0, HK_swfFileNew, &fn_swfFileNew);
 	// SetupFileSystemHook();
 	// HookFuncRva(0xeb6730, HK_Hash, &fnHash);
-
-	HookFuncRva(0x157480, HK_grcTextureFactoryD11_Create, &fn_grcTextureFactoryD11_Create);
+	HookFuncRva(0x1575a0, HK_grcTextureFactoryD11_CreateVF3, &fn_grcTextureFactoryD11_CreateVF3);
+	HookFuncRva(0x157480, HK_grcTextureFactoryD11_CreateVF4, &fn_grcTextureFactoryD11_CreateVF4);
 	HookFuncRva(0x15da80, HK_grcImageLoad, &fn_grcImageLoad);
+	HookFuncRva(0x155010, HK_grcTextureD11_Init, &fn_grcTextureD11_Init);
 	HookFuncRva(0x140fc0, HK_LookupTextureReference, &fn_LookupTextureReference);
 	HookFuncRva(0x154bf0, HK_grcTextureD11_Construct, &fn_grcTextureD11_Construct);
 	HookFuncRva(0x154260, HK_grcTextureD11_Construct2, &fn_grcTextureD11_Construct2);
 	HookFuncRva(0x180b30, HK_swfContext_Construct, &fn_swfContext_Construct);
+	HookFuncRva(0x11c1e0, HK_grcTextureD11_Debug1, &fn_grcTextureD11_Debug1);
+	// HookFuncRva(0x11bf80, HK_grcTextureD11_Debug2, &fn_grcTextureD11_Debug2);
+	// HookFuncRva(0x11be40, HK_grcTextureD11_Debug3, &fn_grcTextureD11_Debug3);
+
 }

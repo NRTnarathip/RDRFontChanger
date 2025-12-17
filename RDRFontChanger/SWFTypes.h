@@ -69,19 +69,18 @@ struct swfFile {
 	uint32_t magic; // x10 -> x14
 	char x14[0x1c];
 	void* files; // x30
-	void* x38;
+	byte version; // x38
 	void* x40;
 	int x48;//0x48 -> x4c
 	char x4c[0x2];
 	unsigned short totalFiles; // 0x4E
-	//unsigned short unk0x4E;
-	char x50[0x130];
-	const char* name;
+	void** objectMap;
+	unsigned short objectMapCount;
 };
 CHECK_OFFSET(swfFile, files, 0x30);
-// CHECK_OFFSET(swfFile, totalFiles, 0x4e);
-CHECK_OFFSET(swfFile, x50, 0x50);
-CHECK_OFFSET(swfFile, name, 0x180);
+CHECK_OFFSET(swfFile, totalFiles, 0x4e);
+CHECK_OFFSET(swfFile, objectMap, 0x50);
+CHECK_OFFSET(swfFile, objectMapCount, 0x58);
 
 
 struct swfGlyph {
@@ -120,7 +119,7 @@ struct swfFont
 	void* _0x10;
 	void* _0x18; // 0x18 -> 0x20
 	unsigned short* glyphToCodeArrayFirstItem; //0x20 - > 0x28
-	void* advanceFirstItem;
+	void* advanceFirstItem; // x28 -> x30
 	char codeToGlyph[0x80]; // 0x30 -> 0xb0
 	short sheetCount; // 0xb0
 	short ascent;  // 0xb2
@@ -129,7 +128,9 @@ struct swfFont
 	unsigned short glyphCount;  // 0xb8
 	unsigned char flags;
 	unsigned char langCode;
-	swfSheet* sheetArrayPtr;
+	swfSheet* sheetArrayPtr; // xc0
+	char xC8[0xb8]; // -> xc8 -> xd0
+	const char* name;
 };
 static_assert(offsetof(swfFont, glyphToCodeArrayFirstItem) == 0x20, "Assert It");
 static_assert(offsetof(swfFont, sheetCount) == 0xb0, "Assert It");
@@ -137,6 +138,8 @@ static_assert(offsetof(swfFont, glyphCount) == 0xb8, "Assert It");
 static_assert(offsetof(swfFont, langCode) == 0xbb, "Assert It");
 static_assert(offsetof(swfFont, sheetArrayPtr) == 0xc0, "Assert It");
 static_assert(offsetof(swfFont, codeToGlyph) == 0x30, "Assert It");
+CHECK_OFFSET(swfFont, xC8, 0xC8);
+CHECK_OFFSET(swfFont, name, 0x180);
 
 #define byte unsigned char
 
@@ -260,6 +263,7 @@ CHECK_OFFSET(PackFile_c, fileIndex, 0x20);
 
 
 void DumpPackFile(PackFile_c* packfile);
+void DumpSWFContext(swfContext* ctx);
 
 // default seed for hash
 #define FNV_OFFSET_BASIS_32 0x811C9DC5

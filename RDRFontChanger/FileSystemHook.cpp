@@ -50,5 +50,5 @@ BOOL WINAPI HK_ReadFile(HANDLE hFile, LPVOID buffer,
 void SetupFileSystemHook()
 {
 	auto kernelbase = L"KERNELBASE.dll";
-	// HookFuncImport(kernelbase, "ReadFile", HK_ReadFile, &fnReadFile);
+	HookFuncImport(kernelbase, "ReadFile", HK_ReadFile, &fnReadFile);
 }

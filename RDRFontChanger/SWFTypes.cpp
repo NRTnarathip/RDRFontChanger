@@ -56,15 +56,15 @@ void* FindFont(swfFile* mainFile, const char* findFontName)
 
 	for (int index = 0; index < totalFiles;index++)
 	{
-		swfFile* file = *(swfFile**)((long)mainFile->files + index * 8);
+		swfFont* font = *(swfFont**)((long)mainFile->files + index * 8);
 		cw("index: %d", index);
-		cw("file: %p", file);
-		cw("file name: %s, findName: %s", file->name, findFontName);
-		if ((file != nullptr) && (GetSWFFileType(file) == SWFTypeEnum::Font)) {
-			auto resultStrcmp = _stricmp(file->name, findFontName);
+		cw("file: %p", font);
+		cw("file name: %s, findName: %s", font->name, findFontName);
+		if ((font != nullptr) && (GetSWFFileType(font) == SWFTypeEnum::Font)) {
+			auto resultStrcmp = _stricmp(font->name, findFontName);
 			cw("match!!");
 			if (resultStrcmp == 0)
-				return file;
+				return font;
 		}
 	}
 	cw("not found any font: %s", findFontName);
@@ -129,12 +129,36 @@ void DumpPackFile(PackFile_c* packFile)
 		auto len = name.size();
 		auto hash = RageHashFNV(name.data(), len);
 		fileNameMap[hash] = name;
-		if (PackFile_DoesFileExist(packFile, name.c_str())) {
-			cw("found file!!: %s", name.c_str());
-		}
 	}
 
 	fileNameStream.close();
+}
+
+void DumpSWFContext(swfContext* ctx)
+{
+	cw("dump swf ctx: %p", ctx);
+	cw("ctx name: %s", ctx->fileName);
+	cw("try dump all files...");
+	auto ctxFile = (swfFile*)ctx->file;
+	cw("total file: %d", ctxFile->totalFiles);
+	cw("magic: 0x%x", ctxFile->magic);
+	auto directory = (void**)ctxFile->files;
+	cw("files: %p", directory);
+	cw("version: %d", ctxFile->version);
+	for (int fileIndex = 0; fileIndex < ctx->file->totalFiles; fileIndex++) {
+		auto file = (swfFile*)directory[fileIndex];
+		cw("[%d] file: %p", fileIndex, file);
+		if (file == nullptr)
+			continue;
+
+		//cw("name: %s", file->name);
+		cw("magic: 0x%x", file->magic);
+		auto fileType = (byte)file->magic;
+		cw("file type: typeName: %s", GetSWFTypeName(fileType));
+		cw("total files: %d", file->totalFiles);
+		cw("obj map array: %p", file->objectMap);
+		cw("obj map count: %d", file->objectMapCount);
+	}
 }
 
 uint32_t RageHashFNV(const void* data, size_t len)

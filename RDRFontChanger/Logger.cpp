@@ -51,7 +51,17 @@ void Logger::LogFormat(const char* format, ...)
 
 	DWORD tid = GetCurrentThreadId();
 	sstream << "[TID:" << tid << "] ";
-	sstream << tabString;
+
+
+	//{
+	//	void* stack[64];
+	//	USHORT frames = RtlCaptureStackBackTrace(0, 64, stack, nullptr);
+	//	std::string lineTab;
+	//	for (int i = 3; i < frames; ++i) {
+	//		lineTab += "  ";
+	//	}
+	//	sstream << lineTab;
+	//}
 
 	sstream << buffer << std::endl;
 
