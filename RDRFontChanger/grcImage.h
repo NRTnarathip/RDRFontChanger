@@ -58,15 +58,11 @@ CHECK_OFFSET(TextureResource, x6c, 0x6C);
 // size 0x80 on android!!
 // pc size 0x88!!
 struct grcTextureD11 {
-	/// <summary> 
-	/// Vftable rva list
-	/// x20 = 0x153f60
-	/// </summary>
 	void** vftable;
 	void* x8;
 	int x10, x14;
 	char x18[0x18];
-	void* x30; // x30
+	void* nameUnsafe; // x30
 	TextureResource* textureResource; // x38
 	unsigned short width, height; // x40 -> x44
 	// magic like: 0x444e5243, 0x55534142, x32 ...
@@ -76,14 +72,18 @@ struct grcTextureD11 {
 	byte mipmap; // x4b
 	float colorExpR, colorExpG, colorExpB;
 	float colorOfsR, colorOfsG, colorOfsB;
+	int x64;
+	void* x68;
+	void* x70;
+	void* rawImage;
 
 	void LogInfo();
+	void CreateFromBackingStore();
+	std::string GetName();
 };
 
 CHECK_OFFSET(grcTextureD11, textureResource, 0x38);
-CHECK_OFFSET(grcTextureD11, fourCC, 0x44);
-CHECK_OFFSET(grcTextureD11, colorExpB, 0x54);
-CHECK_OFFSET(grcTextureD11, colorOfsB, 0x60);
+CHECK_OFFSET(grcTextureD11, rawImage, 0x78);
 
 
 struct grcTextureFactoryD11 {

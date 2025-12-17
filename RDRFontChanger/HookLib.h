@@ -18,7 +18,14 @@ namespace HookLib {
 	{
 		uintptr_t addr = (uintptr_t)XMem::GetAddressFromRva(rva);
 		using Fn = Ret(__fastcall*)(Args...);
-		return reinterpret_cast<Fn>(addr)(args...);
+		return ((Fn)(addr))(args...);
+	}
+
+	template<typename Ret, typename... Args>
+	Ret Invoke(void* address, Args... args)
+	{
+		using Fn = Ret(__fastcall*)(Args...);
+		return ((Fn)(address))(args...);
 	}
 }
 

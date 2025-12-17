@@ -82,3 +82,23 @@ void Logger::UnTab()
 	tabString.erase(tabString.size() - 4);
 }
 
+const char* TryGetStringInternal(void* ptr) {
+	if (ptr == nullptr)
+		return "(null)";
+
+	__try {
+		const char* str = reinterpret_cast<const char*>(ptr);
+		if (str[0] == '\0')
+			return "";
+
+		return str;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+	}
+
+	return "(null)";
+}
+
+std::string TryGetString(void* ptr) {
+	return TryGetStringInternal(ptr);
+}

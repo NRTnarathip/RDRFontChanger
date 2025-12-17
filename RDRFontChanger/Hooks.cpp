@@ -127,7 +127,7 @@ static void HK_DrawTextWithFont(
 	//auto bound = self->GetBound();
 	//cw("boundX: %.2f, boundY: %.2f", bound.x, bound.y);
 	//cw("bound width: %.2f, height: %.2f", bound.width, bound.height);
-	//CustomFont::TryReplaceSwfFontToThaiFont(font);
+	// CustomFont::TryReplaceSwfFontToThaiFont(font);
 
 
 	// try debug all swf context
@@ -276,10 +276,6 @@ grcTextureD11* HK_grcTextureD11_Construct2(grcTextureD11* self, int allocSize) {
 	cw("allocSize: %d", allocSize);
 	auto r = fn_grcTextureD11_Construct2(self, allocSize);
 	cw("HK_grcTextureD11_Construct2 result: %p", r);
-	if (allocSize == 0x88 && (uintptr_t)r == 0x00007FF734279FA0) {
-		cw("it's rdr2narrow texture!");
-		PrintStackRva();
-	}
 	r->LogInfo();
 	cw("EndHook HK_grcTextureD11_Construct2");
 	unTab();
@@ -496,11 +492,7 @@ void* HK_PackFile_OpenForRead(PackFile_c* packFile, const char* name) {
 void* (*fn_grcTextureD11_Debug1)(void* p1, void* p2);
 void* HK_grcTextureD11_Debug1(void* p1, void* p2) {
 	cw("BeginHook HK_grcTextureD11_Debug1");
-	grcTextureD11* tex = (grcTextureD11*)0x00007FF734279FA0;
 	auto r = fn_grcTextureD11_Debug1(p1, p2);
-
-	cw("after call and recheck texture");
-	tex->LogInfo();
 	cw("EndHook HK_grcTextureD11_Debug1");
 	return r;
 }
@@ -508,10 +500,6 @@ void* (*fn_grcTextureD11_Debug2)(void* p1, void* p2);
 void* HK_grcTextureD11_Debug2(void* p1, void* p2) {
 	cw("BeginHook HK_grcTextureD11_Debug2");
 	auto r = fn_grcTextureD11_Debug2(p1, p2);
-
-	grcTextureD11* tex = (grcTextureD11*)0x00007FF734279FA0;
-	cw("try debug check main texture");
-	tex->LogInfo();
 	cw("EndHook HK_grcTextureD11_Debug2");
 	return r;
 }
@@ -519,11 +507,19 @@ void* (*fn_grcTextureD11_Debug3)(void* p1, void* p2);
 void* HK_grcTextureD11_Debug3(void* p1, void* p2) {
 	cw("BeginHook HK_grcTextureD11_Debug3");
 	auto r = fn_grcTextureD11_Debug3(p1, p2);
-
-	grcTextureD11* tex = (grcTextureD11*)0x00007FF734279FA0;
-	cw("try debug check main texture");
-	tex->LogInfo();
 	cw("EndHook HK_grcTextureD11_Debug3");
+	return r;
+}
+
+void* (*fn_grcTextureD11_CreateFromBackingStore)(grcTextureD11* self);
+void* HK_grcTextureD11_CreateFromBackingStore(grcTextureD11* self) {
+	cw("BeginHook HK_grcTextureD11_CreateFromBackingStore, self: %p", self);
+	cw("before call HK_grcTextureD11_CreateFromBackingStore");
+	self->LogInfo();
+	auto r = fn_grcTextureD11_CreateFromBackingStore(self);
+	cw("after call HK_grcTextureD11_CreateFromBackingStore");
+	self->LogInfo();
+	cw("EndHook HK_grcTextureD11_CreateFromBackingStore");
 	return r;
 }
 
@@ -561,6 +557,8 @@ void Hooks::SetupHooks()
 	HookFuncRva(0x157480, HK_grcTextureFactoryD11_CreateVF4, &fn_grcTextureFactoryD11_CreateVF4);
 	HookFuncRva(0x15da80, HK_grcImageLoad, &fn_grcImageLoad);
 	HookFuncRva(0x155010, HK_grcTextureD11_Init, &fn_grcTextureD11_Init);
+	HookFuncRva(0x1543c0, HK_grcTextureD11_CreateFromBackingStore,
+		&fn_grcTextureD11_CreateFromBackingStore);
 	HookFuncRva(0x140fc0, HK_LookupTextureReference, &fn_LookupTextureReference);
 	HookFuncRva(0x154bf0, HK_grcTextureD11_Construct, &fn_grcTextureD11_Construct);
 	HookFuncRva(0x154260, HK_grcTextureD11_Construct2, &fn_grcTextureD11_Construct2);

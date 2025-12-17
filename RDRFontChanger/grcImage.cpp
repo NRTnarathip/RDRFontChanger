@@ -1,6 +1,7 @@
 #include "grcImage.h"
 #include "XMem.h"
 #include "Logger.h"
+#include "HookLib.h"
 
 using namespace XMem;
 
@@ -33,15 +34,28 @@ std::string MagicToString(uint32_t magic)
 void grcTextureD11::LogInfo()
 {
 	cw("grcTextureD11::LogInfo: %p", this);
-	cw("x30: %p", x30);
+	// crash some object!!
+	std::string name = GetName();
+	cw("name: %s", name.c_str());
 	cw("size: %d - %d", width, height);
 	auto magicString = MagicToString(fourCC);
 	cw("fourCC: name: %s, hex: 0x%x", magicString.c_str(), fourCC);
-	cw("mips: %d, x4a: %d", mipmap, x4a);
+	cw("stride: %d, mips: %d, type: %d", stride, mipmap, type);
+	cw("raw image: %p", rawImage);
 	cw("texture resource: %p", textureResource);
 	if (textureResource) {
 		textureResource->LogInfo();
 	}
+}
+
+void grcTextureD11::CreateFromBackingStore()
+{
+	HookLib::Invoke<void*, void*>(vftable[0x20], this);
+}
+
+std::string grcTextureD11::GetName()
+{
+	return TryGetString(this->nameUnsafe);
 }
 
 void TextureResource::LogInfo()
