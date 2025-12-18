@@ -92,9 +92,18 @@ void Logger::UnTab()
 	tabString.erase(tabString.size() - 4);
 }
 
+const char* stringNull = "(null)";
 const char* TryGetStringInternal(void* ptr) {
 	if (ptr == nullptr)
-		return "(null)";
+		return stringNull;
+
+	uintptr_t addr = (uintptr_t)ptr;
+	if (addr < 0x10000)
+		return stringNull;
+
+	if (addr > 0x00007FFFFFFFFFFFULL)
+		return stringNull;
+
 
 	__try {
 		const char* str = reinterpret_cast<const char*>(ptr);
@@ -107,7 +116,7 @@ const char* TryGetStringInternal(void* ptr) {
 		return "(null exception pointer)";
 	}
 
-	return "(null)";
+	return stringNull;
 }
 
 std::string TryGetString(void* ptr) {

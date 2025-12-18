@@ -74,8 +74,27 @@ void TextureReplacer::OnBeforeCreateFromBackingStore(grcTextureD11* tex)
 		return;
 	}
 
-	// change it
-	auto image = img.GetImage(0, 0, 0);
+	// check image it match metadata
+	auto meta = img.GetMetadata();
+	// Todo: need to check fourCC and dxgi format this!
+	bool isMatchMetadata =
+		meta.mipLevels == tex->mipmap
+		&& meta.width == tex->width
+		&& meta.height == tex->height;
+
+	if (!isMatchMetadata) {
+		cw("error dds meta not match!");
+		cw("new texture meta info...");
+		cw("size:   %d - %d", meta.width, meta.height);
+		cw("mipmap: %d", meta.mipLevels);
+		cw("format: 0x%x | name: %s", meta.format, DxgiFormatToString(meta.format));
+		cw("and here your current texture info...");
+		tex->LogInfo();
+		return;
+	}
+
+
+	// ready to change new raw data of dds file!!
 	auto oldRawImage = tex->rawImage;
 	auto newRawImage = img.GetPixels();
 	tex->rawImage = newRawImage;
