@@ -14,6 +14,7 @@
 #include "StringHooks.h"
 #include "FileSystemHook.h"
 #include "TextureLib.h"
+#include "FontReplacer.h"
 
 
 using namespace XMem;
@@ -114,6 +115,7 @@ static void HK_DrawTextWithFont(
 	logFormat("HK_DrawTextWithFont!!");
 	logFormat("draw text: %s", (const char*)p2_text);
 	cw("font: %p", font);
+
 	//cw("font height: %d", p4_fontHeight);
 	//auto color = swfEditTextDrawColor::Decode(p5_drawColorInt);
 	//cw("draw color: r:%d g:%d b:%d a:%d", color.r, color.g, color.b, color.a);
@@ -128,7 +130,10 @@ static void HK_DrawTextWithFont(
 	//auto bound = self->GetBound();
 	//cw("boundX: %.2f, boundY: %.2f", bound.x, bound.y);
 	//cw("bound width: %.2f, height: %.2f", bound.width, bound.height);
-	// CustomFont::TryReplaceSwfFontToThaiFont(font);
+
+	// replace it!
+	auto fontReplacer = FontReplacer::Instance();
+	fontReplacer->TryReplaceMainFontToThai(font);
 
 
 	// try debug all swf context
@@ -535,7 +540,7 @@ LONG CALLBACK MyHandler(PEXCEPTION_POINTERS pExceptionInfo) {
 
 void Hooks::SetupDebugHooks()
 {
-	// HookRva(0x1979c0, HK_DrawTextWithFont, &backup_DrawTextWithFont);
+	HookRva(0x1979c0, HK_DrawTextWithFont, &backup_DrawTextWithFont);
 	// HookFuncRva(0x1fced0, HK_LoadFlashFile, &backup_LoadFlashFile);
 	// HookFuncRva(0x11b110, HK_pgRscBuilder_LoadFlash, &fn_pgRscBuilder_LoadFlash);
 	// HookFuncRva(0xc7510, rage_swfCONTEXT_GetGlobal, &backup_rage_swfCONTEXT_GetGlobal);

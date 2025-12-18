@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "Logger.h"
 #include "TextureChanger.h"
+#include "FontReplacer.h"
 #include "Hooks.h"
 
 Application::Application() {
@@ -10,10 +11,12 @@ void Application::SetupOnDllLoaded(HMODULE hModule)
 {
 	// setup core system
 	m_systemMgr.OnAppInit();
-
-
-	// ready
 	RegisterAllMyModule();
+	// init all!
+	if (!m_systemMgr.InitializeAll()) {
+		cw("failed to system intiialize all");
+		return;
+	}
 }
 
 void Application::RegisterAllMyModule()
@@ -24,14 +27,9 @@ void Application::RegisterAllMyModule()
 
 	// reigster here
 	sys.Register<TextureReplacer>();
+	sys.Register<FontReplacer, TextureReplacer>();
 
 
-
-	// init all!
-	if (!sys.InitializeAll()) {
-		cw("failed to system intiialize all");
-		return;
-	}
 
 
 	// debug

@@ -1,18 +1,17 @@
 #include "CustomFont.h"
-#include "Logger.h"
 #include <iostream>
 #include <filesystem>
 #include <fstream>
 #include <string>
-#include "SWFTypes.h"
-#include "HookLib.h"
 #include <filesystem>
 #include "grcImage.h"
+#include "SystemManager.h"
+
+#include "SWFTypes.h"
+#include "HookLib.h"
+#include "Logger.h"
 
 using namespace HookLib;
-
-
-std::unordered_map<swfFont*, CustomFont*> CustomFont::g_registeredFonts;
 
 
 static std::unordered_set<std::string> g_dumpFonts;
@@ -70,20 +69,13 @@ void TryDumpSwfFont(swfFont* font, const char* prefixFileName) {
 
 const float k_swfFontUnitSize = 1024.0f;
 
-CustomFont::CustomFont(swfFont* originalFont)
+CustomFont::CustomFont(swfFont* font)
 {
-	this->font = originalFont;
+	this->font = font;
 }
 
-BitmapFont* CustomFont::GetThaiFont()
-{
-	static BitmapFont font;
-	if (font.isLoaded == false)
-		font.Load("thai.fnt");
-	return &font;
-}
-
-void CustomFont::ReplaceGlyph(swfFont* font, const BitmapFont::Glyph& newGlyph)
+void CustomFont::ReplaceGlyph(swfFont* font,
+	const BitmapFont& thaiFont, const BitmapFont::Glyph& newGlyph)
 {
 	cw("try replace glyph id: %d", newGlyph.id);
 
@@ -108,8 +100,7 @@ void CustomFont::ReplaceGlyph(swfFont* font, const BitmapFont::Glyph& newGlyph)
 	int fontHeight = sheet->size; // or font height size
 	cw("sheet size: %d", sheet->size);
 
-	auto thaiFont = this->GetThaiFont();
-	float fontScaleEM = k_swfFontUnitSize / thaiFont->size;
+	float fontScaleEM = k_swfFontUnitSize / thaiFont.size;
 	cw("font scale em: %.2f", fontScaleEM);
 
 	// setup min, max bound on swf font size em
@@ -197,44 +188,6 @@ void CustomFont::ReplaceTexture(int replaceTextureIndex, std::string newTextureF
 
 	// check index
 	cw("sheet index array: %p", sheet->indexArray);
-}
-
-void CustomFont::TryReplaceSwfFontToThaiFont(swfFont* font) {
-	// assert
-	auto sheet = font->sheetArrayPtr;
-	if (sheet == nullptr) {
-		cw("font sheet is null!");
-		return;
-	}
-
-	// debug
-	// support only main font!
-	if (sheet->IsTextureExist("RDR2Narrow.charset_0.dds") == false)
-		return;
-
-	if (g_registeredFonts.contains(font))
-		return;
-
-	// create new custom font
-	auto customFont = new CustomFont(font);
-	g_registeredFonts[font] = customFont;
-
-	auto thaiFont = GetThaiFont();
-
-	// replace all glyph
-	//for (int i = 0;i < thaiFont->glyphs.size();i++) {
-	//	if (i >= 'A' && i <= 'z') {
-	//		auto& newGlyph = thaiFont->glyphs[i];
-	//		customFont->ReplaceGlyph(font, newGlyph);
-	//	}
-	//}
-
-	logFormat("registered font glyphs for: %p", font);
-}
-
-bool CustomFont::Init()
-{
-
 }
 
 void BitmapFont::ParseGlyph(const std::string& line, BitmapFont::Glyph& g) {

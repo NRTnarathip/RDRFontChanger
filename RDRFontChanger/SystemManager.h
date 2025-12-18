@@ -9,6 +9,10 @@
 
 class SystemManager {
 public:
+	SystemManager() {
+		g_instance = this;
+	}
+
 	struct SystemRegisterData {
 		using CreateFn = ISystem * (*)();
 
@@ -58,11 +62,12 @@ public:
 
 
 	template< typename T>
-	ISystem* TryGetSystemInstance() {
-		return TryGetSystemInstance(std::type_index(typeid(T)));
+	T* TryGetSystemInstance() {
+		return (T*)TryGetSystemInstance(std::type_index(typeid(T)));
 	}
-
+	static SystemManager* Instance() { return g_instance; }
 private:
+	static SystemManager* g_instance;
 	std::unordered_map<std::type_index, SystemRegisterData> m_registerSystems;
 	void OnRegisteredType(SystemRegisterData& data);
 	bool TryInitSystemRecursive(SystemRegisterData& sysData);

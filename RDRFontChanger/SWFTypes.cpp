@@ -170,7 +170,7 @@ uint32_t RageHashFNV(const void* data, size_t len)
 	return hash;
 }
 
-bool swfSheet::IsTextureExist(const char* findName)
+bool swfSheet::DoesTextureExist(const char* findName)
 {
 	if (this->textureCount == 0)
 		return false;

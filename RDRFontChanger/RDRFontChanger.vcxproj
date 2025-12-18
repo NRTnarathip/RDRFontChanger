@@ -94,6 +94,7 @@
     <ClInclude Include="dllmain.h" />
     <ClInclude Include="DXLib.h" />
     <ClInclude Include="FileSystemHook.h" />
+    <ClInclude Include="FontReplacer.h" />
     <ClInclude Include="grcImage.h" />
     <ClInclude Include="HookLib.h" />
     <ClInclude Include="Hooks.h" />
@@ -113,6 +114,7 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="DXLib.cpp" />
     <ClCompile Include="FileSystemHook.cpp" />
+    <ClCompile Include="FontReplacer.cpp" />
     <ClCompile Include="grcImage.cpp" />
     <ClCompile Include="HookLib.cpp" />
     <ClCompile Include="Hooks.cpp" />

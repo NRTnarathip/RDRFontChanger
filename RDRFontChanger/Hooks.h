@@ -6,3 +6,4 @@ public:
 	static void SetupDebugHooks();
 	static void OnDetachDLL();
 };
+

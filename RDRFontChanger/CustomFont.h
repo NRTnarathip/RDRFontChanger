@@ -30,11 +30,11 @@ public:
 	void Load(std::string path);
 };
 
-class CustomFont : ISystem
+class CustomFont
 {
 public:
-	CustomFont(swfFont* font);
 	swfFont* font;
+	CustomFont(swfFont* font);
 
 	// base on calling ReplaceTexture(); !!!
 	std::vector<grcTextureD11*> backupTextureArray;
@@ -42,18 +42,13 @@ public:
 	std::vector<grcTextureD11*> newTextures;
 	std::vector<std::string> newTextureFileNames;
 
-	static BitmapFont* GetThaiFont();
 	int replaceGlyphCount;
 
 	// glyphs count per font
-	static std::unordered_map<swfFont*, CustomFont*> g_registeredFonts;
-	void ReplaceGlyph(swfFont* font, const BitmapFont::Glyph& bitmapGlyph);
+	void ReplaceGlyph(swfFont* font, const BitmapFont& thaiFont, const BitmapFont::Glyph& bitmapGlyph);
 	void ReplaceTexture(int index, std::string newTextureFilePath);
-	static void TryReplaceSwfFontToThaiFont(swfFont* font);
-	bool Init() override;
-
 private:
-	TextureReplacer* tc;
+	TextureReplacer* textureReplacer;
 };
 
 

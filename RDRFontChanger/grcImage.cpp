@@ -41,6 +41,7 @@ void grcTextureD11::LogInfo()
 	cw("size: %d - %d", width, height);
 	auto magicString = MagicToString(fourCC);
 	cw("fourCC: name: %s, hex: 0x%x", magicString.c_str(), fourCC);
+	cw("img type: %d", type);
 	cw("stride: %d, mips: %d, type: %d", stride, mipmap, type);
 	cw("raw image: %p", rawImage);
 	cw("texture resource: %p", textureResource);

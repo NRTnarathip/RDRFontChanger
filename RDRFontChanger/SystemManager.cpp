@@ -2,6 +2,7 @@
 #include "Logger.h"
 
 
+SystemManager* SystemManager::g_instance;
 void SystemManager::OnAppInit()
 {
 	InitializeAll();
