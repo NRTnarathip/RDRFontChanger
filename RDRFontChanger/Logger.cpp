@@ -9,6 +9,7 @@
 #include <ctime>
 #include <cstdarg>
 #include <sstream>
+#include <mutex>
 
 std::string tabString;
 std::string Logger::GetTimeNowMsString() {
@@ -26,50 +27,59 @@ std::string Logger::GetTimeNowMsString() {
 
 Logger::Logger()
 {
-	// allow logger
+	m_logStream.open(m_logFileName, std::ios::out | std::ios::trunc);
+}
+
+void Logger::ShowConsole()
+{
 	AllocConsole();
 	freopen("CONOUT$", "w", stdout);
 	freopen("CONOUT$", "w", stderr);
 	freopen("CONIN$", "r", stdin);
-
-	m_logStream.open(m_logFileName, std::ios::out | std::ios::trunc);
 }
 
+std::mutex g_mutex;
 void Logger::LogFormat(const char* format, ...)
 {
-	char buffer[1024];
 	va_list args;
 	va_start(args, format);
-	vsnprintf(buffer, sizeof(buffer), format, args);
+
+	int size = vsnprintf(nullptr, 0, format, args) + 1;
 	va_end(args);
 
-	// build string
-	std::stringstream sstream;
+	std::vector<char> buffer(size);
+	va_start(args, format);
+	vsnprintf(buffer.data(), size, format, args);
+	va_end(args);
+
 	auto now = std::chrono::system_clock::now();
+	auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 	auto in_time = std::chrono::system_clock::to_time_t(now);
-	sstream << "[" << std::put_time(std::localtime(&in_time), "%T") << "]";
+
+	struct tm buf;
+	localtime_s(&buf, &in_time);
+
+	std::stringstream sstream;
+
+	// [HH:MM:SS.ms]
+	sstream << "[" << std::put_time(&buf, "%H:%M:%S")
+		<< "." << std::setfill('0') << std::setw(3) << ms.count() << "]";
 
 	DWORD tid = GetCurrentThreadId();
-	sstream << "[TID:" << tid << "] ";
+	sstream << "[TID:" << std::setw(5) << tid << "] ";
 
+	sstream << buffer.data() << std::endl;
 
-	//{
-	//	void* stack[64];
-	//	USHORT frames = RtlCaptureStackBackTrace(0, 64, stack, nullptr);
-	//	std::string lineTab;
-	//	for (int i = 3; i < frames; ++i) {
-	//		lineTab += "  ";
-	//	}
-	//	sstream << lineTab;
-	//}
+	std::string finalLog = sstream.str();
 
-	sstream << buffer << std::endl;
+	std::lock_guard<std::mutex> lock(g_mutex);
 
-	// log it
-	std::cout << sstream.str();
+	std::cout << finalLog;
 
-	m_logStream << sstream.str();
-	m_logStream.flush();
+	if (m_logStream.is_open()) {
+		m_logStream << finalLog;
+		m_logStream.flush();
+	}
 }
 
 void Logger::AddTab()
@@ -94,6 +104,7 @@ const char* TryGetStringInternal(void* ptr) {
 		return str;
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER) {
+		return "(null exception pointer)";
 	}
 
 	return "(null)";

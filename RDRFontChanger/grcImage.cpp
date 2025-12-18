@@ -2,6 +2,7 @@
 #include "XMem.h"
 #include "Logger.h"
 #include "HookLib.h"
+#include "StringLib.h"
 
 using namespace XMem;
 
@@ -55,7 +56,21 @@ void grcTextureD11::CreateFromBackingStore()
 
 std::string grcTextureD11::GetName()
 {
-	return TryGetString(this->nameUnsafe);
+	return TryGetString((void*)nameUnsafe);
+}
+
+void grcTextureD11::BeforeCreateFromBackingStore()
+{
+	cw("before call HK_grcTextureD11_CreateFromBackingStore");
+	LogInfo();
+
+	// callback
+}
+
+void grcTextureD11::AfterCreateFromBackingStore()
+{
+	cw("after call HK_grcTextureD11_CreateFromBackingStore");
+	LogInfo();
 }
 
 void TextureResource::LogInfo()
@@ -64,5 +79,4 @@ void TextureResource::LogInfo()
 	cw("name: %s", name);
 	cw("size: %d - %d", width, height);
 	cw("x68: %d, x6a: %d, x6c: %d", x68, x6a, x6c);
-
 }

@@ -5,8 +5,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "SWFTypes.h"
-
-
+#include "TextureChanger.h"
 
 class BitmapFont {
 public:
@@ -50,6 +49,10 @@ public:
 	void ReplaceGlyph(swfFont* font, const BitmapFont::Glyph& bitmapGlyph);
 	void ReplaceTexture(int index, std::string newTextureFilePath);
 	static void TryReplaceSwfFontToThaiFont(swfFont* font);
+	static void InitOnMain(TextureReplacer* textureChanger);
+
+private:
+	TextureReplacer* tc;
 };
 
 

@@ -14,19 +14,21 @@ struct HookInfo {
 };
 std::unordered_map<void*, HookInfo*> g_hookMap;
 
-void HookLib::Init()
-{
-	// hooks
-	if (MH_Initialize() != MH_OK) {
-		logFormat("minhook initialization failed");
-	}
-}
-
 void HookLib::DisableHooks() {
 	MH_DisableHook(MH_ALL_HOOKS);
 }
 
-bool HookLib::HookFuncAddr(void* targetFunc, void* detour, void* ppBackupFunc) {
+bool HookLib::HookAddr(void* targetFunc, void* detour, void* ppBackupFunc) {
+	static bool isInit;
+	if (!isInit) {
+		if (MH_Initialize() != MH_STATUS::MH_OK) {
+			cw("error MH_Initialize");
+			return false;
+		}
+
+		isInit = true;
+	}
+
 	auto it = g_hookMap.find(targetFunc);
 	// already hooked at target func
 	if (it != g_hookMap.end()) {
@@ -66,14 +68,14 @@ bool HookLib::HookFuncAddr(void* targetFunc, void* detour, void* ppBackupFunc) {
 	return true;
 }
 
-bool HookLib::HookFuncRva(uintptr_t funcRva, void* detour, void* ppBackup) {
-	return HookFuncAddr(GetAddressFromRva(funcRva), detour, ppBackup);
+bool HookLib::HookRva(uintptr_t funcRva, void* detour, void* ppBackup) {
+	return HookAddr(GetAddressFromRva(funcRva), detour, ppBackup);
 }
 
-bool HookLib::HookFuncImport(const wchar_t* moduleName, const char* importName, void* detour, void* ppBackup)
+bool HookLib::HookImport(const wchar_t* moduleName, const char* importName, void* detour, void* ppBackup)
 {
 	HMODULE hKernelBase = GetModuleHandleW(moduleName);
 	auto target = GetProcAddress(hKernelBase, importName);
-	return HookLib::HookFuncAddr((void*)target, detour, ppBackup);
+	return HookLib::HookAddr((void*)target, detour, ppBackup);
 }
 

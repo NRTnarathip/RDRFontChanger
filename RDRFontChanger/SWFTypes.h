@@ -141,7 +141,6 @@ static_assert(offsetof(swfFont, codeToGlyph) == 0x30, "Assert It");
 CHECK_OFFSET(swfFont, xC8, 0xC8);
 CHECK_OFFSET(swfFont, name, 0x180);
 
-#define byte unsigned char
 
 struct swfEditTextDrawColor {
 	unsigned char r, g, b, a;

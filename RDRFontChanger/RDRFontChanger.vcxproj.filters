@@ -55,6 +55,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TextureChanger.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureLib.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StringLib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -95,6 +101,12 @@
     <ClCompile Include="TextureChanger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TextureLib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StringLib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\ScriptHookRDR.lib">
@@ -106,5 +118,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="PostBuild.cmd" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

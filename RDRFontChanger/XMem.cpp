@@ -21,3 +21,13 @@ uintptr_t XMem::GetRvaFromAddress(void* addr)
 void* XMem::GetAddressFromRva(int rva) {
 	return (void*)(GetImageBase() + rva);
 }
+
+bool XMem::IsPointerReadable(void* ptr, size_t size) {
+	__try {
+		volatile char active_read = *(char*)ptr;
+		return !IsBadReadPtr(ptr, size);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		return false;
+	}
+}

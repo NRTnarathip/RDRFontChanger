@@ -98,8 +98,10 @@
     <ClInclude Include="Hooks.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="StringHooks.h" />
+    <ClInclude Include="StringLib.h" />
     <ClInclude Include="SWFTypes.h" />
     <ClInclude Include="TextureChanger.h" />
+    <ClInclude Include="TextureLib.h" />
     <ClInclude Include="XMem.h" />
   </ItemGroup>
   <ItemGroup>
@@ -112,8 +114,10 @@
     <ClCompile Include="Hooks.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="StringHooks.cpp" />
+    <ClCompile Include="StringLib.cpp" />
     <ClCompile Include="SWFTypes.cpp" />
     <ClCompile Include="TextureChanger.cpp" />
+    <ClCompile Include="TextureLib.cpp" />
     <ClCompile Include="XMem.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -121,12 +125,22 @@
     <Library Include="libs\ScriptHookRDR.lib" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="packages.config" />
     <None Include="PostBuild.cmd" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets" Condition="Exists('..\packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" />
+    <Import Project="..\packages\directxtex_desktop_win10.2025.10.28.1\build\native\directxtex_desktop_win10.targets" Condition="Exists('..\packages\directxtex_desktop_win10.2025.10.28.1\build\native\directxtex_desktop_win10.targets')" />
   </ImportGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="&quot;$(ProjectDir)PostBuild.cmd&quot;" />
+  </Target>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets'))" />
+    <Error Condition="!Exists('..\packages\directxtex_desktop_win10.2025.10.28.1\build\native\directxtex_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtex_desktop_win10.2025.10.28.1\build\native\directxtex_desktop_win10.targets'))" />
   </Target>
 </Project>

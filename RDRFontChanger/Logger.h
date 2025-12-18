@@ -11,6 +11,7 @@ public:
 		static Logger instance;
 		return &instance;
 	}
+	void ShowConsole();
 	void LogFormat(const char* format, ...);
 	void AddTab();
 	void UnTab();

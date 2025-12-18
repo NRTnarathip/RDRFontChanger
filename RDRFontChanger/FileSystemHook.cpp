@@ -4,16 +4,9 @@
 #include "HookLib.h"
 using namespace HookLib;
 
+#include "StringLib.h"
 
-std::string WCharToString(const wchar_t* wstr) {
-	if (!wstr)
-		return {};
 
-	int len = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, nullptr, 0, nullptr, nullptr);
-	std::string result(len - 1, '\0');
-	WideCharToMultiByte(CP_UTF8, 0, wstr, -1, result.data(), len, nullptr, nullptr);
-	return result;
-}
 
 typedef BOOL(WINAPI* ReadFile_t)(
 	HANDLE,
@@ -50,5 +43,5 @@ BOOL WINAPI HK_ReadFile(HANDLE hFile, LPVOID buffer,
 void SetupFileSystemHook()
 {
 	auto kernelbase = L"KERNELBASE.dll";
-	HookFuncImport(kernelbase, "ReadFile", HK_ReadFile, &fnReadFile);
+	HookImport(kernelbase, "ReadFile", HK_ReadFile, &fnReadFile);
 }

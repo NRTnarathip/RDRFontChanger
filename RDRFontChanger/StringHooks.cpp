@@ -90,8 +90,8 @@ void* operator_new(uint64_t size) {
 
 void SetupStringHooks()
 {
-	HookFuncRva(0xeab3d0, String_c, &fnString_c);
-	HookFuncRva(0xeab570, String_c_operator1, &fnString_c_operator1);
-	HookFuncRva(0xeab680, String_c_operator2, &fnString_c_operator2);
+	HookRva(0xeab3d0, String_c, &fnString_c);
+	HookRva(0xeab570, String_c_operator1, &fnString_c_operator1);
+	HookRva(0xeab680, String_c_operator2, &fnString_c_operator2);
 	//HookFuncRva(0x7d6c0, operator_new, &fn_operator_new);
 }

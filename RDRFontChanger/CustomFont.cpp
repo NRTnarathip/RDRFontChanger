@@ -7,6 +7,7 @@
 #include "SWFTypes.h"
 #include "HookLib.h"
 #include <filesystem>
+#include "grcImage.h"
 
 using namespace HookLib;
 
@@ -155,21 +156,10 @@ void CustomFont::ReplaceGlyph(swfFont* font, const BitmapFont::Glyph& newGlyph)
 
 }
 
-#include "grcImage.h"
-
 grcTextureD11* rage_grcTextureD11Create(const char* assetName)
 {
 	auto instance = grcTextureFactoryD11::GetInstance();
 	return instance->CreateTexture(assetName, nullptr);
-}
-
-void LogGrcImage(grcImage* img) {
-	cw("LogGrcImage img: %p", img);
-	if (img == nullptr)
-		return;
-
-	cw("format: 0x%x", img->format);
-	cw("w: %d, h: %d", img->width, img->height);
 }
 
 void CustomFont::ReplaceTexture(int replaceTextureIndex, std::string newTextureFilePath)
@@ -239,18 +229,12 @@ void CustomFont::TryReplaceSwfFontToThaiFont(swfFont* font) {
 	//	}
 	//}
 
-	// replace font textures
-	// customFont->ReplaceTexture(0, "thai_0.dds");
-	//customFont->ReplaceTexture(0, "D:\\SteamLibrary\\steamapps\\common\\Red Dead Redemption\\thai_0.dds");
-	auto currentDir = std::filesystem::current_path();
-	auto thai_dds_path = (currentDir / "thai_0.dds");
-	auto rdr2narrow_charset_path = (currentDir / "rdr2narrow.charset_0.dds");
-	customFont->ReplaceTexture(0, rdr2narrow_charset_path.string());
-
-
 	logFormat("registered font glyphs for: %p", font);
 }
 
+void CustomFont::InitOnMain(TextureReplacer* tc)
+{
+}
 
 void BitmapFont::ParseGlyph(const std::string& line, BitmapFont::Glyph& g) {
 	auto lineCstr = line.c_str();
@@ -258,7 +242,6 @@ void BitmapFont::ParseGlyph(const std::string& line, BitmapFont::Glyph& g) {
 		&g.id, &g.x, &g.y, &g.width, &g.height,
 		&g.xoffset, &g.yoffset, &g.xadvance, &g.page, &g.chnl);
 }
-
 
 void BitmapFont::Load(std::string path)
 {

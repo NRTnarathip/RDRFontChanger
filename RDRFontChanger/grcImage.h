@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <iostream>
 #include "AssetLib.h"
 #include "DXLib.h"
 
@@ -62,11 +63,11 @@ struct grcTextureD11 {
 	void* x8;
 	int x10, x14;
 	char x18[0x18];
-	void* nameUnsafe; // x30
+	const char* nameUnsafe; // x30
 	TextureResource* textureResource; // x38
 	unsigned short width, height; // x40 -> x44
 	// magic like: 0x444e5243, 0x55534142, x32 ...
-	int fourCC; // x44 -> x48
+	DXGI_FORMAT fourCC; // x44 -> x48
 	unsigned short stride; // x48 -> 4a
 	byte type; // x4a
 	byte mipmap; // x4b
@@ -80,10 +81,18 @@ struct grcTextureD11 {
 	void LogInfo();
 	void CreateFromBackingStore();
 	std::string GetName();
+
+	// hook
+	void BeforeCreateFromBackingStore();
+	void AfterCreateFromBackingStore();
 };
 
 CHECK_OFFSET(grcTextureD11, textureResource, 0x38);
 CHECK_OFFSET(grcTextureD11, rawImage, 0x78);
+CHECK_OFFSET(grcTextureD11, fourCC, 0x44);
+CHECK_OFFSET(grcTextureD11, stride, 0x48);
+CHECK_OFFSET(grcTextureD11, type, 0x4a);
+CHECK_OFFSET(grcTextureD11, mipmap, 0x4b);
 
 
 struct grcTextureFactoryD11 {

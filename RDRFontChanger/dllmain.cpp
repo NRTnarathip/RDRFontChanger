@@ -11,9 +11,19 @@
 #include <filesystem>
 #include "Logger.h"
 #include "Hooks.h"
+#include "CustomFont.h"
+#include "TextureChanger.h"
 
 void Setup() {
-	Logger::Instance();
+	// setup logger first
+	auto logger = Logger::Instance();
+	logger->ShowConsole();
+
+	// ready to setup framework
+	auto textureReplacer = TextureReplacer::InitOnMain();
+	// CustomFont::InitOnMain(textureReplacer);
+
+	// debug only!!
 	Hooks::SetupHooks();
 }
 
