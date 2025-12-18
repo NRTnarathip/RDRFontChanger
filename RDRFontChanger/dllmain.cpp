@@ -13,18 +13,12 @@
 #include "Hooks.h"
 #include "CustomFont.h"
 #include "TextureChanger.h"
+#include <unordered_set>
+#include "Application.h"
 
-void Setup() {
-	// setup logger first
-	auto logger = Logger::Instance();
-	logger->ShowConsole();
-
-	// ready to setup framework
-	auto textureReplacer = TextureReplacer::InitOnMain();
-	// CustomFont::InitOnMain(textureReplacer);
-
-	// debug only!!
-	Hooks::SetupHooks();
+void Setup(HMODULE module) {
+	Application* app = new Application();
+	app->SetupOnDllLoaded(module);
 }
 
 void Detach() {
@@ -36,7 +30,7 @@ BOOL APIENTRY DllMain(HMODULE hInstance, DWORD reason, LPVOID lpReserved)
 	switch (reason)
 	{
 	case DLL_PROCESS_ATTACH:
-		Setup();
+		Setup(hInstance);
 		break;
 	case DLL_PROCESS_DETACH:
 		Detach();

@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include "SWFTypes.h"
 #include "TextureChanger.h"
+#include "ISystem.h"
 
 class BitmapFont {
 public:
@@ -29,7 +30,7 @@ public:
 	void Load(std::string path);
 };
 
-class CustomFont
+class CustomFont : ISystem
 {
 public:
 	CustomFont(swfFont* font);
@@ -49,7 +50,7 @@ public:
 	void ReplaceGlyph(swfFont* font, const BitmapFont::Glyph& bitmapGlyph);
 	void ReplaceTexture(int index, std::string newTextureFilePath);
 	static void TryReplaceSwfFontToThaiFont(swfFont* font);
-	static void InitOnMain(TextureReplacer* textureChanger);
+	bool Init() override;
 
 private:
 	TextureReplacer* tc;

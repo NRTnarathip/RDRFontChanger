@@ -533,16 +533,16 @@ LONG CALLBACK MyHandler(PEXCEPTION_POINTERS pExceptionInfo) {
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
-void Hooks::SetupHooks()
+void Hooks::SetupDebugHooks()
 {
-	HookRva(0x1979c0, HK_DrawTextWithFont, &backup_DrawTextWithFont);
+	// HookRva(0x1979c0, HK_DrawTextWithFont, &backup_DrawTextWithFont);
 	// HookFuncRva(0x1fced0, HK_LoadFlashFile, &backup_LoadFlashFile);
 	// HookFuncRva(0x11b110, HK_pgRscBuilder_LoadFlash, &fn_pgRscBuilder_LoadFlash);
 	// HookFuncRva(0xc7510, rage_swfCONTEXT_GetGlobal, &backup_rage_swfCONTEXT_GetGlobal);
 	// HookFuncRva(0x19b9e0, swfFontDeclareStruct, &backup_swfFontDeclareStruct);
 	// HookFuncRva(0x196860, HK_GetGlyphFromChar, &backup_GetGlyphFromChar);
 	// HookFuncRva(0x195980, HK_swfFont_VF0, &backup_swfFont_VF0);
-	HookRva(0x194d10, HK_swfSomeFactory, &backup_swfSomeFactory);
+	// HookRva(0x194d10, HK_swfSomeFactory, &backup_swfSomeFactory);
 	// HookFuncRva(0xc95c0, PushFolder, &backup_PushFolder);
 	// HookFuncRva(0xc9140, fiAssetManager_Open, &backup_fiAssetManager_Open);
 	// HookFuncRva(0xc98b0, fiAssetManager_Open2, &backup_fiAssetManager_Open2);
@@ -557,15 +557,15 @@ void Hooks::SetupHooks()
 	// HookFuncRva(0x183eb0, HK_swfFileNew, &fn_swfFileNew);
 	// SetupFileSystemHook();
 	// HookFuncRva(0xeb6730, HK_Hash, &fnHash);
-	HookRva(0x1575a0, HK_grcTextureFactoryD11_CreateVF3, &fn_grcTextureFactoryD11_CreateVF3);
-	HookRva(0x157480, HK_grcTextureFactoryD11_CreateVF4, &fn_grcTextureFactoryD11_CreateVF4);
-	HookRva(0x15da80, HK_grcImageLoad, &fn_grcImageLoad);
-	HookRva(0x155010, HK_grcTextureD11_Init, &fn_grcTextureD11_Init);
-	HookRva(0x140fc0, HK_LookupTextureReference, &fn_LookupTextureReference);
-	HookRva(0x154bf0, HK_grcTextureD11_Construct, &fn_grcTextureD11_Construct);
-	HookRva(0x154260, HK_grcTextureD11_Construct2, &fn_grcTextureD11_Construct2);
-	HookRva(0x180b30, HK_swfContext_Construct, &fn_swfContext_Construct);
-	HookRva(0x11c1e0, HK_grcTextureD11_Debug1, &fn_grcTextureD11_Debug1);
+	//HookRva(0x1575a0, HK_grcTextureFactoryD11_CreateVF3, &fn_grcTextureFactoryD11_CreateVF3);
+	//HookRva(0x157480, HK_grcTextureFactoryD11_CreateVF4, &fn_grcTextureFactoryD11_CreateVF4);
+	//HookRva(0x15da80, HK_grcImageLoad, &fn_grcImageLoad);
+	//HookRva(0x155010, HK_grcTextureD11_Init, &fn_grcTextureD11_Init);
+	//HookRva(0x140fc0, HK_LookupTextureReference, &fn_LookupTextureReference);
+	//HookRva(0x154bf0, HK_grcTextureD11_Construct, &fn_grcTextureD11_Construct);
+	//HookRva(0x154260, HK_grcTextureD11_Construct2, &fn_grcTextureD11_Construct2);
+	//HookRva(0x180b30, HK_swfContext_Construct, &fn_swfContext_Construct);
+	//HookRva(0x11c1e0, HK_grcTextureD11_Debug1, &fn_grcTextureD11_Debug1);
 	// HookFuncRva(0x11bf80, HK_grcTextureD11_Debug2, &fn_grcTextureD11_Debug2);
 	// HookFuncRva(0x11be40, HK_grcTextureD11_Debug3, &fn_grcTextureD11_Debug3);
 

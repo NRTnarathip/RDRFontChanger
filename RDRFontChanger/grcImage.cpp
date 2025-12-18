@@ -56,7 +56,7 @@ void grcTextureD11::CreateFromBackingStore()
 
 std::string grcTextureD11::GetName()
 {
-	return TryGetString((void*)nameUnsafe);
+	return name;
 }
 
 void grcTextureD11::BeforeCreateFromBackingStore()

@@ -63,6 +63,15 @@
     <ClInclude Include="StringLib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ISystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Application.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SystemManager.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -105,6 +114,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="StringLib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ISystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SystemManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

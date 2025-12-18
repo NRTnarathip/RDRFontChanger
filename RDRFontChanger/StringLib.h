@@ -4,3 +4,5 @@
 std::string WCharToString(const wchar_t* wstr);
 
 std::string ToLower(std::string s);
+
+std::string TryGetString(void* ptr);

@@ -28,6 +28,7 @@ std::string Logger::GetTimeNowMsString() {
 Logger::Logger()
 {
 	m_logStream.open(m_logFileName, std::ios::out | std::ios::trunc);
+	ShowConsole();
 }
 
 void Logger::ShowConsole()
@@ -90,35 +91,4 @@ void Logger::AddTab()
 void Logger::UnTab()
 {
 	tabString.erase(tabString.size() - 4);
-}
-
-const char* stringNull = "(null)";
-const char* TryGetStringInternal(void* ptr) {
-	if (ptr == nullptr)
-		return stringNull;
-
-	uintptr_t addr = (uintptr_t)ptr;
-	if (addr < 0x10000)
-		return stringNull;
-
-	if (addr > 0x00007FFFFFFFFFFFULL)
-		return stringNull;
-
-
-	__try {
-		const char* str = reinterpret_cast<const char*>(ptr);
-		if (str[0] == '\0')
-			return "";
-
-		return str;
-	}
-	__except (EXCEPTION_EXECUTE_HANDLER) {
-		return "(null exception pointer)";
-	}
-
-	return stringNull;
-}
-
-std::string TryGetString(void* ptr) {
-	return TryGetStringInternal(ptr);
 }

@@ -232,8 +232,9 @@ void CustomFont::TryReplaceSwfFontToThaiFont(swfFont* font) {
 	logFormat("registered font glyphs for: %p", font);
 }
 
-void CustomFont::InitOnMain(TextureReplacer* tc)
+bool CustomFont::Init()
 {
+
 }
 
 void BitmapFont::ParseGlyph(const std::string& line, BitmapFont::Glyph& g) {

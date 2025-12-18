@@ -88,6 +88,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Application.h" />
     <ClInclude Include="AssetLib.h" />
     <ClInclude Include="CustomFont.h" />
     <ClInclude Include="dllmain.h" />
@@ -96,15 +97,18 @@
     <ClInclude Include="grcImage.h" />
     <ClInclude Include="HookLib.h" />
     <ClInclude Include="Hooks.h" />
+    <ClInclude Include="ISystem.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="StringHooks.h" />
     <ClInclude Include="StringLib.h" />
     <ClInclude Include="SWFTypes.h" />
+    <ClInclude Include="SystemManager.h" />
     <ClInclude Include="TextureChanger.h" />
     <ClInclude Include="TextureLib.h" />
     <ClInclude Include="XMem.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Application.cpp" />
     <ClCompile Include="CustomFont.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="DXLib.cpp" />
@@ -112,10 +116,12 @@
     <ClCompile Include="grcImage.cpp" />
     <ClCompile Include="HookLib.cpp" />
     <ClCompile Include="Hooks.cpp" />
+    <ClCompile Include="ISystem.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="StringHooks.cpp" />
     <ClCompile Include="StringLib.cpp" />
     <ClCompile Include="SWFTypes.cpp" />
+    <ClCompile Include="SystemManager.cpp" />
     <ClCompile Include="TextureChanger.cpp" />
     <ClCompile Include="TextureLib.cpp" />
     <ClCompile Include="XMem.cpp" />

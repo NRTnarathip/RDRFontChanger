@@ -61,12 +61,11 @@ CHECK_OFFSET(TextureResource, x6c, 0x6C);
 struct grcTextureD11 {
 	void** vftable;
 	void* x8;
-	int x10, x14;
-	char x18[0x18];
-	const char* nameUnsafe; // x30
+	int x10, x14; //x10 -> x18
+	char x18[0x18]; //x18 ++
+	const char* name; // x30
 	TextureResource* textureResource; // x38
 	unsigned short width, height; // x40 -> x44
-	// magic like: 0x444e5243, 0x55534142, x32 ...
 	DXGI_FORMAT fourCC; // x44 -> x48
 	unsigned short stride; // x48 -> 4a
 	byte type; // x4a
@@ -76,7 +75,7 @@ struct grcTextureD11 {
 	int x64;
 	void* x68;
 	void* x70;
-	void* rawImage;
+	void* rawImage; //x78
 
 	void LogInfo();
 	void CreateFromBackingStore();

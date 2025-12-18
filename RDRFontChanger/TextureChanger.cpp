@@ -30,25 +30,17 @@ void* HK_grcTextureD11_CreateFromBackingStore(grcTextureD11* self) {
 	return r;
 }
 
-TextureReplacer* TextureReplacer::InitOnMain()
-{
-	cw("TextureChagner setup...");
-	if (g_instance) {
-		cw("already instance!");
-		return g_instance;
-	}
-
-	g_instance = new TextureReplacer();
-}
-
 TextureReplacer::TextureReplacer()
 {
-	HookRva(0x1543c0, HK_grcTextureD11_CreateFromBackingStore,
-		&fn_grcTextureD11_CreateFromBackingStore);
-
-	LoadMods();
+	g_instance = this;
 }
 
+bool TextureReplacer::Init()
+{
+	SetupHooks();
+	LoadMods();
+	return true;
+}
 
 void TextureReplacer::OnBeforeCreateFromBackingStore(grcTextureD11* tex)
 {
@@ -126,6 +118,13 @@ std::unordered_set<std::string> GetTextureNamesInModsFolder() {
 	return manifestPaths;
 }
 
+void TextureReplacer::SetupHooks()
+{
+	// setup hooks
+	HookRva(0x1543c0, HK_grcTextureD11_CreateFromBackingStore,
+		&fn_grcTextureD11_CreateFromBackingStore);
+}
+
 void TextureReplacer::LoadMods()
 {
 	cw("try loading mods texture changer...");
@@ -136,3 +135,4 @@ void TextureReplacer::LoadMods()
 		cw("texture name: %s", name.c_str());
 	}
 }
+

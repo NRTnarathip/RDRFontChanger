@@ -31,4 +31,3 @@ private:
 #define unTab Logger::Instance()->UnTab
 
 
-std::string TryGetString(void* ptr);
