@@ -5,14 +5,13 @@ using System.Security.Permissions;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace TranslatorTool;
-
 public sealed class LineParser
 {
     public enum TextType : int
     {
         HTMLTag,
         Placeholder,
+        AssetPath,
         Text,
     }
     public readonly string m_prefix;
@@ -43,11 +42,9 @@ public sealed class LineParser
         }
 
         // ready!
-        this.m_prefix = line.Substring(0, dashIndex + 1);
+        this.m_prefix = line.Substring(0, dashIndex + 2);
         this.m_text = line.Substring(dashIndex + 1).Trim();
         this.m_index = index;
-
-        Console.WriteLine("parse line: " + line);
 
         // try parse tag symbol
         if (IsAnyTagSymbol(m_text))
@@ -56,63 +53,76 @@ public sealed class LineParser
             while (currentText.Length > 0)
             {
                 int moveNext = 1;
-                // like <A> Hello World  </A>
                 var c = currentText[0];
+
                 // find html tag first!
                 if (c == '<')
                 {
                     if (TryParseHTMLTag(currentText,
                         out var content, out var beginTag, out var endTag))
                     {
-                        Console.WriteLine($"found tag: {beginTag}{content}{endTag}");
+                        //Console.WriteLine($"found tag: {beginTag}{content}{endTag}");
                         moveNext = content.Length + beginTag.Length + endTag.Length;
                         MarkText(content, TextType.HTMLTag);
                     }
                 }
+
                 // like {@RADIAL_MENU.SHOW_HIDE:PENDING}
                 else if (c == '{')
                 {
                     if (TryParsePlaceholder(currentText,
                         out var content, out var beginIndex))
                     {
-                        Console.WriteLine($"found ui prompt tag: {content}");
+                        //Console.WriteLine($"found ui prompt tag: {content}");
                         moveNext = beginIndex + content.Length;
                         MarkText(content, TextType.Placeholder);
                     }
                 }
-                // normal text content
+
+                // like $/content/scripting/DesignerDefined/SocialClub/sc_example_template
+                else if (currentText.StartsWith("$/"))
+                {
+                    moveNext = -1;
+                    MarkText(currentText, TextType.AssetPath);
+                }
+
+                // unknow text content
                 else
                 {
+                    // try find first any tag
                     var firstAnyTagIndex = Regex.Match(currentText, "[<{]");
                     if (firstAnyTagIndex.Success)
                     {
                         var content = currentText.Substring(0, firstAnyTagIndex.Index);
                         moveNext = content.Length;
                         MarkText(content, TextType.Text);
-                        Console.WriteLine($"found content text: {content}");
+                        //Console.WriteLine($"found content text: {content}");
                     }
                     else
                     {
                         // all current text is pure text
                         moveNext = currentText.Length;
                         MarkText(currentText, TextType.Text);
-                        Console.WriteLine($"found pure text: {currentText}");
+                        // Console.WriteLine($"found pure text: {currentText}");
                     }
                 }
 
-                // Console.WriteLine("move next: " + moveNext);
-                if (moveNext >= currentText.Length)
+                if (moveNext <= 0
+                    || moveNext >= currentText.Length)
                     break;
+                // cut next string
                 currentText = currentText.Substring(moveNext);
             }
         }
 
         // helper
-        isPureText = true;
-        foreach (var str in textTypeSplits)
+        foreach (var type in textTypeSplits)
         {
-            if (str != TextType.Text)
+            if (type != TextType.Text)
+            {
                 isPureText = false;
+                break;
+            }
         }
 
         isPureSingleSymbol = textTypeSplits.Count == 1
