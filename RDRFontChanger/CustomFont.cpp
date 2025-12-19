@@ -42,7 +42,7 @@ void DumpSwfFont(swfFont* font, const char* prefixFileName) {
 	stream << std::format("font address={}\n", (void*)font);
 	stream << std::format("sheet size= {}\n", font->sheet->size);
 	stream << std::format("ascent= {}, decent= {}, leading= {}\n",
-		font->ascent, font->ascent, font->leading);
+		font->ascent, font->descent, font->leading);
 	stream << std::format("sheet cell count= {}\n", sheet->cellCount);
 	stream << std::format("sheet texture count= {}\n", sheet->textureCount);
 
@@ -128,14 +128,13 @@ void CustomFont::ReplaceGlyph(swfFont* font,
 	float baseline = bitmapFont.baseline;
 	float lineHeight = bitmapFont.lineHeight;
 	float pixelTop = baseline - yoffset;
-	float pixelBottom = baseline - (yoffset + glyph.height);
+	float pixelBottom = baseline - yoffset - glyph.height;
+	float minY = to1024Units(-pixelTop, fontSize);
+	float maxY = to1024Units(-pixelBottom, fontSize);
 
-	float maxY = to1024Units(pixelTop, fontSize);
-	float minY = to1024Units(pixelBottom, fontSize);
-
-	font->ascent = to1024Units((float)baseline, fontSize);
-	font->descent = to1024Units((float)(lineHeight - baseline), fontSize);
-	font->leading = to1024Units(20.0f, fontSize);
+	font->ascent = to1024Units(baseline, fontSize);
+	font->descent = to1024Units(lineHeight - baseline, fontSize);
+	font->leading = to1024Units(0.0f, fontSize);
 
 
 	// change it!
