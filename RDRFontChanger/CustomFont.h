@@ -25,6 +25,7 @@ public:
 	int lineHeight, baseline, scaleW, scaleH;
 
 	std::vector<Glyph> glyphs;
+	std::unordered_map<USHORT, Glyph*> charIDToGlyph;
 	void ParseGlyph(const std::string& line, BitmapFont::Glyph& g);
 	bool isLoaded;
 	void Load(std::string path);
@@ -33,8 +34,12 @@ public:
 class CustomFont
 {
 public:
-	swfFont* font;
-	CustomFont(swfFont* font);
+	swfFont* originalFont;
+	BitmapFont* bitmapFont;
+	int backupGlyphCount;
+	void* backupGlyphToCode;
+	void* backupSheetCellArray;
+	CustomFont(swfFont* font, BitmapFont* bitmapFont);
 
 	// base on calling ReplaceTexture(); !!!
 	std::vector<grcTextureD11*> backupTextureArray;
@@ -80,4 +85,4 @@ public:
 static_assert(offsetof(Fonttext, CharHeight) == 0x50, "assert");
 static_assert(offsetof(Fonttext, NumGlyphs) == 0x98, "assert");
 
-void TryDumpSwfFont(swfFont* font, const char* prefixFileName);
+void DumpSwfFont(swfFont* font, const char* prefixFileName);

@@ -23,37 +23,47 @@ bool FontReplacer::Init()
 	return true;
 }
 
-void FontReplacer::TryReplaceMainFontToThai(swfFont* font) {
-	cw("try replace font: %p", font);
+//CustomFont* FontReplacer::Register(swfFont* font, CustomFont* newFont)
+//{
+//	// check is registered?
+//	if (g_registeredFonts.contains(font)) {
+//		return g_registeredFonts[font];
+//	}
+//
+//	// create new custom font
+//	auto thaiFont = GetThaiFont();
+//	auto customFont = new CustomFont(font, thaiFont);
+//	g_registeredFonts[font] = customFont;
+//	return nullptr;
+//}
+
+CustomFont* FontReplacer::TryReplaceToThaiFont(swfFont* originalFont) {
+	cw("try replace font: %p", originalFont);
+	// check is registered?
+	if (g_registeredFonts.contains(originalFont))
+		return g_registeredFonts[originalFont];
+
 	// assert
-	auto sheet = font->sheetArrayPtr;
+	auto sheet = originalFont->sheet;
 	if (sheet == nullptr) {
 		cw("font sheet is null!");
-		return;
+		return nullptr;
 	}
 
 	// debug
 	// support only main font!
-	if (sheet->DoesTextureExist("RDR2Narrow.charset_0.dds") == false)
-		return;
+	bool support = sheet->textureCount == 1
+		&& sheet->DoesTextureExist("RDR2Narrow.charset_0.dds");
+	if (!support)
+		return nullptr;
 
-	// check is registered?
-	if (g_registeredFonts.contains(font))
-		return;
+	// ready
+	auto thaiFont = GetThaiFont();
+	auto customFont = new CustomFont(originalFont, thaiFont);
+	g_registeredFonts[originalFont] = customFont;
 
-	// create new custom font
-	auto customFont = new CustomFont(font);
-	g_registeredFonts[font] = customFont;
 
-	auto& thaiFont = *GetThaiFont();
-
-	// replace all glyph
-	cw("try replace all glyph...");
-	for (int i = 0;i < thaiFont.glyphs.size();i++) {
-		auto& newGlyph = thaiFont.glyphs[i];
-		customFont->ReplaceGlyph(font, thaiFont, newGlyph);
-	}
-
-	logFormat("registered font all glyph for: %p", font);
+	logFormat("replaced original font: %p", originalFont);
+	return customFont;
 }
 

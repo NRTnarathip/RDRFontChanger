@@ -15,6 +15,7 @@
 #include "FileSystemHook.h"
 #include "TextureLib.h"
 #include "FontReplacer.h"
+#include "TextTranslator.h"
 
 
 using namespace XMem;
@@ -49,23 +50,6 @@ uint32_t HK_GetGlyphFromChar(swfFont* font, unsigned short charCode) {
 	logFormat("result: %d", result);
 	return result;
 }
-
-
-std::string TranslateThaiText(swfFont* font, std::string text) {
-	//CustomFont::TryRegisterThaiFontGlyphs(font);
-
-	//if (text.contains("Setttings"))
-	//	text = "S";
-	//else if (text.contains("Play"))
-	//	text = "P";
-	//else if (text.contains("Quit"))
-	//	text = "Q";
-
-	// not replace font yet
-	return text;
-}
-
-
 
 
 int (*backup_GetMovieID)(void* p1, void* p2);
@@ -103,77 +87,6 @@ int HK_GetMovieID(FlashManager* p1, char* p2) {
 	logFormat("EndHook GetMovieID!!");
 
 	return result;
-}
-
-typedef void (*HK_DrawTextWithFont_TypeDef)(
-	swfEditText* p1, const char* p2, swfFont* p3, int p4,
-	uint32_t p5, byte p6_align, void* p7);
-HK_DrawTextWithFont_TypeDef backup_DrawTextWithFont;
-static void HK_DrawTextWithFont(
-	swfEditText* self, const char* p2_text, swfFont* font, int p4_fontHeight,
-	uint32_t p5_drawColorInt, byte p6_align, void* p7) {
-	logFormat("HK_DrawTextWithFont!!");
-	logFormat("draw text: %s", (const char*)p2_text);
-	cw("font: %p", font);
-
-	//cw("font height: %d", p4_fontHeight);
-	//auto color = swfEditTextDrawColor::Decode(p5_drawColorInt);
-	//cw("draw color: r:%d g:%d b:%d a:%d", color.r, color.g, color.b, color.a);
-
-	//cw("editText fontID: %d", self->fontID);
-	//cw("editText string size: %d", self->stringSize);
-	//cw("editText string: %s", self->string);
-	//cw("editText varName: %s", self->varName);
-	//cw("editText leading: %d", self->leading);
-	//cw("editText width: %.2f, height: %.2f", self->width, self->height);
-	//cw("editText offsetX: %.2f, offsetY: %.2f", self->offsetX, self->offsetY);
-	//auto bound = self->GetBound();
-	//cw("boundX: %.2f, boundY: %.2f", bound.x, bound.y);
-	//cw("bound width: %.2f, height: %.2f", bound.width, bound.height);
-
-	// replace it!
-	auto fontReplacer = FontReplacer::Instance();
-	fontReplacer->TryReplaceMainFontToThai(font);
-
-
-	// try debug all swf context
-	//static bool dumpAllContextYet = false;
-	//if (!dumpAllContextYet) {
-	//	dumpAllContextYet = true;
-	//	for (int ctxIndex = 0;ctxIndex < g_allSwfContext.size();ctxIndex++) {
-	//		DumpSWFContext(g_allSwfContext[ctxIndex]);
-	//	}
-	//}
-
-
-	auto sheet = font->sheetArrayPtr;
-	//cw("sheet: %p", sheet);
-	//cw("size: %d", sheet->size);
-	//cw("cell count: %d", sheet->cellCount);
-	//cw("texture count: %d", sheet->textureCount);
-	//cw("sheet cell array ptr: %p", sheet->cellArray);
-	//cw("font glyph array ptr: %p", font->glyphToCodeArrayFirstItem);
-
-	// TryDumpSwfFont(font, "onDrawText");
-
-	//cw("total swf files: %d", g_swfFiles.size());
-	//for (int i = 0;i < g_swfFiles.size();i++) {
-	//	auto file = g_swfFiles[i];
-	//	cw("[%d] file: %p", i, file);
-	//	cw("name: %s", file->name);
-	//}
-
-	std::string replaceString = "";
-	if (p2_text != nullptr)
-		replaceString = p2_text;
-
-
-	// replace font glyphs
-	//if (replaceString.empty() == false)
-	//	replaceString = TranslateThaiText(font, replaceString);
-
-
-	backup_DrawTextWithFont(self, replaceString.c_str(), font, p4_fontHeight, p5_drawColorInt, p6_align, p7);
 }
 
 typedef void* (*LoadFlashFile_Fn)(const char* p1);
@@ -218,7 +131,7 @@ void* swfFontDeclareStruct(swfFont* self, void* p1) {
 	logFormat("self: %p", self);
 	logFormat("p1: %p", p1);
 	auto result = backup_swfFontDeclareStruct(self, p1);
-	TryDumpSwfFont(self, "swfFontDeclareStructAfter");
+	DumpSwfFont(self, "swfFontDeclareStructAfter");
 	logFormat("result: %p", result);
 	return result;
 }
@@ -523,16 +436,16 @@ void Hooks::OnDetachDLL() {
 }
 
 LONG CALLBACK MyHandler(PEXCEPTION_POINTERS pExceptionInfo) {
-	// �ٻ������ͧ Error
+	// ดูประเภทของ Error
 	DWORD code = pExceptionInfo->ExceptionRecord->ExceptionCode;
 
-	// �ѹ�֡ŧ Log �ͧ��ҡ�͹
+	// บันทึกลง Log ของเราก่อน
 	cw("Crash detected! Code: 0x%X at address: %p",
 		code, pExceptionInfo->ExceptionRecord->ExceptionAddress);
 
-	// �ҡ�� Access Violation (�ѡ�Դ�ҡ Pointer ���·����Ҥ�¡ѹ)
+	// หากเป็น Access Violation (มักเกิดจาก Pointer เสียที่เราคุยกัน)
 	if (code == EXCEPTION_ACCESS_VIOLATION) {
-		return EXCEPTION_CONTINUE_SEARCH; // ����к��ҵ�ǨѴ������ ���;ѧ����
+		return EXCEPTION_CONTINUE_SEARCH; // ให้ระบบหาตัวจัดการอื่น หรือพังไปเลย
 	}
 
 	return EXCEPTION_CONTINUE_SEARCH;
@@ -540,7 +453,6 @@ LONG CALLBACK MyHandler(PEXCEPTION_POINTERS pExceptionInfo) {
 
 void Hooks::SetupDebugHooks()
 {
-	HookRva(0x1979c0, HK_DrawTextWithFont, &backup_DrawTextWithFont);
 	// HookFuncRva(0x1fced0, HK_LoadFlashFile, &backup_LoadFlashFile);
 	// HookFuncRva(0x11b110, HK_pgRscBuilder_LoadFlash, &fn_pgRscBuilder_LoadFlash);
 	// HookFuncRva(0xc7510, rage_swfCONTEXT_GetGlobal, &backup_rage_swfCONTEXT_GetGlobal);

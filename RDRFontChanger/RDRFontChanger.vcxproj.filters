@@ -75,6 +75,12 @@
     <ClInclude Include="FontReplacer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TextTranslator.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderHook.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -129,6 +135,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FontReplacer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TextTranslator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderHook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

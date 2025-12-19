@@ -13,9 +13,13 @@
 
 using namespace HookLib;
 
+float to1024Units(float pixels, float fontSize) {
+	return (pixels * 1024.0f) / fontSize;
+}
+
 
 static std::unordered_set<std::string> g_dumpFonts;
-void TryDumpSwfFont(swfFont* font, const char* prefixFileName) {
+void DumpSwfFont(swfFont* font, const char* prefixFileName) {
 	// dump font
 	std::string fileNameStr = std::format("{}_{}.txt", prefixFileName, (void*)font);
 	if (g_dumpFonts.contains(fileNameStr))
@@ -27,9 +31,7 @@ void TryDumpSwfFont(swfFont* font, const char* prefixFileName) {
 	std::ofstream stream(fileNameStr.c_str(), std::ios::out | std::ios::trunc);
 	logFormat("open stream file!");
 
-	stream << std::format("font address={}\n", (void*)font);
-
-	auto sheet = font->sheetArrayPtr;
+	auto sheet = font->sheet;
 	cw("sheet: %p", sheet);
 	if (sheet == nullptr) {
 		cw("sheet is null!");
@@ -37,12 +39,14 @@ void TryDumpSwfFont(swfFont* font, const char* prefixFileName) {
 		return;
 	}
 
-	cw("cell count: 5d", sheet->cellCount);
-	stream << std::format("sheet size count= {}\n", sheet->size);
+	stream << std::format("font address={}\n", (void*)font);
+	stream << std::format("sheet size= {}\n", font->sheet->size);
+	stream << std::format("ascent= {}, decent= {}, leading= {}\n",
+		font->ascent, font->ascent, font->leading);
 	stream << std::format("sheet cell count= {}\n", sheet->cellCount);
 	stream << std::format("sheet texture count= {}\n", sheet->textureCount);
 
-	auto glyphArrayFirstElement = (swfGlyph**)sheet->cellArray;
+	auto glyphArrayFirstElement = (swfGlyph**)sheet->cellArrayPtr;
 
 	for (int i = 0;i < font->glyphCount;i++)
 	{
@@ -53,43 +57,54 @@ void TryDumpSwfFont(swfFont* font, const char* prefixFileName) {
 			"index={}, char={}, left={:.2f}, top={:.2f}, width={:.2f}, height={:.2f}",
 			i, currentCode, g->left, g->top, g->width, g->height);
 
+		float minX = g->minX;
+		float minY = g->minY;
+		float maxX = g->maxX;
+		float maxY = g->maxY;
+		float advance = *((float*)font->advanceFirstItem + i);
 		line += std::format(
-			", minX={:.2f}, minY={:.2f}, maxX={:.2f}, maxY={:.2f}",
-			g->minX, g->minY, g->maxX, g->maxY);
+			", minX={:.2f}, minY={:.2f}, maxX={:.2f}, maxY={:.2f}, advance={:.2f}",
+			minX, minY, maxX, maxY, advance);
 
 		stream << line.c_str() << "\n";
-
-		float advance = *((float*)font->advanceFirstItem + i);
-		auto line2 = std::format("advance={}\n", advance);
-		stream << line2;
 	}
 	stream.close();
 	logFormat("dump success for font file name: %s", fileNameStr.c_str());
 }
 
-const float k_swfFontUnitSize = 1024.0f;
-
-CustomFont::CustomFont(swfFont* font)
+CustomFont::CustomFont(swfFont* gameFont, BitmapFont* bitmapFont)
 {
-	this->font = font;
+	this->bitmapFont = bitmapFont;
+	this->originalFont = gameFont;
+	DumpSwfFont(originalFont, "MainFont");
+
+	// replace all glyph
+	cw("try replace all glyph...");
+	this->backupGlyphToCode = gameFont->glyphToCodeArrayFirstItem;
+	this->backupGlyphCount = gameFont->glyphCount;
+
+	auto sheet = gameFont->sheet;
+
+	// ready to replace
+	for (int i = 0;i < bitmapFont->glyphs.size();i++) {
+		auto& newGlyph = bitmapFont->glyphs[i];
+		ReplaceGlyph(gameFont, *bitmapFont, newGlyph);
+	}
+
 }
 
 void CustomFont::ReplaceGlyph(swfFont* font,
-	const BitmapFont& thaiFont, const BitmapFont::Glyph& newGlyph)
+	const BitmapFont& bitmapFont, const BitmapFont::Glyph& glyph)
 {
-	cw("try replace glyph id: %d", newGlyph.id);
+	cw("try replace glyph id: %d", glyph.id);
 
 	// assert
-	if (newGlyph.id < 0 || newGlyph.id > 0xFFFF) {
+	if (glyph.id < 0 || glyph.id > 0xFFFF) {
 		cw("bitmap glyph charCode overflow unsigned short");
 		return;
 	}
 
-	auto sheet = font->sheetArrayPtr;
-	if (sheet == nullptr) {
-		cw("sheet font is null!");
-		return;
-	}
+	auto sheet = font->sheet;
 
 	auto glyphIndex = this->replaceGlyphCount;
 	if (glyphIndex == font->glyphCount - 1) {
@@ -97,30 +112,38 @@ void CustomFont::ReplaceGlyph(swfFont* font,
 		return;
 	}
 
-	int fontHeight = sheet->size; // or font height size
+	// counter glyph replace!
+	this->replaceGlyphCount++;
 	cw("sheet size: %d", sheet->size);
 
-	float fontScaleEM = k_swfFontUnitSize / thaiFont.size;
-	cw("font scale em: %.2f", fontScaleEM);
-
 	// setup min, max bound on swf font size em
-	float xoffset = newGlyph.xoffset;
-	float yoffset = newGlyph.yoffset;
+	float xoffset = glyph.xoffset;
+	float yoffset = glyph.yoffset;
 
-	float minX = newGlyph.xoffset * fontScaleEM;
-	float maxX = (newGlyph.xoffset + newGlyph.width) * fontScaleEM;
+	// X
+	float fontSize = bitmapFont.size;
+	float minX = to1024Units(glyph.xoffset, fontSize);
+	float maxX = to1024Units(glyph.xoffset + glyph.width, fontSize);
 
-	float minY = -(yoffset + newGlyph.height) * fontScaleEM;
-	float maxY = -yoffset * fontScaleEM;
+	float baseline = bitmapFont.baseline;
+	float lineHeight = bitmapFont.lineHeight;
+	float pixelTop = baseline - yoffset;
+	float pixelBottom = baseline - (yoffset + glyph.height);
+
+	float maxY = to1024Units(pixelTop, fontSize);
+	float minY = to1024Units(pixelBottom, fontSize);
+
+	font->ascent = to1024Units((float)baseline, fontSize);
+	font->descent = to1024Units((float)(lineHeight - baseline), fontSize);
+	font->leading = to1024Units(20.0f, fontSize);
 
 
 	// change it!
-	swfGlyph* glyphArray = (swfGlyph*)sheet->cellArray;
-	swfGlyph* g = glyphArray + glyphIndex;
-	g->left = newGlyph.x;
-	g->top = newGlyph.y;
-	g->width = newGlyph.width;
-	g->height = newGlyph.height;
+	swfGlyph* g = sheet->cellArrayPtr + glyphIndex;
+	g->left = glyph.x;
+	g->top = glyph.y;
+	g->width = glyph.width;
+	g->height = glyph.height;
 	g->minX = minX;
 	g->minY = minY;
 	g->maxX = maxX;
@@ -128,66 +151,24 @@ void CustomFont::ReplaceGlyph(swfFont* font,
 
 
 	// update glyph advanceX array
-	float advanceX = newGlyph.xadvance * fontScaleEM;
-	float* advanceArray = (float*)font->advanceFirstItem;
-	advanceArray[glyphIndex] = advanceX;
+	float advanceX = to1024Units(glyph.xadvance, fontSize);
+	font->advanceFirstItem[glyphIndex] = advanceX;
 	cw("advanceX: %.2f", advanceX);
 
-	// update glyphToCode 
-	unsigned short* glyphToCodeArray = font->glyphToCodeArrayFirstItem;
-	glyphToCodeArray[glyphIndex] = (unsigned short)newGlyph.id;
-
-	// counter glyph replace!
-	this->replaceGlyphCount++;
+	//// update glyphToCode 
+	font->glyphToCodeArrayFirstItem[glyphIndex] = (unsigned short)glyph.id;
+	cw("replace glyph index[%d] = charCode: %d", glyphIndex, glyph.id);
 
 
-	cw("info: x:%d, y:%d, w:%d, h:%d", (int)g->left, (int)g->top, (int)g->width, (int)g->height);
+
+	cw("info glyph: x:%d, y:%d, w:%d, h:%d", (int)g->left, (int)g->top, (int)g->width, (int)g->height);
 	cw("bound: minX:%.2f, minY:%.2f, maxX:%.2f, maxY:%.2f", g->minX, g->minY, g->maxX, g->maxY);
-	cw("Registered replace font: %p", font);
-
 }
 
 grcTextureD11* rage_grcTextureD11Create(const char* assetName)
 {
 	auto instance = grcTextureFactoryD11::GetInstance();
 	return instance->CreateTexture(assetName, nullptr);
-}
-
-void CustomFont::ReplaceTexture(int replaceTextureIndex, std::string newTextureFilePath)
-{
-	cw("try ReplaceTexture index: %d, path: %s", replaceTextureIndex, newTextureFilePath.c_str());
-	auto sheet = font->sheetArrayPtr;
-	if (replaceTextureIndex < 0
-		|| replaceTextureIndex >= sheet->textureCount) {
-		cw("texture index is over than texture count");
-		return;
-	}
-
-	auto i = replaceTextureIndex;
-	grcTextureD11* originalTexture = sheet->textureArray[i];
-	const char* originalName = sheet->textureNameArray[i];
-	// backup it before change!
-	this->backupTextureArray.push_back(originalTexture);
-	this->backupTextureNameArray.push_back(originalName);
-	cw("texture original: %p, name: %s", originalTexture, originalName);
-
-	// change it!!
-	auto imgFactory = grcTextureFactoryD11::GetInstance();
-	grcTextureD11* newTexture = rage_grcTextureD11Create(newTextureFilePath.c_str());
-	cw("create new texture: %p", newTexture);
-
-	this->newTextures.push_back(newTexture);
-	this->newTextureFileNames.push_back(newTextureFilePath);
-	sheet->textureArray[i] = newTexture;
-	auto newTextureNameObj = &this->newTextureFileNames[i];
-	sheet->textureNameArray[i] = newTextureNameObj->c_str();
-	cw("texture after replace: %p, name: %s",
-		sheet->textureArray[i],
-		sheet->textureNameArray[i]);
-
-
-	// check index
-	cw("sheet index array: %p", sheet->indexArray);
 }
 
 void BitmapFont::ParseGlyph(const std::string& line, BitmapFont::Glyph& g) {
@@ -210,9 +191,9 @@ void BitmapFont::Load(std::string path)
 		auto lineCstr = line.c_str();
 		// parse line
 		if (line.find("char id=") == 0) {
-			Glyph g;
-			ParseGlyph(line, g);
-			this->glyphs.push_back(g);
+			auto& glyph = this->glyphs.emplace_back(Glyph{});
+			ParseGlyph(line, glyph);
+			charIDToGlyph[glyph.id] = &glyph;
 		}
 		else if (line.find("common") == 0) {
 			sscanf(lineCstr, "common lineHeight=%d base=%d scaleW=%d scaleH=%d",

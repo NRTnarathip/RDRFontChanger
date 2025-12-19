@@ -1,6 +1,8 @@
 #pragma once
 #include "ISystem.h"
 #include "SWFTypes.h"
+#include "CustomFont.h"
+#include <unordered_set>
 
 class FontReplacer : public ISystem
 {
@@ -10,7 +12,8 @@ public:
 	}
 
 	bool Init() override;
-	void TryReplaceMainFontToThai(swfFont* font);
+	CustomFont* Register();
+	CustomFont* TryReplaceToThaiFont(swfFont* font);
 
 	static FontReplacer* Instance() { return g_instance; };
 private:

@@ -98,7 +98,7 @@ static_assert(sizeof(swfGlyph) == 0x20, "Assert Size");
 
 struct swfSheet {
 	grcTextureD11** textureArray;
-	swfGlyph* cellArray; // 0x8 -> 0x10
+	swfGlyph* cellArrayPtr; // 0x8 -> 0x10
 	unsigned short size; // 0x10
 	unsigned short cellCount; // 0x12
 	void* indexArray; //x18
@@ -119,25 +119,25 @@ struct swfFont
 	void* _0x10;
 	void* _0x18; // 0x18 -> 0x20
 	unsigned short* glyphToCodeArrayFirstItem; //0x20 - > 0x28
-	void* advanceFirstItem; // x28 -> x30
+	float* advanceFirstItem; // x28 -> x30
 	char codeToGlyph[0x80]; // 0x30 -> 0xb0
 	short sheetCount; // 0xb0
 	short ascent;  // 0xb2
-	short desent; // 0xb4
+	short descent; // 0xb4
 	short leading; // 0xb6
 	unsigned short glyphCount;  // 0xb8
 	unsigned char flags;
 	unsigned char langCode;
-	swfSheet* sheetArrayPtr; // xc0
+	swfSheet* sheet; // xc0
 	char xC8[0xb8]; // -> xc8 -> xd0
 	const char* name;
 };
-static_assert(offsetof(swfFont, glyphToCodeArrayFirstItem) == 0x20, "Assert It");
-static_assert(offsetof(swfFont, sheetCount) == 0xb0, "Assert It");
-static_assert(offsetof(swfFont, glyphCount) == 0xb8, "Assert It");
-static_assert(offsetof(swfFont, langCode) == 0xbb, "Assert It");
-static_assert(offsetof(swfFont, sheetArrayPtr) == 0xc0, "Assert It");
-static_assert(offsetof(swfFont, codeToGlyph) == 0x30, "Assert It");
+CHECK_OFFSET(swfFont, glyphToCodeArrayFirstItem, 0x20);
+CHECK_OFFSET(swfFont, sheetCount, 0xb0);
+CHECK_OFFSET(swfFont, glyphCount, 0xb8);
+CHECK_OFFSET(swfFont, langCode, 0xbb);
+CHECK_OFFSET(swfFont, sheet, 0xc0);
+CHECK_OFFSET(swfFont, codeToGlyph, 0x30);
 CHECK_OFFSET(swfFont, xC8, 0xC8);
 CHECK_OFFSET(swfFont, name, 0x180);
 

@@ -3,6 +3,7 @@
 #include "TextureChanger.h"
 #include "FontReplacer.h"
 #include "Hooks.h"
+#include "RenderHook.h"
 
 Application::Application() {
 }
@@ -28,8 +29,7 @@ void Application::RegisterAllMyModule()
 	// reigster here
 	sys.Register<TextureReplacer>();
 	sys.Register<FontReplacer, TextureReplacer>();
-
-
+	sys.Register<RenderHook>();
 
 
 	// debug

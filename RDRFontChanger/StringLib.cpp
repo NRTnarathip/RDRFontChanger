@@ -13,6 +13,17 @@ std::string WCharToString(const wchar_t* wstr) {
 	return result;
 }
 
+std::wstring ToWString(const std::string& str) {
+	if (str.empty())
+		return std::wstring();
+	int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
+
+	std::wstring wstrTo(size_needed, 0);
+	MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
+
+	return wstrTo;
+}
+
 std::string ToLower(std::string s)
 {
 	std::transform(s.begin(), s.end(), s.begin(),
