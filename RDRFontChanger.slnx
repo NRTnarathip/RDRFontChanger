@@ -1,9 +1,11 @@
 <Solution>
   <Configurations>
-    <BuildType Name="Release" />
     <Platform Name="Any CPU" />
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="RDRFontChanger/RDRFontChanger.vcxproj" Id="6aadc69f-6a84-45b0-b2ab-c6782c8f8f6c" />
+  <Project Path="RDRFontChanger/RDRFontChanger.vcxproj" Id="6aadc69f-6a84-45b0-b2ab-c6782c8f8f6c">
+    <BuildType Project="Release" />
+  </Project>
+  <Project Path="TranslatorTool/TranslatorTool.csproj" Id="87c83d9e-5bee-404a-b6f8-4176753fc700" />
 </Solution>
