@@ -1,6 +1,7 @@
 ﻿using OpenAI;
 using OpenAI.Chat;
 using System.ClientModel;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 var options = new OpenAIClientOptions
@@ -18,9 +19,10 @@ var saveFilePath = Path.Combine(dir, filename.Replace(".txt", "@thai-ai.txt"));
 if (File.Exists(saveFilePath) == false)
     File.Copy(srcFilePath, saveFilePath);
 
-int saveFileEveryLine = 20;
+Stopwatch saveFileTimer = new Stopwatch();
+saveFileTimer.Start();
+int saveFileEverySeconds = 5;
 var writeLines = File.ReadAllLines(saveFilePath);
-int currentTranslateCount = 0;
 int totalLine = writeLines.Length;
 for (int lineIndex = 0; lineIndex < totalLine; lineIndex++)
 {
@@ -40,40 +42,41 @@ for (int lineIndex = 0; lineIndex < totalLine; lineIndex++)
         continue;
 
     string prefix = line.Substring(0, dashIndex + 1);
-    Console.WriteLine($"prefix: {prefix}");
-    string pureText = line.Substring(dashIndex + 1).Trim();
-    Console.WriteLine($"pure text: {pureText}");
-    string textPartPattern = @"(@""(<(\w+)>.*?<\/\2>|\{@[^}]+\})"")";
-    string[] pureTextSplits = Regex.Split(
-        pureText, textPartPattern)
+    string text = line.Substring(dashIndex + 1).Trim();
+
+    // $/content/scripting/DesignerDefined/SocialClub/sc_challenge_02
+    if (text.StartsWith("$/"))
+    {
+        Console.WriteLine("skip: " + line);
+        continue;
+    }
+
+    string textPartPattern = @"(<[^>]+>|\{[^}]+\})";
+    string[] textSplits = Regex.Split(
+        text, textPartPattern)
           .Where(s => !string.IsNullOrEmpty(s) && !Regex.IsMatch(s, @"^\w+$")).ToArray();
-    List<string> pureTextPart = new();
 
     // check if found any string
     // if not found we should stop it!
-    bool shouldSkip = false;
-    foreach (string p in pureTextSplits)
+    bool foundAnyWord = false;
+    foreach (string p in textSplits)
     {
         var part = p.Trim();
         // like "  "
         if (part.Length == 0)
             continue;
 
-        // such as:
-        // $/content/scripting/DesignerDefined/SocialClub/sc_challenge_02
-        // <A>
-        // {@UI.xxx}
-        if (part.StartsWith("$/") ||
-            part.StartsWith("<") || part.StartsWith("{"))
-        {
-            shouldSkip = true;
-            break;
-        }
+        // such as:  <A>  {@UI.xxx}
+        if (part.StartsWith("<") || part.StartsWith("{"))
+            continue;
+
+        foundAnyWord = true;
+        break;
     }
 
-    if (shouldSkip)
+    if (!foundAnyWord)
     {
-        Console.WriteLine($"skip!!: {line}");
+        Console.WriteLine($"skip: {line}");
         continue;
     }
 
@@ -81,20 +84,19 @@ for (int lineIndex = 0; lineIndex < totalLine; lineIndex++)
     string translateText = "";
     while (true)
     {
-        translateText = await TranslateTextAsync(client, pureText);
+        translateText = await TranslateTextAsync(client, text);
         string[] translateTextSplits = translateText.Split(
             ["\r\n", "\r", "\n"], StringSplitOptions.None);
         Console.WriteLine("retry...");
         // only 1 line!
-        if (translateTextSplits.Length != 1)
+        if (translateTextSplits.Length != 1
+            || translateText.Contains("ภาษาไทย"))
         {
             Console.WriteLine("look like your AI result is incorrect");
             Console.WriteLine($"result: {translateText}");
+            translateText = ""; //clear
             continue;
         }
-        // invalid result
-        else if (translateText.Contains("ภาษาไทย"))
-            continue;
 
         break;
     }
@@ -112,13 +114,13 @@ for (int lineIndex = 0; lineIndex < totalLine; lineIndex++)
     writeLines[lineIndex] = newLine;
     Console.WriteLine($"write line: " + newLine);
 
-    currentTranslateCount++;
-    if (currentTranslateCount % saveFileEveryLine == 0)
+    if (saveFileTimer.Elapsed.TotalSeconds >= saveFileEverySeconds)
     {
         Console.WriteLine($"progress line {lineIndex + 1} / {totalLine} total");
         Console.WriteLine("try saving file...");
         File.WriteAllLines(saveFilePath, writeLines);
         Console.WriteLine("saved file!");
+        saveFileTimer.Restart(); //reset it!
     }
 }
 
