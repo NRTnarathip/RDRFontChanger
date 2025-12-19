@@ -4,6 +4,7 @@
 #include "FontReplacer.h"
 #include "Hooks.h"
 #include "RenderHook.h"
+#include "TextTranslator.h"
 
 Application::Application() {
 }
@@ -34,4 +35,5 @@ void Application::RegisterAllMyModule()
 
 	// debug
 	Hooks::SetupDebugHooks();
+	TextTranslator::Initialize();
 }
