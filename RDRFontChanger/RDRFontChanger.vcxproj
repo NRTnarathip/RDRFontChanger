@@ -140,6 +140,11 @@
     <None Include="packages.config" />
     <None Include="PostBuild.cmd" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SDFontLib\SDFontLib.vcxproj">
+      <Project>{3a2be667-1d61-4ab7-9bb9-3e3e39eb2c96}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets" Condition="Exists('..\packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" />

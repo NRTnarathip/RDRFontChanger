@@ -7,5 +7,6 @@
   <Project Path="RDRFontChanger/RDRFontChanger.vcxproj" Id="6aadc69f-6a84-45b0-b2ab-c6782c8f8f6c">
     <BuildType Project="Release" />
   </Project>
+  <Project Path="SDFontLib/SDFontLib.vcxproj" Id="3a2be667-1d61-4ab7-9bb9-3e3e39eb2c96" />
   <Project Path="TranslatorTool/TranslatorTool.csproj" Id="87c83d9e-5bee-404a-b6f8-4176753fc700" />
 </Solution>
