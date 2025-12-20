@@ -22,8 +22,11 @@ public abstract class AITranslatorAbstract
                 m_maxRetryCount = value;
         }
     }
+    public static AITranslatorAbstract Instance { get; private set; }
     public AITranslatorAbstract()
     {
+        Instance = this;
+
         var options = new OpenAIClientOptions
         {
             Endpoint = new Uri("http://localhost:1234/v1")

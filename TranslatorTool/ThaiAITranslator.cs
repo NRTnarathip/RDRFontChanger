@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-public sealed class ThaiTranslator : AITranslatorAbstract
+public sealed class ThaiAITranslator : AITranslatorAbstract
 {
     public static bool HasThai(string input)
     {

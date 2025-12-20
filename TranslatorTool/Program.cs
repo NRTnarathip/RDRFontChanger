@@ -28,13 +28,14 @@ internal class Program
         if (!File.Exists(saveFilePath))
             File.Copy(srcFilepath, saveFilePath);
 
-        // ready to load
-        var srcFile = TranslatorFile.OpenSrcFile(srcFilepath);
-        var thaiTranslatorFile = TranslatorFile.OpenDestFile(srcFile, k_suffixSaveFilepath);
-
         // setup AI Translator Tool
         var beginLineIndex = 0;
-        var translatorTool = new ThaiTranslator();
+        var ai = new ThaiAITranslator();
+
+        // ready to load
+        var srcFile = TranslatorFile.OpenSrcFile(srcFilepath);
+        var thaiTranslatorFile = TranslatorFile.OpenDestFile(srcFile, k_suffixSaveFilepath, ai);
+
 
         // load dst file lines
         foreach (var srcLineParserPair in srcFile.m_lineParserMap)
@@ -42,29 +43,12 @@ internal class Program
             var srcLineParser = srcLineParserPair.Value;
             var index = srcLineParser.m_index;
 
-            if (!thaiTranslatorFile.m_lineParserMap.TryGetValue(index,
-                out LineParser? dstLineParser))
-            {
-                Console.WriteLine($"not found src: {srcLineParser.m_raw} at dst file!");
+            var dstLineParser = thaiTranslatorFile.TryGetLine(index);
+            if (thaiTranslatorFile.ShouldTranslateText(
+                srcLineParser, dstLineParser) == false)
                 continue;
-            }
 
-            // assert should you translate this source line??
-            if (srcLineParser.isPureSingleSymbol)
-            {
-                Console.WriteLine($"skip line: {srcLineParser.m_raw}");
-                continue;
-            }
-
-            // check if this line is translate yet??
-            if (translatorTool.IsTranslateYet(
-                srcLineParser, dstLineParser))
-            {
-                Console.WriteLine($"already translated: {dstLineParser.m_raw}");
-                continue;
-            }
-
-            var translateResult = await translatorTool.TryTranslateAsync(
+            var translateResult = await ai.TryTranslateAsync(
                 srcLineParser.m_text);
 
             if (translateResult == null)
