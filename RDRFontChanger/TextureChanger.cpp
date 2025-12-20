@@ -6,12 +6,13 @@
 #include <vector>
 #include <string>
 #include "StringLib.h"
+#include "Rage.h"
 
 namespace fs = std::filesystem;
 
 using namespace HookLib;
 
-TextureReplacer* g_instance = nullptr;
+TextureReplacer* TextureReplacer::g_instance;
 const char* TextureReplacer::k_modsReplaceTeturesDir = "mods/replace_textures"; // default
 
 void* (*fn_grcTextureD11_CreateFromBackingStore)(grcTextureD11* self);
@@ -19,9 +20,9 @@ void* HK_grcTextureD11_CreateFromBackingStore(grcTextureD11* self) {
 	cw("BeginHook HK_grcTextureD11_CreateFromBackingStore, self: %p", self);
 
 	self->BeforeCreateFromBackingStore();
-	// replace here
 
-	g_instance->OnBeforeCreateFromBackingStore(self);
+	// replace here
+	TextureReplacer::Instance()->OnBeforeCreateFromBackingStore(self);
 
 	auto r = fn_grcTextureD11_CreateFromBackingStore(self);
 	self->AfterCreateFromBackingStore();
@@ -38,23 +39,23 @@ TextureReplacer::TextureReplacer()
 bool TextureReplacer::Init()
 {
 	SetupHooks();
-	LoadMods();
+	LoadDefaultTextureFiles();
 	return true;
 }
 
 void TextureReplacer::OnBeforeCreateFromBackingStore(grcTextureD11* tex)
 {
-	auto texName = tex->GetName();
-	if (m_replaceTextureNames.contains(texName) == false) {
+	auto textureKey = tex->GetName();
+	if (m_registerReplaceTextureMap.contains(textureKey) == false) {
 		return;
 	}
 
-	cw("try replace texture: %s", texName.c_str());
-	auto filePathString = std::format("{}/{}", k_modsReplaceTeturesDir, texName);
-	cw("try to read file: %s", filePathString.c_str());
+	auto redirectNewTexturePath = m_registerReplaceTextureMap[textureKey];
+	cw("try replace texture: %s", textureKey.c_str());
+	cw("try to read file: %s", redirectNewTexturePath.c_str());
 
 	DirectX::ScratchImage img;
-	auto filePathSystem = fs::path(filePathString);
+	auto filePathSystem = fs::path(redirectNewTexturePath);
 	auto wFilePath = filePathSystem.wstring();
 	HRESULT hr = DirectX::LoadFromDDSFile(
 		wFilePath.data(),
@@ -93,29 +94,45 @@ void TextureReplacer::OnBeforeCreateFromBackingStore(grcTextureD11* tex)
 	cw("set rawImage!! old: %p, new: %p!!", oldRawImage, newRawImage);
 
 	// add to cache
-	m_scratchImageMap.emplace(texName, std::move(img));
+	m_scratchImageMap.emplace(textureKey, std::move(img));
 }
 
-std::unordered_set<std::string> GetTextureNamesInModsFolder() {
-	std::unordered_set<std::string> manifestPaths;
+void TextureReplacer::RegisterReplaceTexture(
+	std::string textureKey, std::string path)
+{
+	textureKey = SafePath(textureKey);
+	path = SafePath(path);
 
-	auto rootDir = TextureReplacer::k_modsReplaceTeturesDir;
-	if (fs::exists(rootDir) && fs::is_directory(rootDir)) {
-		for (const auto& entry : fs::recursive_directory_iterator(rootDir)) {
+	cw("try register texture path: %s", path.c_str());
+	if (fs::exists(path) == false) {
+		cw("error file path not exist");
+		return;
+	}
+
+	// ready
+	m_registerReplaceTextureMap[textureKey] = path;
+
+	// debug
+	cw("registered texture key: %s with new path: %s",
+		textureKey.c_str(), path.c_str());
+}
+
+std::unordered_set<std::string> GetAllTextureDDSFiles(std::string dirToLoad)
+{
+	std::unordered_set<std::string> files;
+
+	if (fs::exists(dirToLoad) && fs::is_directory(dirToLoad)) {
+		for (const auto& entry : fs::recursive_directory_iterator(dirToLoad)) {
 			auto path = entry.path();
 			auto filename = path.filename();
 			if (fs::is_regular_file(entry) && path.extension() == ".dds") {
-				// key hash lower case
-				fs::path relative = fs::relative(path, rootDir);
-				relative = relative.generic_string(); // normalize path format
-				auto textureNameKey = ToLower(relative.string());
-				cw("found texture name key: %s", textureNameKey.c_str());
-				manifestPaths.insert(textureNameKey);
+				auto pathString = path.string();
+				files.insert(pathString);
 			}
 		}
 	}
 
-	return manifestPaths;
+	return files;
 }
 
 void TextureReplacer::SetupHooks()
@@ -125,14 +142,16 @@ void TextureReplacer::SetupHooks()
 		&fn_grcTextureD11_CreateFromBackingStore);
 }
 
-void TextureReplacer::LoadMods()
+void TextureReplacer::LoadDefaultTextureFiles()
 {
-	cw("try loading mods texture changer...");
+	cw("try loading default texture replace files...");
 	const char* modsDir = "mods";
-	m_replaceTextureNames = GetTextureNamesInModsFolder();
-	cw("found replace texture name count: %d", m_replaceTextureNames.size());
-	for (const std::string& name : m_replaceTextureNames) {
-		cw("texture name: %s", name.c_str());
+	auto textureFiles = GetAllTextureDDSFiles(k_modsReplaceTeturesDir);
+	cw("found replace texture name count: %d", textureFiles.size());
+	for (auto& file : textureFiles) {
+		auto textureKeyPath = fs::relative(file, k_modsReplaceTeturesDir);
+		auto textureKey = textureKeyPath.string();
+		RegisterReplaceTexture(textureKey, file);
 	}
 }
 

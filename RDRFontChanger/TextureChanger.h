@@ -7,17 +7,21 @@
 #include <unordered_map>
 #include "DirectXTex.h"
 #include "ISystem.h"
+#include <filesystem>
 
-class TextureReplacer : public ISystem
-{
+class TextureReplacer : public ISystem {
 public:
 	static const char* k_modsReplaceTeturesDir;
 	TextureReplacer();
 	bool Init() override;
 	void OnBeforeCreateFromBackingStore(grcTextureD11* tex);
+	void RegisterReplaceTexture(std::string textureName, std::string path);
+	static TextureReplacer* Instance() { return g_instance; }
+
 private:
-	std::unordered_set<std::string> m_replaceTextureNames;
+	std::unordered_map<std::string, std::string> m_registerReplaceTextureMap;
 	std::unordered_map<std::string, DirectX::ScratchImage> m_scratchImageMap;
-	void LoadMods();
+	void LoadDefaultTextureFiles();
 	void SetupHooks();
+	static TextureReplacer* g_instance;
 };

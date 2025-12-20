@@ -60,9 +60,6 @@
     <ClInclude Include="TextureLib.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="StringLib.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ISystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -72,13 +69,28 @@
     <ClInclude Include="SystemManager.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="FontReplacer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="TextTranslator.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="BitmapFont.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomSwfFontBitmap.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomFontSDF.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FontReplacer.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StringLib.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
     <ClInclude Include="RenderHook.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Rage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -141,6 +153,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RenderHook.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomSwfFontBitmap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BitmapFont.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomFontSDF.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Rage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

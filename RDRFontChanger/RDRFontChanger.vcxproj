@@ -90,7 +90,10 @@
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="AssetLib.h" />
+    <ClInclude Include="BitmapFont.h" />
     <ClInclude Include="CustomFont.h" />
+    <ClInclude Include="CustomFontSDF.h" />
+    <ClInclude Include="CustomSwfFontBitmap.h" />
     <ClInclude Include="dllmain.h" />
     <ClInclude Include="DXLib.h" />
     <ClInclude Include="FileSystemHook.h" />
@@ -100,6 +103,7 @@
     <ClInclude Include="Hooks.h" />
     <ClInclude Include="ISystem.h" />
     <ClInclude Include="Logger.h" />
+    <ClInclude Include="Rage.h" />
     <ClInclude Include="RenderHook.h" />
     <ClInclude Include="StringHooks.h" />
     <ClInclude Include="StringLib.h" />
@@ -112,7 +116,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="BitmapFont.cpp" />
     <ClCompile Include="CustomFont.cpp" />
+    <ClCompile Include="CustomFontSDF.cpp" />
+    <ClCompile Include="CustomSwfFontBitmap.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="DXLib.cpp" />
     <ClCompile Include="FileSystemHook.cpp" />
@@ -122,6 +129,7 @@
     <ClCompile Include="Hooks.cpp" />
     <ClCompile Include="ISystem.cpp" />
     <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="Rage.cpp" />
     <ClCompile Include="RenderHook.cpp" />
     <ClCompile Include="StringHooks.cpp" />
     <ClCompile Include="StringLib.cpp" />

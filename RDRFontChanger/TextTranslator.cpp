@@ -121,8 +121,8 @@ void TextTranslator::Initialize() {
 
 			auto key = GetEnglishStringKey(englishString);
 			g_translateStringMap[key] = newString;
-			cw("mapped key: %s, new string: %s",
-				englishString.c_str(), newString.c_str());
+			//cw("mapped key: %s, new string: %s",
+			//	englishString.c_str(), newString.c_str());
 		}
 	}
 
@@ -130,9 +130,8 @@ void TextTranslator::Initialize() {
 }
 
 
-bool TextTranslator::TryTranslate(std::string& inout, CustomFont* font)
+bool TextTranslator::TryTranslate(std::string& inout, CustomSwfFontAbstract* font)
 {
-
 	if (font == nullptr) {
 		cw("can't translate, cause font is null!");
 		return false;

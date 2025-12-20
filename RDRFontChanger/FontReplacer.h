@@ -1,8 +1,9 @@
 #pragma once
+#include <unordered_set>
 #include "ISystem.h"
 #include "SWFTypes.h"
 #include "CustomFont.h"
-#include <unordered_set>
+#include "CustomSwfFontBitmap.h"
 
 class FontReplacer : public ISystem
 {
@@ -12,8 +13,8 @@ public:
 	}
 
 	bool Init() override;
-	CustomFont* Register();
-	CustomFont* TryReplaceToThaiFont(swfFont* font);
+	void RegisterFontNarrowWithFontBitmap(std::string newFontName);
+	CustomSwfFontAbstract* TryReplaceFontNarrow(swfFont* font);
 
 	static FontReplacer* Instance() { return g_instance; };
 private:

@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <print>
-#include<unordered_map>
+#include <unordered_map>
 #include "Glyph.h"
 
 namespace fs = std::filesystem;

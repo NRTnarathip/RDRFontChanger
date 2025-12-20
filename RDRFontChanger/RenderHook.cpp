@@ -18,7 +18,7 @@ static void* HK_DrawTextWithFont(
 	// cw("font: %p", p3_font);
 
 	auto fontReplacer = FontReplacer::Instance();
-	auto newCustomFont = fontReplacer->TryReplaceToThaiFont(p3_font);
+	auto newCustomFont = fontReplacer->TryReplaceFontNarrow(p3_font);
 	if (newCustomFont) {
 		p3_font = newCustomFont->originalFont;
 	}

@@ -19,6 +19,16 @@ void Application::SetupOnDllLoaded(HMODULE hModule)
 		cw("failed to system intiialize all");
 		return;
 	}
+
+
+	// ready
+	// load text translate
+	TextTranslator::Initialize();
+
+	// debug!!
+	// register thai font 
+	auto fontReplacer = FontReplacer::Instance();
+	fontReplacer->RegisterFontNarrowWithFontBitmap("thai_bitmap.fnt");
 }
 
 void Application::RegisterAllMyModule()
@@ -35,5 +45,4 @@ void Application::RegisterAllMyModule()
 
 	// debug
 	Hooks::SetupDebugHooks();
-	TextTranslator::Initialize();
 }

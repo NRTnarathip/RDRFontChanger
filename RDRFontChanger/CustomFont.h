@@ -8,52 +8,27 @@
 #include "TextureChanger.h"
 #include "ISystem.h"
 
-class BitmapFont {
+class FontAbstract {
 public:
-	struct Glyph {
-		int id;         // 106 - character code
-		int x, y;       // 577, 65 - texture position
-		int width, height;  // 17, 54 - texture size
-		int xoffset, yoffset;  // -5, 25 - render offset
-		int xadvance;   // 12 - cursor advance
-		int page;       // 0 - texture page
-		int chnl;       // 15 - channel
-	};
-	char face[256];
-	std::string fontName;
-	int size, bold, italic;
-	int lineHeight, baseline, scaleW, scaleH;
 
-	std::vector<Glyph> glyphs;
-	std::unordered_map<USHORT, Glyph*> charIDToGlyph;
-	void ParseGlyph(const std::string& line, BitmapFont::Glyph& g);
-	bool isLoaded;
-	void Load(std::string path);
 };
 
-class CustomFont
-{
+
+class CustomSwfFontAbstract {
 public:
 	swfFont* originalFont;
-	BitmapFont* bitmapFont;
 	int backupGlyphCount;
 	void* backupGlyphToCode;
 	void* backupSheetCellArray;
-	CustomFont(swfFont* font, BitmapFont* bitmapFont);
+
+	void virtual Init() = 0;
 
 	// base on calling ReplaceTexture(); !!!
 	std::vector<grcTextureD11*> backupTextureArray;
 	std::vector<const char*> backupTextureNameArray;
 	std::vector<grcTextureD11*> newTextures;
 	std::vector<std::string> newTextureFileNames;
-
 	int replaceGlyphCount;
-
-	// glyphs count per font
-	void ReplaceGlyph(swfFont* font, const BitmapFont& thaiFont, const BitmapFont::Glyph& bitmapGlyph);
-	void ReplaceTexture(int index, std::string newTextureFilePath);
-private:
-	TextureReplacer* textureReplacer;
 };
 
 
