@@ -14,17 +14,21 @@ public sealed class LineParser
         AssetPath,
         Text,
     }
+
     public readonly string m_prefix;
+    public readonly string m_raw;
     public readonly string m_text;
     public readonly int m_index = -1;
     public readonly List<string> textSplits = new();
     public readonly List<TextType> textTypeSplits = new();
+    // don't keep text
+    public readonly List<string> m_tagOrSymbolList = new();
     public readonly bool isPureText;
     public readonly bool isPureSingleSymbol;
 
     public LineParser(string line)
     {
-        line = line.Trim();
+        this.m_raw = line = line.Trim();
         // assert check!
         int openBracket = line.IndexOf('[');
         int closeBracket = line.IndexOf(']');
@@ -46,73 +50,69 @@ public sealed class LineParser
         this.m_text = line.Substring(dashIndex + 1).Trim();
         this.m_index = index;
 
-        // try parse tag symbol
-        if (IsAnyTagSymbol(m_text))
+        var currentText = m_text;
+        while (currentText.Length > 0)
         {
-            var currentText = m_text;
-            while (currentText.Length > 0)
+            int moveNext = 1;
+            var c = currentText[0];
+
+            // find html tag first!
+            if (c == '<')
             {
-                int moveNext = 1;
-                var c = currentText[0];
-
-                // find html tag first!
-                if (c == '<')
+                if (TryParseHTMLTag(currentText,
+                    out var content, out var beginTag, out var endTag))
                 {
-                    if (TryParseHTMLTag(currentText,
-                        out var content, out var beginTag, out var endTag))
-                    {
-                        //Console.WriteLine($"found tag: {beginTag}{content}{endTag}");
-                        moveNext = content.Length + beginTag.Length + endTag.Length;
-                        MarkText(content, TextType.HTMLTag);
-                    }
+                    //Console.WriteLine($"found tag: {beginTag}{content}{endTag}");
+                    moveNext = content.Length + beginTag.Length + endTag.Length;
+                    MarkText(content, TextType.HTMLTag);
                 }
+            }
 
-                // like {@RADIAL_MENU.SHOW_HIDE:PENDING}
-                else if (c == '{')
+            // like {@RADIAL_MENU.SHOW_HIDE:PENDING}
+            else if (c == '{')
+            {
+                if (TryParsePlaceholder(currentText,
+                    out var content, out var beginIndex))
                 {
-                    if (TryParsePlaceholder(currentText,
-                        out var content, out var beginIndex))
-                    {
-                        //Console.WriteLine($"found ui prompt tag: {content}");
-                        moveNext = beginIndex + content.Length;
-                        MarkText(content, TextType.Placeholder);
-                    }
+                    //Console.WriteLine($"found ui prompt tag: {content}");
+                    moveNext = beginIndex + content.Length;
+                    MarkText(content, TextType.Placeholder);
                 }
+            }
 
-                // like $/content/scripting/DesignerDefined/SocialClub/sc_example_template
-                else if (currentText.StartsWith("$/"))
+            // like $/content/scripting/DesignerDefined/SocialClub/sc_example_template
+            else if (currentText.StartsWith("$/"))
+            {
+                moveNext = -1;
+                MarkText(currentText, TextType.AssetPath);
+            }
+
+            // unknow text content
+            else
+            {
+                // try find first any tag
+                var firstAnyTagIndex = Regex.Match(currentText, "[<{]");
+                if (firstAnyTagIndex.Success)
                 {
-                    moveNext = -1;
-                    MarkText(currentText, TextType.AssetPath);
+                    var content = currentText.Substring(0, firstAnyTagIndex.Index);
+                    moveNext = content.Length;
+                    MarkText(content, TextType.Text);
+                    //Console.WriteLine($"found content text: {content}");
                 }
-
-                // unknow text content
                 else
                 {
-                    // try find first any tag
-                    var firstAnyTagIndex = Regex.Match(currentText, "[<{]");
-                    if (firstAnyTagIndex.Success)
-                    {
-                        var content = currentText.Substring(0, firstAnyTagIndex.Index);
-                        moveNext = content.Length;
-                        MarkText(content, TextType.Text);
-                        //Console.WriteLine($"found content text: {content}");
-                    }
-                    else
-                    {
-                        // all current text is pure text
-                        moveNext = currentText.Length;
-                        MarkText(currentText, TextType.Text);
-                        // Console.WriteLine($"found pure text: {currentText}");
-                    }
+                    // all current text is pure text
+                    moveNext = currentText.Length;
+                    MarkText(currentText, TextType.Text);
+                    // Console.WriteLine($"found pure text: {currentText}");
                 }
-
-                if (moveNext <= 0
-                    || moveNext >= currentText.Length)
-                    break;
-                // cut next string
-                currentText = currentText.Substring(moveNext);
             }
+
+            if (moveNext <= 0
+                || moveNext >= currentText.Length)
+                break;
+            // cut next string
+            currentText = currentText.Substring(moveNext);
         }
 
         // helper
@@ -128,11 +128,20 @@ public sealed class LineParser
         isPureSingleSymbol = textTypeSplits.Count == 1
                 && textTypeSplits[0] != TextType.Text;
     }
-
+    public static LineParser New(int i, string text)
+    {
+        return new LineParser(MakeLine(i, text));
+    }
+    public static string MakeLine(int i, string text)
+    {
+        return $"[{i}] - {text}";
+    }
     void MarkText(string text, TextType type)
     {
         this.textSplits.Add(text);
         this.textTypeSplits.Add(type);
+        if (type != TextType.Text)
+            m_tagOrSymbolList.Add(text);
     }
 
     public static bool TryParsePlaceholder(
@@ -204,12 +213,27 @@ public sealed class LineParser
         return text.Substring(beginIndex, endIndex - beginIndex + 1);
     }
 
-    public static bool IsAnyTagSymbol(string t)
+
+    internal bool IsSameTags(LineParser target)
     {
-        // <a>WW.XX</a>
-        // <0xfcaf17>CHALLENGE:</0x>
-        // {0} {@UI.xxx} 
-        const string pattern = "[<{]";
-        return Regex.IsMatch(t, pattern);
+        // just pure text, don't check tags
+        if (target.isPureText && this.isPureText)
+            return true;
+
+        // same tags count
+        if (target.m_tagOrSymbolList.Count == this.m_tagOrSymbolList.Count)
+        {
+            for(int i = 0;i < target.m_tagOrSymbolList.Count; i++)
+                // not same!!
+                if (target.m_tagOrSymbolList[i] != this.m_tagOrSymbolList[i])
+                    return false;
+
+            // same here
+            return true;
+        }
+
+
+        // not match tags
+        return false;
     }
 }

@@ -7,10 +7,22 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 
-public sealed class TranslatorTool
+public abstract class AITranslatorAbstract
 {
     public readonly ChatClient client;
-    public TranslatorTool()
+    int m_maxRetryCount = 3;
+    public int MaxRetryCount
+    {
+        get => m_maxRetryCount;
+        set
+        {
+            if (value <= 0)
+                m_maxRetryCount = 3;
+            else
+                m_maxRetryCount = value;
+        }
+    }
+    public AITranslatorAbstract()
     {
         var options = new OpenAIClientOptions
         {
@@ -22,11 +34,11 @@ public sealed class TranslatorTool
     }
 
     readonly string[] k_lineSeparators = { Environment.NewLine, "\r", "\n" };
-    public async Task<string> TryTranslateAsync(string text)
+    public async Task<string?> TryTranslateAsync(string srcText)
     {
-        while (true)
+        for (int i = 0; i < m_maxRetryCount; i++)
         {
-            var result = await TranslateTextAsync(text);
+            var result = await TranslateTextAsync(srcText);
             var resultLines = result.Split(k_lineSeparators,
                 StringSplitOptions.None);
 
@@ -36,7 +48,10 @@ public sealed class TranslatorTool
             {
                 return result;
             }
+            Console.WriteLine($"result translate incorrect: {result}");
+            Console.WriteLine($"retry translate source: {srcText}");
         }
+        return null;
     }
 
     async Task EjectModelAsync()
@@ -78,4 +93,6 @@ public sealed class TranslatorTool
             return $"[Error: {ex.Message}]";
         }
     }
+
+    public abstract bool IsTranslateYet(LineParser src, LineParser dst);
 }
