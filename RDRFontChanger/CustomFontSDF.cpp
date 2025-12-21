@@ -4,12 +4,14 @@
 
 namespace fs = std::filesystem;
 
-CustomSwfFontSDF::CustomSwfFontSDF(swfFont* gameFont, std::string fontpath)
+CustomSwfFontSDF::CustomSwfFontSDF(swfFont* gameFont,
+	std::string fontpath, float fontSize)
 {
-	this->originalGameFont = gameFont;
-	this->newGameFont = gameFont->Clone();
-	this->fontSDF = new SDFont(fontpath);
+	cw("try create custom sdf font: %s", fontpath.c_str());
 
+	this->originalGameFont = gameFont;
+	this->fontSDF = new SDFont(fontpath);
+	this->fontSize = fontSize;
 
 	float ascentMax = 0, descentMax = 0;
 	for (auto& item : fontSDF->charCodeToGlyphMap) {
@@ -21,20 +23,19 @@ CustomSwfFontSDF::CustomSwfFontSDF(swfFont* gameFont, std::string fontpath)
 		float ascentNow = aboveBaselineY;
 		float descentNow = belowBaselineY;
 
-		cw("ascent now: %.2f", ascentNow);
 		ascentMax = max(ascentMax, ascentNow);
 		descentMax = max(descentMax, descentNow);
 	}
 
-	this->baseline = ascentMax;
-	this->lineHeight = ascentMax + descentMax;
-	this->newGameFont->ascent = ascentMax * fontUIScale;
-	this->newGameFont->descent = descentMax * fontUIScale;
-	this->newGameFont->leading = 0.0f;
+	this->baselineNormalize = ascentMax;
+	this->lineHeightNormalize = ascentMax + descentMax;
+	this->originalGameFont->ascent = ascentMax * fontSize;
+	this->originalGameFont->descent = descentMax * fontSize;
+	this->originalGameFont->leading = 0.0f;
 
-	cw("ascent: %.2f", ascentMax);
-	cw("descent: %.2f", descentMax);
-
+	cw("ascent: %d", originalGameFont->ascent);
+	cw("descent: %d", originalGameFont->descent);
+	cw("lineHeight: %.2f", lineHeightNormalize * fontSize);
 
 	// replace font glyphs
 	for (auto& item : fontSDF->charCodeToGlyphMap) {
@@ -48,7 +49,7 @@ void CustomSwfFontSDF::ReplaceGlyph(unsigned short charCode, SDFGlyph* glyph)
 {
 	cw("try replace glyph, name: %s", glyph->name);
 
-	auto gameFont = this->newGameFont;
+	auto gameFont = this->originalGameFont;
 	auto sdf = this->fontSDF;
 
 	// assert
@@ -94,8 +95,8 @@ void CustomSwfFontSDF::ReplaceGlyph(unsigned short charCode, SDFGlyph* glyph)
 
 
 	// log
-	cw("size:     %d - %d", textureWidth, textureHeight);
-	cw("left-top: %d - %d", (int)textureLeft, (int)textureTop);
+	cw("size:     %.2f - %.2f", textureWidth, textureHeight);
+	cw("left-top: %.2f - %.2f", textureLeft, textureTop);
 
 	float xoffset = sdfGlyph.horizontalBearingX;
 	float yoffset = sdfGlyph.horizontalBearingY;
@@ -105,10 +106,18 @@ void CustomSwfFontSDF::ReplaceGlyph(unsigned short charCode, SDFGlyph* glyph)
 	float minX = xoffset;
 	float maxX = xoffset + glyphWidth;
 
-	float pixelTop = baseline - yoffset;
+	float pixelTop = baselineNormalize + yoffset;
 	float pixelBottom = pixelTop - glyphHeight;
+
 	float minY = -pixelTop;
 	float maxY = -pixelBottom;
+
+	// try debug
+	//float debugMinMaxYOffset = glyphHeight;
+	//minY += debugMinMaxYOffset;
+	//maxY += debugMinMaxYOffset;
+	//end debug
+
 
 	// spread
 	float spreadVertex = this->fontSDF->spreadFontMetric;
@@ -118,11 +127,11 @@ void CustomSwfFontSDF::ReplaceGlyph(unsigned short charCode, SDFGlyph* glyph)
 	maxY += spreadVertex;
 
 	// final scale
-	minX *= fontUIScale;
-	maxX *= fontUIScale;
+	minX *= fontSize;
+	maxX *= fontSize;
 
-	minY *= fontUIScale;
-	maxY *= fontUIScale;
+	minY *= fontSize;
+	maxY *= fontSize;
 
 
 	swfGlyph* g = sheet->cellArrayPtr + glyphIndex;
@@ -136,7 +145,7 @@ void CustomSwfFontSDF::ReplaceGlyph(unsigned short charCode, SDFGlyph* glyph)
 	g->maxY = maxY;
 
 	// update glyph advanceX array
-	float advanceX = sdfGlyph.advanceX * fontUIScale;
+	float advanceX = sdfGlyph.advanceX * fontSize;
 	gameFont->advanceFirstItem[glyphIndex] = advanceX;
 	cw("advanceX: %.2f", advanceX);
 

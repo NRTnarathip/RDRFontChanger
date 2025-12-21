@@ -5,7 +5,7 @@
 CustomSwfFontBitmap::CustomSwfFontBitmap(swfFont* gameFont, BitmapFont* newFont)
 {
 	this->originalGameFont = gameFont;
-	this->newGameFont = gameFont->Clone();
+	//this->newGameFont = gameFont->Clone();
 	this->bitmapFont = newFont;
 
 	// ready to replace
@@ -26,11 +26,11 @@ void CustomSwfFontBitmap::ReplaceGlyph(const BitmapFont::Glyph& glyph)
 		return;
 	}
 
-	auto font = this->newGameFont;
-	auto sheet = this->newGameFont->sheet;
+	auto font = this->originalGameFont;
+	auto sheet = font->sheet;
 
 	auto glyphIndex = this->replaceGlyphCount;
-	if (glyphIndex == newGameFont->glyphCount - 1) {
+	if (glyphIndex == font->glyphCount - 1) {
 		cw("glyph count is full!");
 		return;
 	}

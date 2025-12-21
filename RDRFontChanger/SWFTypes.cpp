@@ -166,6 +166,37 @@ uint32_t RageHashFNV(const void* data, size_t len)
 	return hash;
 }
 
+bool swfSheet::DoesTextureContains(std::string findName) {
+	if (this->textureCount == 0)
+		return false;
+
+	findName = SafePath(findName);
+	for (int i = 0;i < this->textureCount;i++) {
+		std::string textureName = textureNameArray[i];
+		textureName = SafePath(textureName);
+		if (textureName.contains(findName))
+			return true;
+	}
+
+	return false;
+}
+
+int swfSheet::FindTextureIndexOf(std::string findName)
+{
+	if (this->textureCount == 0)
+		return -1;
+
+	findName = SafePath(findName);
+	for (int i = 0;i < this->textureCount;i++) {
+		std::string textureName = textureNameArray[i];
+		textureName = SafePath(textureName);
+		if (textureName == findName)
+			return i;
+	}
+
+	return -1;
+}
+
 bool swfSheet::DoesTextureExist(std::string findName)
 {
 	if (this->textureCount == 0)
@@ -175,6 +206,7 @@ bool swfSheet::DoesTextureExist(std::string findName)
 	for (int i = 0;i < this->textureCount;i++) {
 		std::string name = textureNameArray[i];
 		name = SafePath(name);
+		cw("try pare texture key: %s == %s", name.c_str(), findName.c_str());
 		if (name == findName)
 			return true;
 	}

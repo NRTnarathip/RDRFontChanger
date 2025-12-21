@@ -107,8 +107,10 @@ struct swfSheet {
 	void* indexArray; //x18
 	const char** textureNameArray; // 0x20
 	void* x28; //x28
-	int textureCount; // 0x30
+	int textureCount;
 	bool DoesTextureExist(std::string name);
+	bool DoesTextureContains(std::string findName);
+	int FindTextureIndexOf(std::string name);
 };
 CHECK_OFFSET(swfSheet, size, 0x10);
 CHECK_OFFSET(swfSheet, cellCount, 0x12);

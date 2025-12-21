@@ -20,7 +20,7 @@ public:
 	swfFont* originalGameFont;
 
 	// patch this here
-	swfFont* newGameFont;
+	// swfFont* newGameFont;
 
 	// base on calling ReplaceTexture(); !!!
 	std::vector<grcTextureD11*> backupTextureArray;

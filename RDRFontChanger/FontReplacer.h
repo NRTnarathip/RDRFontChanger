@@ -15,12 +15,14 @@ public:
 
 	bool Init() override;
 	void RegisterFontNarrowWithFontBitmap(std::string fontPath);
-	void RegisterFontNarrowWithFontSDF(std::string fontPath);
+	void RegisterFontNarrowWithFontSDF(
+		std::string regularPath, std::string boldPath);
 	CustomSwfFontBitmap* TryReplaceFontNarrowWithBitmap(swfFont* font);
 	CustomSwfFontSDF* TryReplaceFontNarrowWithSDF(swfFont* font);
 
 	static FontReplacer* Instance() { return g_instance; };
 private:
+	CustomSwfFontSDF* TryReplaceFontNarrowWithSDFInternal(swfFont* font);
 	static FontReplacer* g_instance;
 };
 

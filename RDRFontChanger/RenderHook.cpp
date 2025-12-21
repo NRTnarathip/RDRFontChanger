@@ -19,20 +19,20 @@ static void* HK_DrawTextWithFont(
 
 	// try get font bitmap and sdf
 	auto fontReplacer = FontReplacer::Instance();
-	CustomSwfFontAbstract* newCustomFont = fontReplacer->TryReplaceFontNarrowWithBitmap(p3_font);
-	if (newCustomFont == nullptr)
-		newCustomFont = fontReplacer->TryReplaceFontNarrowWithSDF(p3_font);
 
-	if (newCustomFont)
-		p3_font = newCustomFont->newGameFont;
+	auto newCustomFont = fontReplacer->TryReplaceFontNarrowWithSDF(p3_font);
+	if (newCustomFont) {
+
+	}
 
 	std::string drawTextString = p2_text ? p2_text : "";
-	if (newCustomFont && !drawTextString.empty()) {
+	if (drawTextString.empty() == false) {
 		// translate text with new font!
 		TextTranslator::TryTranslate(drawTextString);
 	}
 
 
+	// cw("try call backup_DrawTextWithFont");
 	auto result = backup_DrawTextWithFont(self, drawTextString.c_str(), p3_font, p4_fontHeight, p5_drawColorInt, p6_align, p7);
 
 	cw("EndHook backup_DrawTextWithFont: result: %p", result);
