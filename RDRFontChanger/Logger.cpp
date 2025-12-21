@@ -42,16 +42,18 @@ void Logger::ShowConsole()
 std::mutex g_mutex;
 void Logger::LogFormat(const char* format, ...)
 {
-	va_list args;
+	std::lock_guard<std::mutex> lock(g_mutex);
+
+	va_list args, args2;
 	va_start(args, format);
+	va_copy(args2, args);
 
 	int size = vsnprintf(nullptr, 0, format, args) + 1;
 	va_end(args);
 
 	std::vector<char> buffer(size);
-	va_start(args, format);
-	vsnprintf(buffer.data(), size, format, args);
-	va_end(args);
+	vsnprintf(buffer.data(), size, format, args2);
+	va_end(args2);
 
 	auto now = std::chrono::system_clock::now();
 	auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
@@ -72,8 +74,6 @@ void Logger::LogFormat(const char* format, ...)
 	sstream << buffer.data() << std::endl;
 
 	std::string finalLog = sstream.str();
-
-	std::lock_guard<std::mutex> lock(g_mutex);
 
 	std::cout << finalLog;
 

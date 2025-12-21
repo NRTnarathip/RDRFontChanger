@@ -17,24 +17,27 @@ CustomSwfFontSDF::CustomSwfFontSDF(swfFont* gameFont,
 	for (auto& item : fontSDF->charCodeToGlyphMap) {
 		auto code = item.first;
 		auto glyph = item.second;
+		float topY = glyph->horizontalBearingY;
+		if (topY > ascentMax)
+			ascentMax = topY;
 
-		float aboveBaselineY = max(0.0f, glyph->horizontalBearingY);
-		float belowBaselineY = max(0.0f, glyph->height - glyph->horizontalBearingY);
-		float ascentNow = aboveBaselineY;
-		float descentNow = belowBaselineY;
-
-		ascentMax = max(ascentMax, ascentNow);
-		descentMax = max(descentMax, descentNow);
+		float bottomY = topY - glyph->height;
+		if (bottomY < 0.0f) {
+			float distBelow = -bottomY;
+			if (distBelow > descentMax)
+				descentMax = distBelow;
+		}
 	}
 
 	this->baselineNormalize = ascentMax;
 	this->lineHeightNormalize = ascentMax + descentMax;
 	this->originalGameFont->ascent = ascentMax * fontSize;
 	this->originalGameFont->descent = descentMax * fontSize;
-	this->originalGameFont->leading = 0.0f;
+	this->originalGameFont->leading = (ascentMax + descentMax) * 0.30 * fontSize;
 
 	cw("ascent: %d", originalGameFont->ascent);
 	cw("descent: %d", originalGameFont->descent);
+	cw("leading: %d", originalGameFont->leading);
 	cw("lineHeight: %.2f", lineHeightNormalize * fontSize);
 
 	// replace font glyphs
@@ -49,20 +52,16 @@ void CustomSwfFontSDF::ReplaceGlyph(unsigned short charCode, SDFGlyph* glyph)
 {
 	cw("try replace glyph, name: %s", glyph->name);
 
-	auto gameFont = this->originalGameFont;
+	auto font = this->originalGameFont;
 	auto sdf = this->fontSDF;
 
 	// assert
-	if (charCode < 0 || charCode > 0xFFFF) {
-		cw("bitmap glyph charCode overflow unsigned short");
-		return;
-	}
-	if (this->replaceGlyphCount >= gameFont->sheet->cellCount) {
+	if (this->replaceGlyphCount >= font->sheet->cellCount) {
 		// full glyph
 		return;
 	}
 
-	auto sheet = gameFont->sheet;
+	auto sheet = font->sheet;
 	// ready
 	int glyphIndex = replaceGlyphCount;
 
@@ -100,36 +99,31 @@ void CustomSwfFontSDF::ReplaceGlyph(unsigned short charCode, SDFGlyph* glyph)
 
 	float xoffset = sdfGlyph.horizontalBearingX;
 	float yoffset = sdfGlyph.horizontalBearingY;
-	float glyphWidth = sdfGlyph.width;
-	float glyphHeight = sdfGlyph.height;
 
+	float spreadFontMetric = this->fontSDF->spreadFontMetric;
 	float minX = xoffset;
-	float maxX = xoffset + glyphWidth;
+	float maxX = xoffset + sdfGlyph.width;
 
-	float pixelTop = baselineNormalize + yoffset;
-	float pixelBottom = pixelTop - glyphHeight;
+
+	// debug
+	float ascentNormalize = font->ascent / fontSize;
+	float descentNormalize = font->descent / fontSize;
+	float leadingNormalize = font->leading / fontSize;
+	float pixelTop = yoffset;
+	float pixelBottom = pixelTop - sdfGlyph.height;
 
 	float minY = -pixelTop;
 	float maxY = -pixelBottom;
 
-	// try debug
-	//float debugMinMaxYOffset = glyphHeight;
-	//minY += debugMinMaxYOffset;
-	//maxY += debugMinMaxYOffset;
-	//end debug
-
-
-	// spread
-	float spreadVertex = this->fontSDF->spreadFontMetric;
-	minX -= spreadVertex;
-	maxX += spreadVertex;
-	minY -= spreadVertex;
-	maxY += spreadVertex;
 
 	// final scale
+	minX -= spreadFontMetric;
+	maxX += spreadFontMetric;
+	minY -= spreadFontMetric;
+	maxY += spreadFontMetric;
+
 	minX *= fontSize;
 	maxX *= fontSize;
-
 	minY *= fontSize;
 	maxY *= fontSize;
 
@@ -140,17 +134,24 @@ void CustomSwfFontSDF::ReplaceGlyph(unsigned short charCode, SDFGlyph* glyph)
 	g->width = textureWidth;
 	g->height = textureHeight;
 	g->minX = minX;
-	g->minY = minY;
 	g->maxX = maxX;
+	g->minY = minY;
 	g->maxY = maxY;
 
+
 	// update glyph advanceX array
+	// cw("try access advanceFirstItem: %p", font->advanceFirstItem);
+	if (font->advanceFirstItem == nullptr) {
+		//	cw("try create advance array!");
+		font->advanceFirstItem = new float[sheet->cellCount];
+	}
+
 	float advanceX = sdfGlyph.advanceX * fontSize;
-	gameFont->advanceFirstItem[glyphIndex] = advanceX;
+	font->advanceFirstItem[glyphIndex] = advanceX;
 	cw("advanceX: %.2f", advanceX);
 
 	// update glyphToCode 
-	gameFont->glyphToCodeArrayFirstItem[glyphIndex] = charCode;
+	font->glyphToCodeArrayFirstItem[glyphIndex] = charCode;
 	this->replaceGlyphCount++;
 	cw("replace glyph index[%d] = charCode: %d", glyphIndex, charCode);
 

@@ -8,22 +8,33 @@ using namespace HookLib;
 
 typedef void* (*HK_DrawTextWithFont_TypeDef)(
 	swfEditText* p1, const char* p2, swfFont* p3, uint64_t p4,
-	uint32_t p5, uint64_t p6_align, uint64_t p7);
+	uint32_t p5, uint64_t p6_align, void* p7, void* p8);
 HK_DrawTextWithFont_TypeDef backup_DrawTextWithFont;
 static void* HK_DrawTextWithFont(
 	swfEditText* self, const char* p2_text, swfFont* p3_font, uint64_t p4_fontHeight,
-	uint32_t p5_drawColorInt, uint64_t p6_align, uint64_t p7) {
+	uint32_t p5_drawColorInt, uint64_t p6_align, void* p7_drawInfo, void* p8_drawCtx) {
 	cw("HK_DrawTextWithFont!!");
 	cw("draw text: %s", (const char*)p2_text);
-	// cw("font: %p", p3_font);
+	cw("p8: %p", p8_drawCtx);
+	cw("font: %p", p3_font);
 
-	// try get font bitmap and sdf
+	auto color = swfEditTextDrawColor::Decode(p5_drawColorInt);
+	float rNorm = color.r / 255.0;
+	float gNorm = color.g / 255.0;
+	float bNorm = color.b / 255.0;
+	float gray = (rNorm * 0.299) + (gNorm * 0.587) + (bNorm * 0.114);
+	cw("color white: %d", (int)(gray * 255));
+	cw("p6_align: %d", p6_align);
+
+
+	// init 
 	auto fontReplacer = FontReplacer::Instance();
-
-	auto newCustomFont = fontReplacer->TryReplaceFontNarrowWithSDF(p3_font);
-	if (newCustomFont) {
-
+	for (auto& _font : FontReplacer::g_gameFonts) {
+		// crash here play ingame
+		// fontReplacer->TryReplaceFontNarrowWithSDF(_font);
 	}
+	fontReplacer->TryReplaceFontNarrowWithSDF(p3_font);
+
 
 	std::string drawTextString = p2_text ? p2_text : "";
 	if (drawTextString.empty() == false) {
@@ -31,9 +42,10 @@ static void* HK_DrawTextWithFont(
 		TextTranslator::TryTranslate(drawTextString);
 	}
 
-
 	// cw("try call backup_DrawTextWithFont");
-	auto result = backup_DrawTextWithFont(self, drawTextString.c_str(), p3_font, p4_fontHeight, p5_drawColorInt, p6_align, p7);
+	auto result = backup_DrawTextWithFont(self,
+		drawTextString.c_str(), p3_font, p4_fontHeight,
+		p5_drawColorInt, p6_align, p7_drawInfo, p8_drawCtx);
 
 	cw("EndHook backup_DrawTextWithFont: result: %p", result);
 	return result;

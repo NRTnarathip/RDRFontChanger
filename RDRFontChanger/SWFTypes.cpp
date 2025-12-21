@@ -7,6 +7,7 @@
 #include <string>
 #include "XMem.h"
 #include "Rage.h"
+#include <print>
 
 using namespace XMem;
 
@@ -202,11 +203,14 @@ bool swfSheet::DoesTextureExist(std::string findName)
 	if (this->textureCount == 0)
 		return false;
 
+	cw("DoesTextureExist: %s", findName.c_str());
+	std::println("print ln: %s", findName.c_str());
+
 	findName = SafePath(findName);
 	for (int i = 0;i < this->textureCount;i++) {
 		std::string name = textureNameArray[i];
 		name = SafePath(name);
-		cw("try pare texture key: %s == %s", name.c_str(), findName.c_str());
+		cw("check texture key: %s, findName: %s", name.c_str(), findName.c_str());
 		if (name == findName)
 			return true;
 	}

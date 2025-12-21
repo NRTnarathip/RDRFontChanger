@@ -135,8 +135,8 @@ struct swfFont
 	unsigned char flags;
 	unsigned char langCode;
 	swfSheet* sheet; // xc0
-	char xC8[0xb8]; // -> xc8 -> xd0
-	const char* name;
+	char xC8[0xb8]; // -> xc8 ++
+	const char* name; // -> 0x180
 	swfFont* Clone();
 };
 CHECK_OFFSET(swfFont, glyphToCodeArrayFirstItem, 0x20);

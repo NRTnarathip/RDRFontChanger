@@ -9,6 +9,7 @@
 class FontReplacer : public ISystem
 {
 public:
+	static std::vector<swfFont*> g_gameFonts;
 	FontReplacer() {
 		g_instance = this;
 	}

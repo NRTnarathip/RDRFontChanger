@@ -57,6 +57,8 @@ void grcTextureD11::CreateFromBackingStore()
 
 std::string grcTextureD11::GetName()
 {
+	if (name == nullptr)
+		return "(null)";
 	return name;
 }
 

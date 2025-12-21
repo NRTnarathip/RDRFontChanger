@@ -203,23 +203,12 @@ grcTextureD11* HK_grcTextureD11_Construct2(grcTextureD11* self, int allocSize) {
 
 void* (*backup_swfSomeFactory)(int p1);
 void* HK_swfSomeFactory(int p1) {
-	addTab();
-	logFormat("HK_swfSomeFactory");
-
-
+	cw("HK_swfSomeFactory");
 	int fileType = p1;
-	logFormat("file type: %s", GetSWFTypeName(p1));
-
 	auto result = backup_swfSomeFactory(p1);
-	logFormat("result: %p", result);
-	if ((uintptr_t)result == 0x00007FF67F66D4B0) {
-		cw("like main font?");
-		// PrintStackRva();
-	}
-
-	logFormat("EndHook: HK_swfSomeFactory");
-
-	unTab();
+	cw("file type: %s", GetSWFTypeName(p1));
+	cw("HK_swfSomeFactory result: %p", result);
+	cw("EndHook: HK_swfSomeFactory");
 	return result;
 }
 
@@ -505,5 +494,6 @@ void Hooks::SetupDebugHooks()
 	// HookFuncRva(0x11be40, HK_grcTextureD11_Debug3, &fn_grcTextureD11_Debug3);
 	//HookRva(0xebfc00, HK_ShowErrorExceptionVector, &fn_ShowErrorExceptionVector);
 	//HookRva(0xebfa80, HK_ShowError2, &fn_ShowError2);
+	// disable error
 	HookRva(0xf6f820, HK_ShowError3, &fn_ShowError3);
 }
