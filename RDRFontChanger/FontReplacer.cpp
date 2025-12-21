@@ -191,7 +191,7 @@ bool TryGetFontNarrowInfo(swfFont* gameFont, bool& isBold) {
 	g_isNarrowFontBoldCache[gameFont] = false;
 
 	// check if font narrow regular - bold
-	if (sheet->textureCount > 0) {
+	if (sheet->textureCount == 1) {
 		// no overhead safe too call loop find
 		if (sheet->DoesTextureExist("rdr2narrow.charset_0.dds")) {
 			g_isNarrowFontCache[gameFont] = true;
@@ -202,6 +202,7 @@ bool TryGetFontNarrowInfo(swfFont* gameFont, bool& isBold) {
 			g_isNarrowFontBoldCache[gameFont] = true;
 		}
 	}
+
 
 	// return it
 	isBold = g_isNarrowFontBoldCache[gameFont];

@@ -8,11 +8,11 @@ using namespace HookLib;
 
 typedef void* (*HK_DrawTextWithFont_TypeDef)(
 	swfEditText* p1, const char* p2, swfFont* p3, uint64_t p4,
-	uint32_t p5, uint64_t p6_align, void* p7, void* p8);
+	uint64_t p5, uint64_t p6_align, void* p7, void* p8);
 HK_DrawTextWithFont_TypeDef backup_DrawTextWithFont;
 static void* HK_DrawTextWithFont(
 	swfEditText* self, const char* p2_text, swfFont* p3_font, uint64_t p4_fontHeight,
-	uint32_t p5_drawColorInt, uint64_t p6_align, void* p7_drawInfo, void* p8_drawCtx) {
+	uint64_t p5_drawColorInt, uint64_t p6_align, void* p7_drawInfo, void* p8_drawCtx) {
 	cw("HK_DrawTextWithFont!!");
 	cw("draw text: %s", (const char*)p2_text);
 	cw("p8: %p", p8_drawCtx);
@@ -23,7 +23,7 @@ static void* HK_DrawTextWithFont(
 	float gNorm = color.g / 255.0;
 	float bNorm = color.b / 255.0;
 	float gray = (rNorm * 0.299) + (gNorm * 0.587) + (bNorm * 0.114);
-	cw("color white: %d", (int)(gray * 255));
+	cw("color rgba: %d %d %d %d", color.r, color.g, color.b, color.a);
 	cw("p6_align: %d", p6_align);
 
 
@@ -33,11 +33,13 @@ static void* HK_DrawTextWithFont(
 		// crash here play ingame
 		// fontReplacer->TryReplaceFontNarrowWithSDF(_font);
 	}
-	fontReplacer->TryReplaceFontNarrowWithSDF(p3_font);
+	auto customFont = fontReplacer->TryReplaceFontNarrowWithSDF(p3_font);
 
 
 	std::string drawTextString = p2_text ? p2_text : "";
-	if (drawTextString.empty() == false) {
+
+	// we can translate text when font is support 
+	if (customFont && drawTextString.empty() == false) {
 		// translate text with new font!
 		TextTranslator::TryTranslate(drawTextString);
 	}

@@ -139,7 +139,7 @@ bool TextTranslator::TryTranslate(std::string& inout)
 	cw("try translate string key: %s", stringKey.c_str());
 	if (g_translateStringMap.contains(stringKey)) {
 		inout = g_translateStringMap[stringKey];
-		// cw("new string: %s", inout.c_str());
+		cw("translated string: %s", inout.c_str());
 		return true;
 	}
 
