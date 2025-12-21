@@ -4,6 +4,7 @@
 #include "SWFTypes.h"
 #include "CustomFont.h"
 #include "CustomSwfFontBitmap.h"
+#include "CustomFontSDF.h"
 
 class FontReplacer : public ISystem
 {
@@ -13,8 +14,10 @@ public:
 	}
 
 	bool Init() override;
-	void RegisterFontNarrowWithFontBitmap(std::string newFontName);
-	CustomSwfFontAbstract* TryReplaceFontNarrow(swfFont* font);
+	void RegisterFontNarrowWithFontBitmap(std::string fontPath);
+	void RegisterFontNarrowWithFontSDF(std::string fontPath);
+	CustomSwfFontBitmap* TryReplaceFontNarrowWithBitmap(swfFont* font);
+	CustomSwfFontSDF* TryReplaceFontNarrowWithSDF(swfFont* font);
 
 	static FontReplacer* Instance() { return g_instance; };
 private:

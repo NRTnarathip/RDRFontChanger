@@ -84,10 +84,13 @@ CHECK_OFFSET(swfFile, objectMapCount, 0x58);
 
 
 struct swfGlyph {
+	// unit pixels base texture size
 	float left;
 	float top;
 	float width;
 	float height;
+
+	// unit EM
 	float minX;
 	float minY;
 	float maxX;
@@ -105,13 +108,14 @@ struct swfSheet {
 	const char** textureNameArray; // 0x20
 	void* x28; //x28
 	int textureCount; // 0x30
-	bool DoesTextureExist(const char* name);
+	bool DoesTextureExist(std::string name);
 };
 CHECK_OFFSET(swfSheet, size, 0x10);
 CHECK_OFFSET(swfSheet, cellCount, 0x12);
 CHECK_OFFSET(swfSheet, textureCount, 0x30);
 
 
+// size?>
 struct swfFont
 {
 	void** vftable; // 0x0 -> 0x8
@@ -131,6 +135,7 @@ struct swfFont
 	swfSheet* sheet; // xc0
 	char xC8[0xb8]; // -> xc8 -> xd0
 	const char* name;
+	swfFont* Clone();
 };
 CHECK_OFFSET(swfFont, glyphToCodeArrayFirstItem, 0x20);
 CHECK_OFFSET(swfFont, sheetCount, 0xb0);

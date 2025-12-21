@@ -1,9 +1,17 @@
 #pragma once
 #include "CustomFont.h"
+#include "../SDFontLib/SDFont.h"
 
-class CustomFontSDF : public CustomSwfFontAbstract
+class CustomSwfFontSDF : public CustomSwfFontAbstract
 {
 public:
-	void Init() override;
+	float baseline;
+	float lineHeight;
+	float fontUIScale = 800;
+	SDFont* fontSDF;
+	CustomSwfFontSDF(swfFont* gameFont, std::string fontpath);
+
+private:
+	void ReplaceGlyph(unsigned short charCode, SDFGlyph* glyph);
 };
 

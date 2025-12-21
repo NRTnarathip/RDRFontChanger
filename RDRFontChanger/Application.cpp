@@ -25,10 +25,14 @@ void Application::SetupOnDllLoaded(HMODULE hModule)
 	// load text translate
 	TextTranslator::Initialize();
 
+
 	// debug!!
+	Hooks::SetupDebugHooks();
+
 	// register thai font 
 	auto fontReplacer = FontReplacer::Instance();
-	fontReplacer->RegisterFontNarrowWithFontBitmap("thai_bitmap.fnt");
+	// fontReplacer->RegisterFontNarrowWithFontBitmap("mods/fonts/thai_bitmap.fnt");
+	fontReplacer->RegisterFontNarrowWithFontSDF("mods/fonts/thai_sdf.txt");
 }
 
 void Application::RegisterAllMyModule()
@@ -42,7 +46,4 @@ void Application::RegisterAllMyModule()
 	sys.Register<FontReplacer, TextureReplacer>();
 	sys.Register<RenderHook>();
 
-
-	// debug
-	Hooks::SetupDebugHooks();
 }

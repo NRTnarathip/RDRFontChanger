@@ -5,65 +5,78 @@
 #include "../SDFontLib/SDFont.h"
 #include "Rage.h"
 
-std::unordered_map<swfFont*, CustomSwfFontAbstract*> g_registeredFonts;
+std::unordered_map<swfFont*, CustomSwfFontBitmap*> g_fontBitmapWithSwfFontMap;
+std::unordered_map<swfFont*, CustomSwfFontSDF*> g_fontSDFMap;
 
 FontReplacer* FontReplacer::g_instance;
-const char* k_fontsDir = "mods/fonts";
-
-std::unordered_map<std::string, BitmapFont*> g_bitmapFontCacheMap;
-BitmapFont* LoadBitmapFont(std::string filename)
-{
-	auto fspath = fs::path(k_fontsDir) / filename;
-	auto path = SafePath(fspath);
-
-	if (g_bitmapFontCacheMap.contains(path))
-		return g_bitmapFontCacheMap[path];
-
-	BitmapFont* font = new BitmapFont();
-	font->Load(path);
-	g_bitmapFontCacheMap[path] = font;
-	return font;
-}
 
 bool FontReplacer::Init()
 {
 	return true;
 }
 
-std::string g_registerNewNarrowFontBitmap;
-void FontReplacer::RegisterFontNarrowWithFontBitmap(std::string newFontName)
+void RegisterReplaceTextureByFontPath(std::string fontpath, std::string textureKey) {
+	// register texture replace to this font
+	auto fspath = fs::path(fontpath);
+	auto fontFilename = fspath.filename();
+	auto dir = fspath.root_directory();
+	auto fontTextureName = fontpath.substr(0, fontpath.size() - 4) + ".dds";
+	auto textureReplacer = TextureReplacer::Instance();
+	auto fontTexturePath = dir / fontTextureName;
+	textureReplacer->RegisterReplaceTexture(
+		textureKey,
+		fontTexturePath.string());
+
+}
+
+std::string g_registerNarrowFontBitmapPath;
+void FontReplacer::RegisterFontNarrowWithFontBitmap(std::string fontpath)
 {
-	if (g_registerNewNarrowFontBitmap.empty() == false) {
-		cw("already registered main narrow font!, current: %s",
-			g_registerNewNarrowFontBitmap.c_str());
+	cw("try register new narrow font bitmap: %s", fontpath.c_str());
+	if (g_registerNarrowFontBitmapPath.empty() == false) {
+		cw("already registered: %s",
+			g_registerNarrowFontBitmapPath.c_str());
 		return;
 	}
 
-	g_registerNewNarrowFontBitmap = newFontName;
-	auto fontTextureName = newFontName.substr(0, newFontName.size() - 4) + ".dds";
-	auto textureReplacer = TextureReplacer::Instance();
-	auto fontsDir = fs::path(k_fontsDir);
-	auto fontTexturePath = fontsDir / fontTextureName;
+	// ready
+	g_registerNarrowFontBitmapPath = fontpath;
+	RegisterReplaceTextureByFontPath(fontpath, "rdr2narrow.charset_0.dds");
+}
+
+std::string g_registerNarrowFontSDFPath;
+void FontReplacer::RegisterFontNarrowWithFontSDF(std::string fontpath)
+{
+	cw("try register new narrow font sdf: %s", fontpath.c_str());
+	if (g_registerNarrowFontSDFPath.empty() == false) {
+		cw("already registered: %s", g_registerNarrowFontSDFPath.c_str());
+		return;
+	}
+
+	if (fs::exists(fontpath) == false) {
+		cw("error file font not found!");
+		return;
+	}
+
+	// ready
+	g_registerNarrowFontSDFPath = fontpath;
 	// register texture replace to this font
-	textureReplacer->RegisterReplaceTexture(
-		"rdr2narrow.charset_0.dds",
-		fontTexturePath.string());
+	RegisterReplaceTextureByFontPath(fontpath, "rdr2narrow.charset_0.dds");
+	cw("registed font %s!", fontpath.c_str());
 }
 
-bool IsCanRegisterNewFont(swfFont* gameFont) {
-	return g_registeredFonts.contains(gameFont) == false;
-}
 
-CustomSwfFontAbstract* FontReplacer::TryReplaceFontNarrow(swfFont* originalFont) {
+CustomSwfFontBitmap* FontReplacer::TryReplaceFontNarrowWithBitmap(swfFont* originalFont) {
 	cw("try replace font: %p", originalFont);
 
-	if (g_registerNewNarrowFontBitmap.empty()) {
+	if (g_registerNarrowFontBitmapPath.empty()) {
+		cw("not register narrow font bitmap");
 		return nullptr;
 	}
 
 	// check is registered?
-	if (g_registeredFonts.contains(originalFont))
-		return g_registeredFonts[originalFont];
+	if (g_fontBitmapWithSwfFontMap.contains(originalFont))
+		return g_fontBitmapWithSwfFontMap[originalFont];
 
 
 	// create new custom font??
@@ -77,49 +90,51 @@ CustomSwfFontAbstract* FontReplacer::TryReplaceFontNarrow(swfFont* originalFont)
 	// debug
 	// support only main font!
 	bool support = sheet->textureCount == 1
-		&& sheet->DoesTextureExist("RDR2Narrow.charset_0.dds");
-	if (!support)
+		&& sheet->DoesTextureExist("rdr2narrow.charset_0.dds");
+	if (!support) {
+		cw("not support this font texture! ");
 		return nullptr;
+	}
 
 
-	BitmapFont* newBitmapFont = LoadBitmapFont(g_registerNewNarrowFontBitmap);
-
+	BitmapFont* newBitmapFont = BitmapFont::TryLoad(g_registerNarrowFontBitmapPath);
 	auto customFont = new CustomSwfFontBitmap(originalFont, newBitmapFont);
-	customFont->Init();
-	g_registeredFonts[originalFont] = customFont;
+	g_fontBitmapWithSwfFontMap[originalFont] = customFont;
 
-	logFormat("replaced original font: %p", originalFont);
+	cw("replaced original font: %p", originalFont);
 	return customFont;
 }
 
-//Custom* FontReplacer::TryReplaceToThaiSDFFont(swfFont* originalFont)
-//{
-	//cw("try replace font: %p", originalFont);
-	//// check is registered?
-	//if (g_registeredFonts.contains(originalFont))
-	//	return g_registeredFonts[originalFont];
-
-	//// assert
-	//auto sheet = originalFont->sheet;
-	//if (sheet == nullptr) {
-	//	cw("font sheet is null!");
-	//	return nullptr;
-	//}
-
-	//// debug
-	//// support only main font!
-	//bool support = sheet->textureCount == 1
-	//	&& sheet->DoesTextureExist("RDR2Narrow.charset_0.dds");
-	//if (!support)
-	//	return nullptr;
-
-	//// ready
-	//auto thaiFont = GetThaiFontSDF();
-	//auto customFont = new Custom(originalFont, thaiFont);
-	//g_registeredFonts[originalFont] = customFont;
+std::unordered_map<swfFont*, CustomSwfFontSDF*> g_fontSDFWithGameFontMap;
+CustomSwfFontSDF* FontReplacer::TryReplaceFontNarrowWithSDF(swfFont* gameFont)
+{
+	cw("try replace font with sdf...");
+	if (g_registerNarrowFontSDFPath.empty())
+		return nullptr;
 
 
-	//logFormat("replaced original font: %p", originalFont);
-	//return customFont;
-//}
+	// from cache
+	if (g_fontSDFWithGameFontMap.contains(gameFont)) {
+		return g_fontSDFWithGameFontMap[gameFont];
+	}
 
+	// assert
+	auto sheet = gameFont->sheet;
+	if (sheet == nullptr) {
+		return nullptr;
+	}
+
+	// support only main font!
+	bool support = sheet->textureCount == 1
+		&& sheet->DoesTextureExist("rdr2narrow.charset_0.dds");
+	if (!support) {
+		return nullptr;
+	}
+
+
+	// ready create it!
+	auto customFont = g_fontSDFWithGameFontMap[gameFont]
+		= new CustomSwfFontSDF(gameFont, g_registerNarrowFontSDFPath);
+	cw("replaced original font: %p", gameFont);
+	return customFont;
+}

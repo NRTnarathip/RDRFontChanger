@@ -4,12 +4,10 @@
 
 class CustomSwfFontBitmap : public CustomSwfFontAbstract {
 public:
-	BitmapFont* newFont;
+	BitmapFont* bitmapFont;
 	CustomSwfFontBitmap(swfFont* gameFont, BitmapFont* newFont);
-	void Init() override;
-
 private:
-	void ReplaceGlyph(swfFont* font, const BitmapFont& thaiFont, const BitmapFont::Glyph& bitmapGlyph);
+	void ReplaceGlyph(const BitmapFont::Glyph& bitmapGlyph);
 	void ReplaceTexture(int index, std::string newTextureFilePath);
 
 };

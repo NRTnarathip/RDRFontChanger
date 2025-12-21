@@ -451,6 +451,24 @@ LONG CALLBACK MyHandler(PEXCEPTION_POINTERS pExceptionInfo) {
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
+void* (*fn_ShowErrorExceptionVector)(uint64_t param_1, uint64_t param_2, uint64_t param_3, uint64_t param_4);
+void* HK_ShowErrorExceptionVector(uint64_t param_1, uint64_t param_2, uint64_t param_3, uint64_t param_4) {
+	cw("bypass fn_ShowErrorExceptionVector");
+	return 0;
+}
+
+void* (*fn_ShowError2)(uint64_t param_1, uint64_t param_2);
+void* HK_ShowError2(uint64_t param_1, uint64_t param_2) {
+	cw("bypass fn_ShowError2");
+	return 0;
+}
+
+void* (*fn_ShowError3)(uint64_t param_1, uint64_t param_2, void*, void*);
+void* HK_ShowError3(uint64_t param_1, uint64_t param_2, void* p3, void* p4) {
+	cw("bypass fn_ShowError3");
+	return 0;
+}
+
 void Hooks::SetupDebugHooks()
 {
 	// HookFuncRva(0x1fced0, HK_LoadFlashFile, &backup_LoadFlashFile);
@@ -485,5 +503,7 @@ void Hooks::SetupDebugHooks()
 	//HookRva(0x11c1e0, HK_grcTextureD11_Debug1, &fn_grcTextureD11_Debug1);
 	// HookFuncRva(0x11bf80, HK_grcTextureD11_Debug2, &fn_grcTextureD11_Debug2);
 	// HookFuncRva(0x11be40, HK_grcTextureD11_Debug3, &fn_grcTextureD11_Debug3);
-
+	//HookRva(0xebfc00, HK_ShowErrorExceptionVector, &fn_ShowErrorExceptionVector);
+	//HookRva(0xebfa80, HK_ShowError2, &fn_ShowError2);
+	HookRva(0xf6f820, HK_ShowError3, &fn_ShowError3);
 }

@@ -67,6 +67,11 @@ void DumpSwfFont(swfFont* font, const char* prefixFileName) {
 	logFormat("dump success for font file name: %s", fileNameStr.c_str());
 }
 
+float toUnitSheetSize(float pixels, float fontSize) {
+	return (pixels * 1024.0f) / fontSize;
+}
+
+
 grcTextureD11* rage_grcTextureD11Create(const char* assetName)
 {
 	auto instance = grcTextureFactoryD11::GetInstance();

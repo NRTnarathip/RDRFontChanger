@@ -130,13 +130,8 @@ void TextTranslator::Initialize() {
 }
 
 
-bool TextTranslator::TryTranslate(std::string& inout, CustomSwfFontAbstract* font)
+bool TextTranslator::TryTranslate(std::string& inout)
 {
-	if (font == nullptr) {
-		cw("can't translate, cause font is null!");
-		return false;
-	}
-
 	if (g_translateStringMap.empty())
 		return false;
 
@@ -144,11 +139,8 @@ bool TextTranslator::TryTranslate(std::string& inout, CustomSwfFontAbstract* fon
 	cw("try translate string key: %s", stringKey.c_str());
 	if (g_translateStringMap.contains(stringKey)) {
 		inout = g_translateStringMap[stringKey];
-		cw("new string: %s", inout.c_str());
+		// cw("new string: %s", inout.c_str());
 		return true;
-	}
-	else {
-		cw("not found key!");
 	}
 
 	return false;

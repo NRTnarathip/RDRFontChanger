@@ -88,6 +88,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\SDFontLib\Glyph.h" />
+    <ClInclude Include="..\SDFontLib\SDFont.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="AssetLib.h" />
     <ClInclude Include="BitmapFont.h" />
@@ -115,6 +117,8 @@
     <ClInclude Include="XMem.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\SDFontLib\Glyph.cpp" />
+    <ClCompile Include="..\SDFontLib\SDFont.cpp" />
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="BitmapFont.cpp" />
     <ClCompile Include="CustomFont.cpp" />
@@ -147,11 +151,6 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="PostBuild.cmd" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\SDFontLib\SDFontLib.vcxproj">
-      <Project>{3a2be667-1d61-4ab7-9bb9-3e3e39eb2c96}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

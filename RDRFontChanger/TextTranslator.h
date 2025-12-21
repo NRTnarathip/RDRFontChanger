@@ -6,6 +6,6 @@ class TextTranslator
 {
 public:
 	static void Initialize();
-	static bool TryTranslate(std::string& inout, CustomSwfFontAbstract* font);
+	static bool TryTranslate(std::string& inout);
 };
 

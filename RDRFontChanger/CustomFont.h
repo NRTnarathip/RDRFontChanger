@@ -16,12 +16,11 @@ public:
 
 class CustomSwfFontAbstract {
 public:
-	swfFont* originalFont;
-	int backupGlyphCount;
-	void* backupGlyphToCode;
-	void* backupSheetCellArray;
+	// don't edit this font
+	swfFont* originalGameFont;
 
-	void virtual Init() = 0;
+	// patch this here
+	swfFont* newGameFont;
 
 	// base on calling ReplaceTexture(); !!!
 	std::vector<grcTextureD11*> backupTextureArray;
@@ -61,3 +60,5 @@ static_assert(offsetof(Fonttext, CharHeight) == 0x50, "assert");
 static_assert(offsetof(Fonttext, NumGlyphs) == 0x98, "assert");
 
 void DumpSwfFont(swfFont* font, const char* prefixFileName);
+
+float toUnitSheetSize(float pixel, float fontSize);

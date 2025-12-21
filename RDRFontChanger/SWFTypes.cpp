@@ -5,15 +5,11 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-
 #include "XMem.h"
+#include "Rage.h"
+
 using namespace XMem;
 
-void DumpSWFText(void* o)
-{
-	SWFText* t = (SWFText*)o;
-	// cw("t");
-}
 const char* GetSWFTypeName(int e) {
 	static std::vector<std::string> names{
 		"Shape", // 1
@@ -170,16 +166,33 @@ uint32_t RageHashFNV(const void* data, size_t len)
 	return hash;
 }
 
-bool swfSheet::DoesTextureExist(const char* findName)
+bool swfSheet::DoesTextureExist(std::string findName)
 {
 	if (this->textureCount == 0)
 		return false;
 
+	findName = SafePath(findName);
 	for (int i = 0;i < this->textureCount;i++) {
-		auto name = textureNameArray[i];
-		if (name && strcmp(name, findName) == 0)
+		std::string name = textureNameArray[i];
+		name = SafePath(name);
+		if (name == findName)
 			return true;
 	}
 
 	return false;
+}
+
+swfFont* swfFont::Clone()
+{
+	auto  clone = new swfFont();
+	memcpy(clone, this, sizeof(swfFont));
+
+	// Todo!
+	//memcpy(clone->sheet, this->sheet, sizeof(swfSheet));
+	//clone->sheet->cellArrayPtr = new swfGlyph[sheet->cellCount];
+
+	//clone->sheet->textureArray = (grcTextureD11**)(new grcTextureD11[clone->sheet->textureCount]);
+	//memcpy(clone->sheet->textureArray, sheet->textureArray, );
+
+	return clone;
 }

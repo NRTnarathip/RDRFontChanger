@@ -12,12 +12,26 @@ SDFont::SDFont(fs::path path) {
 	}
 
 	std::string line;
-	//begin pare glyphs!
+	//begin pare unit SPREAD  TEXTURE || FONT METRICS!
 	while (std::getline(file, line)) {
-		if (line == "GLYPHS") {
-			TryParseGlyphs(file);
+		if (line == "SPREAD IN TEXTURE") {
+			// SPREAD TEXTURE
+			std::getline(file, line);
+			sscanf(line.c_str(), "%f", &this->spreadTexture);
+			// SPREAD FONT METRICS!
+			std::getline(file, line);
+			std::getline(file, line);
+			sscanf(line.c_str(), "%f", &this->spreadFontMetric);
 			break;
 		}
+	}
+
+	cw("font spreadTexture: {}", this->spreadTexture);
+	cw("font spreadFontMetric: {}", this->spreadFontMetric);
+
+	//begin pare glyphs!
+	while (std::getline(file, line)) {
+		TryParseGlyphs(file);
 	}
 
 	cw("loaded font! total glyphs: {}, total chars: {}",
@@ -32,32 +46,26 @@ void SDFont::TryParseGlyphs(std::ifstream& file) {
 			break;
 
 		// parse line
-		float w, h, bx, by, adv, vbx, vby, vadv, tx, ty, tw, th;
 		char name[60];
-		int id;
+		SDFGlyph g;
 		sscanf(line.c_str(),
 			"%x %s %f %f %f %f %f %f %f %f %f %f %f %f",
-			&id, name,
-			&w, &h,
-			&bx, &by,
-			&adv,
-			&vbx, &vby,
-			&vadv,
-			&tx, &ty,
-			&tw, &th);
-
-		// setup glyph
-		auto& g = glyphs[id] = Glyph{};
-		g.id = id;
+			&g.pointID, name,
+			&g.width, &g.height,
+			&g.horizontalBearingX, &g.horizontalBearingY,
+			&g.advanceX,
+			&g.vbx, &g.vby,
+			&g.vadv,
+			&g.tx, &g.ty,
+			&g.tw, &g.th);
 		g.name = name;
-		g.width = w;
+		glyphs.emplace(g.pointID, std::move(g));
 	}
 
 	// skip into #FT_ENCODING_UNICODE
 	while (std::getline(file, line)) {
 		if (line.contains("FT_ENCODING_UNICODE"))
 			break;
-
 	}
 
 	// parse #FT_ENCODING_UNICODE first line!
@@ -90,7 +98,7 @@ void SDFont::TryParseGlyphs(std::ifstream& file) {
 			sscanf(str.c_str(), "%x", &charCode);
 			sscanf(str2.c_str(), "%x", &glyphID);
 
-			// check if exist
+			// check if not exist
 			if (glyphs.contains(glyphID) == false)
 				continue;
 

@@ -16,6 +16,9 @@
     <Filter Include="libs">
       <UniqueIdentifier>{4784dd90-fee2-47e9-a0a0-cef16131c832}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\SDFontLib">
+      <UniqueIdentifier>{a294a1f8-f7ee-4c2e-8407-cc4a94a61d24}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Hooks.h">
@@ -93,6 +96,12 @@
     <ClInclude Include="Rage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\SDFontLib\Glyph.h">
+      <Filter>Source Files\SDFontLib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SDFontLib\SDFont.h">
+      <Filter>Source Files\SDFontLib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -166,6 +175,12 @@
     </ClCompile>
     <ClCompile Include="Rage.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDFontLib\Glyph.cpp">
+      <Filter>Source Files\SDFontLib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDFontLib\SDFont.cpp">
+      <Filter>Source Files\SDFontLib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -10,8 +10,10 @@ namespace fs = std::filesystem;
 
 struct SDFont {
 	fs::path path;
-	std::unordered_map<int, Glyph> glyphs;
-	std::unordered_map<int, Glyph*> charCodeToGlyphMap;
+	float spreadTexture;
+	float spreadFontMetric;
+	std::unordered_map<int, SDFGlyph> glyphs;
+	std::unordered_map<int, SDFGlyph*> charCodeToGlyphMap;
 	SDFont(fs::path path);
 	void TryParseGlyphs(std::ifstream& file);
 	int TotalGlyph() {

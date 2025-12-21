@@ -5,7 +5,7 @@
 class BitmapFont : public FontAbstract {
 public:
 	struct Glyph {
-		int id;         // 106 - character code
+		int charCode;         // 106 - character code
 		int x, y;       // 577, 65 - texture position
 		int width, height;  // 17, 54 - texture size
 		int xoffset, yoffset;  // -5, 25 - render offset
@@ -20,7 +20,8 @@ public:
 
 	std::vector<Glyph> glyphs;
 	std::unordered_map<USHORT, Glyph*> charIDToGlyph;
+
+	BitmapFont(std::string path);
 	void ParseGlyph(const std::string& line, BitmapFont::Glyph& g);
-	bool isLoaded;
-	void Load(std::string path);
+	static BitmapFont* TryLoad(std::string path);
 };
