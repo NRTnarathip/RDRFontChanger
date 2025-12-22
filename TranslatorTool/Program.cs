@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using TranslatorTool;
 
 internal class Program
 {
@@ -6,9 +7,9 @@ internal class Program
     {
         if (args.Length == 0)
         {
-#if DEBUG
-            args = ["interface_win32.txt"];
-#endif
+            Console.WriteLine("Please put source file path");
+            Console.Read();
+            return;
         }
 
         var srcFilepath = args[0];
@@ -34,7 +35,7 @@ internal class Program
 
         // ready to load
         var srcFile = TranslatorFile.OpenSrcFile(srcFilepath);
-        var thaiTranslatorFile = TranslatorFile.OpenDestFile(srcFile, k_suffixSaveFilepath, ai);
+        var translateFile = TranslatorFile.OpenDestFile(srcFile, k_suffixSaveFilepath, ai);
 
 
         // load dst file lines
@@ -42,48 +43,74 @@ internal class Program
         {
             var srcLineParser = srcLineParserPair.Value;
             var index = srcLineParser.m_index;
-
-            var dstLineParser = thaiTranslatorFile.TryGetLine(index);
-            if (thaiTranslatorFile.ShouldTranslateText(
-                srcLineParser, dstLineParser) == false)
-                continue;
-
-            var translateResult = await ai.TryTranslateAsync(
-                srcLineParser.m_text);
-
-            if (translateResult == null)
             {
-                Console.WriteLine("can't translate this line, skip it!");
-                continue;
+                var dstLineParser = translateFile.TryGetLine(index);
+                if (dstLineParser == null)
+                {
+                    Console.WriteLine("not found dst line at index: " + index);
+                    continue;
+                }
+
+                // you already translate this!
+                // just skip it
+                if (translateFile.ShouldTranslateText(
+                    srcLineParser, dstLineParser) == false)
+                    continue;
             }
 
-            // check if tags it valid same lik source
-            var translateResultParser = LineParser.New(index, translateResult);
-            if (translateResultParser.IsSameTags(srcLineParser) == false)
+            while (true)
             {
-                Console.WriteLine("result translate tags it not same source!");
-                Console.WriteLine($"result: {translateResult}");
-                // restore back!!
-                Console.WriteLine($"try restore back: {srcLineParser.m_raw}");
-                thaiTranslatorFile.SetLineParser(srcLineParser);
-                continue;
-            }
+                // save file
+                if (saveFileTimer.Elapsed.TotalSeconds > saveFileEeverySeconds)
+                {
+                    translateFile.Save();
+                    saveFileTimer.Restart();
+                }
+
+                var result = await ai.TryTranslateAsync(
+                    srcLineParser.m_text);
+                if (result == null)
+                {
+                    Logger.Log([
+                        " -- can't translate this line",
+                        srcLineParser.m_text,
+                        " -- skip it",
+                    ]);
+                    break;
+                }
 
 
-            // replace it
-            Console.WriteLine($"translate text: [{index}] - {translateResult}");
-            thaiTranslatorFile.SetLineParser(translateResultParser);
+                var resultParser = LineParser.New(index, result);
 
-            // save file
-            if (saveFileTimer.Elapsed.TotalSeconds > saveFileEeverySeconds)
-            {
-                thaiTranslatorFile.Save();
-                Console.WriteLine($"progress {index}/{thaiTranslatorFile.m_linesReadonly.Length} total");
-                saveFileTimer.Restart();
+                // retry translate if result word from ai correct
+                if (translateFile.ShouldTranslateText(
+                        srcLineParser, resultParser))
+                {
+                    Logger.Log([
+                        $" -- retry translate again...",
+                        $" -- source text >> ",
+                        srcLineParser.m_text,
+                        $" -- translate result >> ",
+                        result,
+                    ]);
+                    continue;
+                }
+
+                // replace it
+                Logger.Log([
+                    $" -- translated text!",
+                    $" -- index   : {index}",
+                    $" -- src text: {srcLineParser.m_text}",
+                    $" -- result  : {result}",
+                    ]);
+                translateFile.UpdateLineParser(resultParser);
+
+                // next line!
+                break;
             }
         }
         Console.WriteLine("successfully translate all lines!");
-        thaiTranslatorFile.Save();
+        translateFile.Save();
         Console.Read();
     }
 }

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
+using TranslatorTool;
 
 public abstract class AITranslatorAbstract
 {
@@ -32,9 +33,15 @@ public abstract class AITranslatorAbstract
             Endpoint = new Uri("http://localhost:1234/v1")
         };
 
-        this.client = new ChatClient("typhoon-translate-4b",
+        var modelname = GetAIModelName();
+        this.client = new ChatClient(modelname,
             new ApiKeyCredential("aweasd"), options);
+        Logger.Log([
+            $" -- ai model: {modelname}",
+            $" -- system prompt: {GetSystemPrompt()}",
+        ]);
     }
+    public abstract string GetAIModelName();
 
     readonly string[] k_lineSeparators = { Environment.NewLine, "\r", "\n" };
     public async Task<string?> TryTranslateAsync(string srcText)
@@ -46,13 +53,15 @@ public abstract class AITranslatorAbstract
                 StringSplitOptions.None);
 
             // check validate
-            if (result.Length > 0
-                && resultLines.Length == 1)
+            if (result.Length > 0 && resultLines.Length == 1)
             {
                 return result;
             }
-            Console.WriteLine($"result translate incorrect: {result}");
-            Console.WriteLine($"retry translate source: {srcText}");
+            Logger.Log([
+                " -- translate incorrect result >> ",
+                result,
+                $" -- retry translate again: {srcText}",
+            ]);
         }
         return null;
     }
@@ -76,23 +85,27 @@ public abstract class AITranslatorAbstract
             }
         }
     }
-    async Task<string> TranslateTextAsync(string text)
+    async Task<string> TranslateTextAsync(string srcText)
     {
         List<ChatMessage> messages = [
             new SystemChatMessage(GetSystemPrompt()),
-            new UserChatMessage(text)
+            new UserChatMessage(srcText)
         ];
 
         try
         {
             ChatCompletion completion = await this.client.CompleteChatAsync(messages);
-            return completion.Content[0].Text.Trim();
+            string result = completion.Content[0].Text.Trim();
+            PostTranslateTextAsync(srcText, ref result);
+            return result;
         }
         catch (Exception ex)
         {
             return $"[Error: {ex.Message}]";
         }
     }
-    public abstract bool IsTranslateYet(LineParser src, LineParser dst);
+
+    public virtual void PostTranslateTextAsync(string original, ref string text) { }
+    public abstract bool ShouldTranslateThis(LineParser src, LineParser dst);
     public abstract String GetSystemPrompt();
 }

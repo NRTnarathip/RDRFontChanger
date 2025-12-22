@@ -1,4 +1,5 @@
 ﻿using System.Xml;
+using TranslatorTool;
 
 public class TranslatorFile
 {
@@ -32,7 +33,7 @@ public class TranslatorFile
         foreach (var line in m_linesReadonly)
         {
             var parser = new LineParser(line);
-            SetLineParser(parser);
+            UpdateLineParser(parser);
         }
         Console.WriteLine("total lines: " + GetTotalLineParser());
         LogInfo();
@@ -61,6 +62,7 @@ public class TranslatorFile
         return new TranslatorFile(dstPath, srcFile, ai: ai);
     }
 
+    int lastSaveUpdateLineCounter = 0;
     public void Save()
     {
         if (isSourceFile)
@@ -69,8 +71,13 @@ public class TranslatorFile
             return;
         }
 
+        // check if any line update
+        if (lastSaveUpdateLineCounter == updateLineCounter)
+            return;
+        lastSaveUpdateLineCounter = updateLineCounter;
+
         var savePath = this.m_path;
-        Console.WriteLine("saving file: " + savePath);
+        Console.WriteLine(" -- saving file: " + savePath);
         var lines = new List<string>();
         foreach (var item in m_lineStringMap)
         {
@@ -79,14 +86,16 @@ public class TranslatorFile
             lines.Add($"[{index}] - {line}");
         }
         File.WriteAllLines(savePath, lines);
-        Console.WriteLine("saved file : " + savePath);
+        Console.WriteLine(" -- saved file : " + savePath);
         LogInfo();
     }
 
-    public void SetLineParser(LineParser parser)
+    public int updateLineCounter = 0;
+    public void UpdateLineParser(LineParser parser)
     {
         m_lineStringMap[parser.m_index] = parser.m_text;
         m_lineParserMap[parser.m_index] = parser;
+        updateLineCounter++;
     }
 
     public LineParser? TryGetLine(int index)
@@ -121,7 +130,7 @@ public class TranslatorFile
 
     public void LogInfo()
     {
-        Console.WriteLine("================================");
+        Logger.Long();
         Console.WriteLine("[ File Info ]");
         Console.WriteLine($"file path: {m_path}");
         int total = GetTotalLineParser();
@@ -131,8 +140,7 @@ public class TranslatorFile
             int progress = GetTranslateProgress();
             Console.WriteLine($"progress: {progress} / {total} total");
         }
-        Console.WriteLine("================================");
-        Console.WriteLine();
+        Logger.Long();
         Console.WriteLine();
     }
 
@@ -164,15 +172,15 @@ public class TranslatorFile
         // tags is not same??
         if (src.IsSameTags(dst) == false)
         {
-            Console.WriteLine("tag src != dst, so should translate this!");
-            Console.WriteLine("src raw: " + src.m_raw);
-            Console.WriteLine("dst raw: " + dst.m_raw);
+            //Console.WriteLine("tag src != dst, so should translate this!");
+            //Console.WriteLine("src raw: " + src.m_raw);
+            //Console.WriteLine("dst raw: " + dst.m_raw);
             return true;
         }
 
         // last check if already translate
-        bool translated = m_ai.IsTranslateYet(src, dst);
-        if (translated)
+        bool aiShouldTranslateThis = m_ai.ShouldTranslateThis(src, dst);
+        if (!aiShouldTranslateThis)
             return false;
 
 
