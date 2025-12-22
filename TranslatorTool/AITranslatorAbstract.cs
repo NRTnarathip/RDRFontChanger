@@ -11,42 +11,35 @@ using TranslatorTool;
 public abstract class AITranslatorAbstract
 {
     public readonly ChatClient client;
-    int m_maxRetryCount = 3;
-    public int MaxRetryCount
-    {
-        get => m_maxRetryCount;
-        set
-        {
-            if (value <= 0)
-                m_maxRetryCount = 3;
-            else
-                m_maxRetryCount = value;
-        }
-    }
     public static AITranslatorAbstract Instance { get; private set; }
     public AITranslatorAbstract()
     {
         Instance = this;
 
-        var options = new OpenAIClientOptions
+        var clientOoptions = new OpenAIClientOptions
         {
             Endpoint = new Uri("http://localhost:1234/v1")
         };
 
         var modelname = GetAIModelName();
         this.client = new ChatClient(modelname,
-            new ApiKeyCredential("aweasd"), options);
+            new ApiKeyCredential("aweasd"), clientOoptions);
+
+        var chatOptions = GetChatCompletionOptions();
         Logger.Log([
             $" -- ai model: {modelname}",
             $" -- system prompt: {GetSystemPrompt()}",
+            $" -- Temperature: {chatOptions.Temperature}",
         ]);
     }
-    public abstract string GetAIModelName();
+    public string GetAIModelName() => GlobalConfig.AIModel;
+    public string GetSystemPrompt() => GlobalConfig.Prompt;
 
     readonly string[] k_lineSeparators = { Environment.NewLine, "\r", "\n" };
     public async Task<string?> TryTranslateAsync(string srcText)
     {
-        for (int i = 0; i < m_maxRetryCount; i++)
+        var maxRetry = GlobalConfig.MaxTranslateRrtry;
+        for (int i = 0; i < maxRetry; i++)
         {
             var result = await TranslateTextAsync(srcText);
             var resultLines = result.Split(k_lineSeparators,
@@ -54,36 +47,19 @@ public abstract class AITranslatorAbstract
 
             // check validate
             if (result.Length > 0 && resultLines.Length == 1)
-            {
                 return result;
-            }
+
             Logger.Log([
                 " -- translate incorrect result >> ",
                 result,
-                $" -- retry translate again: {srcText}",
+                $" -- attempt: {i+ 1}/{maxRetry}",
+                $" -- retry translate again, src text >>",
+                srcText,
             ]);
         }
+
+
         return null;
-    }
-    async Task EjectModelAsync()
-    {
-        Console.WriteLine("Try Eject model...");
-        using (var client = new HttpClient())
-        {
-            var requestUri = "http://localhost:1234/v1/models/eject";
-            try
-            {
-                var response = await client.PostAsync(requestUri, null);
-                if (response.IsSuccessStatusCode)
-                {
-                    Console.WriteLine("Model ejected successfully.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
-        }
     }
     async Task<string> TranslateTextAsync(string srcText)
     {
@@ -92,9 +68,11 @@ public abstract class AITranslatorAbstract
             new UserChatMessage(srcText)
         ];
 
+        var options = GetChatCompletionOptions();
+
         try
         {
-            ChatCompletion completion = await this.client.CompleteChatAsync(messages);
+            ChatCompletion completion = await this.client.CompleteChatAsync(messages, options);
             string result = completion.Content[0].Text.Trim();
             PostTranslateTextAsync(srcText, ref result);
             return result;
@@ -104,8 +82,7 @@ public abstract class AITranslatorAbstract
             return $"[Error: {ex.Message}]";
         }
     }
-
     public virtual void PostTranslateTextAsync(string original, ref string text) { }
+    public abstract ChatCompletionOptions GetChatCompletionOptions();
     public abstract bool ShouldTranslateThis(LineParser src, LineParser dst);
-    public abstract String GetSystemPrompt();
 }

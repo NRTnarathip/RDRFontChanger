@@ -132,13 +132,13 @@ public class TranslatorFile
     {
         Logger.Long();
         Console.WriteLine("[ File Info ]");
-        Console.WriteLine($"file path: {m_path}");
+        Console.WriteLine($" -- file path: {m_path}");
         int total = GetTotalLineParser();
-        Console.WriteLine($"total lines: {total}");
+        Console.WriteLine($" -- total lines: {total}");
         if (this.isTranslateFile)
         {
             int progress = GetTranslateProgress();
-            Console.WriteLine($"progress: {progress} / {total} total");
+            Console.WriteLine($" -- progress: {progress} / {total} total");
         }
         Logger.Long();
         Console.WriteLine();
@@ -185,5 +185,10 @@ public class TranslatorFile
 
 
         return true;
+    }
+
+    internal int GetTotalLine()
+    {
+        return m_lineParserMap.Count;
     }
 }

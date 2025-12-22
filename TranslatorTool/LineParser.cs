@@ -13,6 +13,7 @@ public sealed class LineParser
         ColorTag,
         Placeholder,
         AssetPath,
+        Unknow,
         Text,
     }
 
@@ -63,7 +64,7 @@ public sealed class LineParser
                 if (TryParseHTMLTag(currentText,
                     out var content, out var beginTag, out var endTag))
                 {
-                    //Console.WriteLine($"found tag: {beginTag}{content}{endTag}");
+                    //  Console.WriteLine($"found html parse: {beginTag}{content}{endTag}");
                     moveNext = content.Length + beginTag.Length + endTag.Length;
                     // check if it's color tag
                     if (IsColorTag(beginTag, out var colorName))
@@ -75,7 +76,22 @@ public sealed class LineParser
                     }
                     else
                     {
+                        // Console.WriteLine("is not color tag!");
                         MarkText(content, TextType.HTMLTag);
+                    }
+                }
+                else
+                {
+                    // check if found single tag
+                    // like "<player> hellow world"
+                    // or "</Mooo> wowww"
+                    var unknowTag = TryFindFirstTag(currentText, ['<', '>'],
+                        out var beginIndex, out var endIndex);
+                    if (unknowTag.Length > 0)
+                    {
+                        // Console.WriteLine("found unknow tag: " + unknowTag);
+                        moveNext += unknowTag.Length;
+                        MarkText(unknowTag, TextType.Unknow);
                     }
                 }
             }
@@ -158,18 +174,18 @@ public sealed class LineParser
 
     static readonly HashSet<string> ColorBeginTags = [
         "<red>", "<blue>", "<green>", "<orange>",
-        "<yellow>", "<green>", "<purple>", "<brown>",
-        "<sepia>", "<gray>", "<purple>", "<brow>",
+        "<yellow>", "<purple>", "<brown>",
+        "<sepia>", "<gray>", "<grey>",
     ];
 
-    public static bool IsColorTag(string text, out string colorName)
+    public static bool IsColorTag(string tag, out string colorName)
     {
         colorName = "";
-        // min len
-        if (text.Length < 5)
+        // min len <red>
+        if (tag.Length <= 4)
             return false;
 
-        var beginTag = TryFindFirstTag(text, ['<', '>'],
+        var beginTag = TryFindFirstTag(tag, ['<', '>'],
                 out var begin, out var end);
         if (ColorBeginTags.Contains(beginTag))
             colorName = beginTag.Substring(1, beginTag.Length - 2);

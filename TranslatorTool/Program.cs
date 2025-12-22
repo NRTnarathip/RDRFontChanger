@@ -1,36 +1,48 @@
-﻿using System.Diagnostics;
+﻿using System.CommandLine;
+using System.Diagnostics;
 using TranslatorTool;
+
 
 internal class Program
 {
     private static async Task Main(string[] args)
     {
-        if (args.Length == 0)
+        try
         {
-            Console.WriteLine("Please put source file path");
-            Console.Read();
-            return;
+            GlobalConfig.Init(args);
+            await Run();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
         }
 
-        var srcFilepath = args[0];
-        if (srcFilepath.EndsWith(".txt") == false)
-        {
-            Console.WriteLine("File name must be .txt!");
-            Console.Read();
-            return;
-        }
+        // ready to run
+        Console.WriteLine("Press any key to close.");
+        Console.ReadLine();
+    }
 
+    private static async Task Run()
+    {
+        var srcFilepath = GlobalConfig.InputSourcePath;
+        var srcFileInfo = new FileInfo(srcFilepath);
+        if (srcFileInfo.Exists == false)
+            throw new FileNotFoundException(srcFilepath);
+
+        string fileExt = srcFileInfo.Extension;
         Stopwatch saveFileTimer = Stopwatch.StartNew();
-        float saveFileEeverySeconds = 5;
 
-        const string k_suffixSaveFilepath = "@ai_translate.txt";
-        var saveFilePath = srcFilepath.Replace(".txt", k_suffixSaveFilepath);
+        string k_suffixSaveFilepath = "@ai_translate" + fileExt;
+        var saveFilePath = srcFilepath.Replace(fileExt, k_suffixSaveFilepath);
+        Console.WriteLine("save output path: " + saveFilePath);
         // create it!
         if (!File.Exists(saveFilePath))
+        {
             File.Copy(srcFilepath, saveFilePath);
+            Console.WriteLine("create new output file!");
+        }
 
         // setup AI Translator Tool
-        var beginLineIndex = 0;
         var ai = new ThaiAITranslator();
 
         // ready to load
@@ -38,6 +50,7 @@ internal class Program
         var translateFile = TranslatorFile.OpenDestFile(srcFile, k_suffixSaveFilepath, ai);
 
 
+        int totalLine = srcFile.GetTotalLine();
         // load dst file lines
         foreach (var srcLineParserPair in srcFile.m_lineParserMap)
         {
@@ -58,10 +71,11 @@ internal class Program
                     continue;
             }
 
-            while (true)
+            int maxRetry = GlobalConfig.MaxTranslateRrtry;
+            for (int attemptIndex = 0; attemptIndex < maxRetry; attemptIndex++)
             {
                 // save file
-                if (saveFileTimer.Elapsed.TotalSeconds > saveFileEeverySeconds)
+                if (saveFileTimer.Elapsed.TotalSeconds > GlobalConfig.SaveFileEveryTime)
                 {
                     translateFile.Save();
                     saveFileTimer.Restart();
@@ -87,7 +101,8 @@ internal class Program
                         srcLineParser, resultParser))
                 {
                     Logger.Log([
-                        $" -- retry translate again...",
+                        $" -- retry translate again",
+                        $" -- attemp: {attemptIndex + 1}/{maxRetry}",
                         $" -- source text >> ",
                         srcLineParser.m_text,
                         $" -- translate result >> ",
@@ -99,9 +114,9 @@ internal class Program
                 // replace it
                 Logger.Log([
                     $" -- translated text!",
-                    $" -- index   : {index}",
+                    $" -- index   : {index}/{totalLine}",
                     $" -- src text: {srcLineParser.m_text}",
-                    $" -- result  : {result}",
+                    $" -- new text: {result}",
                     ]);
                 translateFile.UpdateLineParser(resultParser);
 
@@ -109,8 +124,7 @@ internal class Program
                 break;
             }
         }
-        Console.WriteLine("successfully translate all lines!");
         translateFile.Save();
-        Console.Read();
+        Console.WriteLine("successfully translate all!");
     }
 }
