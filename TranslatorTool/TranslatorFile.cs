@@ -161,6 +161,15 @@ public class TranslatorFile
             return false;
         }
 
+        // tags is not same??
+        if (src.IsSameTags(dst) == false)
+        {
+            Console.WriteLine("tag src != dst, so should translate this!");
+            Console.WriteLine("src raw: " + src.m_raw);
+            Console.WriteLine("dst raw: " + dst.m_raw);
+            return true;
+        }
+
         // last check if already translate
         bool translated = m_ai.IsTranslateYet(src, dst);
         if (translated)

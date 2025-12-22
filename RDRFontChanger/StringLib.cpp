@@ -63,3 +63,28 @@ std::string TryGetString(void* ptr) {
 	return TryGetStringInternal(ptr);
 }
 
+const char* leftRightTrimCharset = " \t\n\r\f\v";
+inline std::string LeftTrim(std::string& s, const char* t = leftRightTrimCharset) {
+	s.erase(0, s.find_first_not_of(t));
+	return s;
+}
+
+inline std::string RightTrim(std::string& s, const char* t = leftRightTrimCharset) {
+	size_t pos = s.find_last_not_of(t);
+	if (pos != std::string::npos) {
+		s.erase(pos + 1);
+	}
+	else {
+		// String was all whitespace
+		s.clear();
+	}
+	return s;
+}
+
+std::string StringTrim(std::string s)
+{
+	s = LeftTrim(s);
+	s = RightTrim(s);
+	return s;
+}
+

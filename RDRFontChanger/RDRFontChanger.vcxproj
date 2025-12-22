@@ -111,6 +111,7 @@
     <ClInclude Include="StringLib.h" />
     <ClInclude Include="SWFTypes.h" />
     <ClInclude Include="SystemManager.h" />
+    <ClInclude Include="TextTranslateFile.h" />
     <ClInclude Include="TextTranslator.h" />
     <ClInclude Include="TextureChanger.h" />
     <ClInclude Include="TextureLib.h" />
@@ -139,6 +140,7 @@
     <ClCompile Include="StringLib.cpp" />
     <ClCompile Include="SWFTypes.cpp" />
     <ClCompile Include="SystemManager.cpp" />
+    <ClCompile Include="TextTranslateFile.cpp" />
     <ClCompile Include="TextTranslator.cpp" />
     <ClCompile Include="TextureChanger.cpp" />
     <ClCompile Include="TextureLib.cpp" />

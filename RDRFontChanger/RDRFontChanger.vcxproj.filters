@@ -19,6 +19,9 @@
     <Filter Include="Source Files\SDFontLib">
       <UniqueIdentifier>{a294a1f8-f7ee-4c2e-8407-cc4a94a61d24}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Translator">
+      <UniqueIdentifier>{62d7fa53-6649-413f-a104-f3343cc749f2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Hooks.h">
@@ -72,9 +75,6 @@
     <ClInclude Include="SystemManager.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="TextTranslator.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="BitmapFont.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -101,6 +101,12 @@
     </ClInclude>
     <ClInclude Include="..\SDFontLib\SDFont.h">
       <Filter>Source Files\SDFontLib</Filter>
+    </ClInclude>
+    <ClInclude Include="TextTranslator.h">
+      <Filter>Source Files\Translator</Filter>
+    </ClInclude>
+    <ClInclude Include="TextTranslateFile.h">
+      <Filter>Source Files\Translator</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -158,9 +164,6 @@
     <ClCompile Include="FontReplacer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TextTranslator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="RenderHook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -181,6 +184,12 @@
     </ClCompile>
     <ClCompile Include="..\SDFontLib\SDFont.cpp">
       <Filter>Source Files\SDFontLib</Filter>
+    </ClCompile>
+    <ClCompile Include="TextTranslator.cpp">
+      <Filter>Source Files\Translator</Filter>
+    </ClCompile>
+    <ClCompile Include="TextTranslateFile.cpp">
+      <Filter>Source Files\Translator</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

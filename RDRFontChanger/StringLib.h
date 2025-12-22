@@ -8,3 +8,5 @@ std::wstring ToWString(const std::string& str);
 std::string ToLower(std::string s);
 
 std::string TryGetString(void* ptr);
+
+std::string StringTrim(std::string s);

@@ -10,6 +10,7 @@ public sealed class LineParser
     public enum TextType : int
     {
         HTMLTag,
+        ColorTag,
         Placeholder,
         AssetPath,
         Text,
@@ -64,7 +65,18 @@ public sealed class LineParser
                 {
                     //Console.WriteLine($"found tag: {beginTag}{content}{endTag}");
                     moveNext = content.Length + beginTag.Length + endTag.Length;
-                    MarkText(content, TextType.HTMLTag);
+                    // check if it's color tag
+                    if (IsColorTag(beginTag, out var colorName))
+                    {
+                        // Console.WriteLine($"found is color!, content: {content}, name: {colorName}");
+                        MarkText(beginTag, TextType.ColorTag);
+                        MarkText(content, TextType.Text);
+                        MarkText(endTag, TextType.ColorTag);
+                    }
+                    else
+                    {
+                        MarkText(content, TextType.HTMLTag);
+                    }
                 }
             }
 
@@ -142,6 +154,27 @@ public sealed class LineParser
         this.textTypeSplits.Add(type);
         if (type != TextType.Text)
             m_tagOrSymbolList.Add(text);
+    }
+
+    static readonly HashSet<string> ColorBeginTags = [
+        "<red>", "<blue>", "<green>", "<orange>",
+        "<yellow>", "<green>", "<purple>", "<brown>",
+        "<sepia>", "<gray>", "<purple>", "<brow>",
+    ];
+
+    public static bool IsColorTag(string text, out string colorName)
+    {
+        colorName = "";
+        // min len
+        if (text.Length < 5)
+            return false;
+
+        var beginTag = TryFindFirstTag(text, ['<', '>'],
+                out var begin, out var end);
+        if (ColorBeginTags.Contains(beginTag))
+            colorName = beginTag.Substring(1, beginTag.Length - 2);
+
+        return colorName.Length != 0;
     }
 
     public static bool TryParsePlaceholder(
@@ -223,10 +256,12 @@ public sealed class LineParser
         // same tags count
         if (target.m_tagOrSymbolList.Count == this.m_tagOrSymbolList.Count)
         {
-            for(int i = 0;i < target.m_tagOrSymbolList.Count; i++)
+            for (int i = 0; i < target.m_tagOrSymbolList.Count; i++)
+            {
                 // not same!!
                 if (target.m_tagOrSymbolList[i] != this.m_tagOrSymbolList[i])
                     return false;
+            }
 
             // same here
             return true;

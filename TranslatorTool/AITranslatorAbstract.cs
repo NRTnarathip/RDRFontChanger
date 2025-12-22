@@ -56,7 +56,6 @@ public abstract class AITranslatorAbstract
         }
         return null;
     }
-
     async Task EjectModelAsync()
     {
         Console.WriteLine("Try Eject model...");
@@ -80,10 +79,8 @@ public abstract class AITranslatorAbstract
     async Task<string> TranslateTextAsync(string text)
     {
         List<ChatMessage> messages = [
-            new SystemChatMessage($"Translate to Thai. " +
-        $"Provide ONLY the translated text without explanations or quotes. " +
-        $"Output only 1 line. "),
-    new UserChatMessage(text)
+            new SystemChatMessage(GetSystemPrompt()),
+            new UserChatMessage(text)
         ];
 
         try
@@ -96,6 +93,6 @@ public abstract class AITranslatorAbstract
             return $"[Error: {ex.Message}]";
         }
     }
-
     public abstract bool IsTranslateYet(LineParser src, LineParser dst);
+    public abstract String GetSystemPrompt();
 }
