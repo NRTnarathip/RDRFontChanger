@@ -6,6 +6,7 @@
 
 using namespace HookLib;
 
+
 typedef void* (*HK_DrawTextWithFont_TypeDef)(
 	swfEditText* p1, const char* p2, swfFont* p3, uint64_t p4,
 	uint64_t p5, uint64_t p6_align, void* p7, void* p8);
@@ -29,11 +30,9 @@ static void* HK_DrawTextWithFont(
 
 	// init 
 	auto fontReplacer = FontReplacer::Instance();
-	for (auto& _font : FontReplacer::g_gameFonts) {
-		// crash here play ingame
-		// fontReplacer->TryReplaceFontNarrowWithSDF(_font);
-	}
-	auto customFont = fontReplacer->TryReplaceFontNarrowWithSDF(p3_font);
+	auto customFont = fontReplacer->TryReplaceFont(p3_font);
+	if (p3_font)
+		p3_font->LogInfo();
 
 
 	std::string drawTextString = p2_text ? p2_text : "";

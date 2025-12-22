@@ -56,9 +56,10 @@ void* FindFont(swfFile* mainFile, const char* findFontName)
 		swfFont* font = *(swfFont**)((long)mainFile->files + index * 8);
 		cw("index: %d", index);
 		cw("file: %p", font);
-		cw("file name: %s, findName: %s", font->name, findFontName);
+		auto fontName = font->name();
+		cw("file name: %s, findName: %s", fontName.c_str(), findFontName);
 		if ((font != nullptr) && (GetSWFFileType(font) == SWFTypeEnum::Font)) {
-			auto resultStrcmp = _stricmp(font->name, findFontName);
+			auto resultStrcmp = _stricmp(fontName.c_str(), findFontName);
 			cw("match!!");
 			if (resultStrcmp == 0)
 				return font;
@@ -231,4 +232,24 @@ swfFont* swfFont::Clone()
 	//memcpy(clone->sheet->textureArray, sheet->textureArray, );
 
 	return clone;
+}
+
+void swfFont::LogInfo()
+{
+	cw(" -- Font Info --");
+	std::string name = nameBuffer;
+	cw("name: %s", name.c_str());
+	cw("ascent: %d", ascent);
+	cw("descent: %d", descent);
+	cw("sheet: %p", sheet);
+	if (sheet) {
+		cw("font size: %d", sheet->size);
+		cw("glyph count: %d", sheet->cellCount);
+		cw("texture count: %d", sheet->textureCount);
+		for (int i = 0;i < sheet->textureCount;i++) {
+			std::string name = sheet->textureNameArray[i];
+			cw("texture[%d]: %s", i, name.c_str());
+		}
+	}
+	cw(" -- End Font Info --");
 }

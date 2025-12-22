@@ -10,3 +10,6 @@ std::string ToLower(std::string s);
 std::string TryGetString(void* ptr);
 
 std::string StringTrim(std::string s);
+
+std::string StringRemove(std::string s, std::string rep);
+std::string StringFileNoExt(std::string path);

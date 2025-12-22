@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include <algorithm>
 #include <string>
+#include <filesystem>
 
 std::string WCharToString(const wchar_t* wstr) {
 	if (!wstr)
@@ -86,5 +87,18 @@ std::string StringTrim(std::string s)
 	s = LeftTrim(s);
 	s = RightTrim(s);
 	return s;
+}
+
+std::string StringRemove(std::string s, std::string remove) {
+	size_t pos;
+	while ((pos = s.find(remove)) != std::string::npos) {
+		s.erase(pos, remove.length());
+	}
+	return s;
+}
+
+std::string StringFileNoExt(std::string path)
+{
+	return std::filesystem::path(path).stem().string();
 }
 

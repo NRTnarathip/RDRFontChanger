@@ -112,7 +112,7 @@ void TextureReplacer::RegisterReplaceTexture(
 
 	cw("try register texture path: %s", path.c_str());
 	if (fs::exists(path) == false) {
-		cw("error file path not exist");
+		cw("warning! file path not exist");
 		return;
 	}
 

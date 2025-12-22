@@ -22,15 +22,15 @@
     <Filter Include="Source Files\Translator">
       <UniqueIdentifier>{62d7fa53-6649-413f-a104-f3343cc749f2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Font">
+      <UniqueIdentifier>{92ed832f-54af-46a2-a76e-2a8fafb01702}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Hooks.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="SWFTypes.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CustomFont.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="dllmain.h">
@@ -75,18 +75,6 @@
     <ClInclude Include="SystemManager.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="BitmapFont.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CustomSwfFontBitmap.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CustomFontSDF.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FontReplacer.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="StringLib.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -108,6 +96,18 @@
     <ClInclude Include="TextTranslateFile.h">
       <Filter>Source Files\Translator</Filter>
     </ClInclude>
+    <ClInclude Include="FontReplacer.h">
+      <Filter>Source Files\Font</Filter>
+    </ClInclude>
+    <ClInclude Include="FileLib.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomFont.h">
+      <Filter>Source Files\Font</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomFontSDF.h">
+      <Filter>Source Files\Font</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -117,9 +117,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Logger.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CustomFont.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SWFTypes.cpp">
@@ -161,19 +158,7 @@
     <ClCompile Include="Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FontReplacer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="RenderHook.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CustomSwfFontBitmap.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="BitmapFont.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CustomFontSDF.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Rage.cpp">
@@ -190,6 +175,18 @@
     </ClCompile>
     <ClCompile Include="TextTranslateFile.cpp">
       <Filter>Source Files\Translator</Filter>
+    </ClCompile>
+    <ClCompile Include="FileLib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FontReplacer.cpp">
+      <Filter>Source Files\Font</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomFont.cpp">
+      <Filter>Source Files\Font</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomFontSDF.cpp">
+      <Filter>Source Files\Font</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

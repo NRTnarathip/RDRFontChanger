@@ -136,8 +136,12 @@ struct swfFont
 	unsigned char langCode;
 	swfSheet* sheet; // xc0
 	char xC8[0xb8]; // -> xc8 ++
-	const char* name; // -> 0x180
+	char nameBuffer[]; // -> 0x180 ++
+	std::string name() {
+		return (char*)&nameBuffer;
+	}
 	swfFont* Clone();
+	void LogInfo();
 };
 CHECK_OFFSET(swfFont, glyphToCodeArrayFirstItem, 0x20);
 CHECK_OFFSET(swfFont, sheetCount, 0xb0);
@@ -146,7 +150,7 @@ CHECK_OFFSET(swfFont, langCode, 0xbb);
 CHECK_OFFSET(swfFont, sheet, 0xc0);
 CHECK_OFFSET(swfFont, codeToGlyph, 0x30);
 CHECK_OFFSET(swfFont, xC8, 0xC8);
-CHECK_OFFSET(swfFont, name, 0x180);
+CHECK_OFFSET(swfFont, nameBuffer, 0x180);
 
 
 struct swfEditTextDrawColor {

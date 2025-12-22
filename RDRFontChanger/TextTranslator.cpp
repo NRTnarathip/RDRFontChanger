@@ -23,7 +23,7 @@ void TextTranslator::AddTranslateString(std::string english, std::string newText
 		return;
 
 	g_translateStringMap[key] = newText;
-	cw("added translate: %s = %s", key.c_str(), newText.c_str());
+	// cw("added translate: %s = %s", key.c_str(), newText.c_str());
 }
 
 void TextTranslator::Initialize() {
@@ -85,6 +85,29 @@ void TextTranslator::Initialize() {
 std::string TextTranslator::MakeTextKeyFromEnglish(std::string englishString) {
 	auto key = ToLower(englishString);
 	key = StringTrim(key);
+	// collapse multiple spaces -> single space
+	{
+		std::string keyRemoveDuplicateSpace;
+		bool lastSpace = false;
+		for (char c : key)
+		{
+			if (std::isspace((unsigned char)c))
+			{
+				if (!lastSpace)
+				{
+					keyRemoveDuplicateSpace.push_back(' ');
+					lastSpace = true;
+				}
+			}
+			else
+			{
+				keyRemoveDuplicateSpace.push_back(c);
+				lastSpace = false;
+			}
+		}
+		key = keyRemoveDuplicateSpace;
+	}
+
 	return key;
 }
 

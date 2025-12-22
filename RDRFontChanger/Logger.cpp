@@ -12,23 +12,34 @@
 #include <mutex>
 
 std::string tabString;
-std::string Logger::GetTimeNowMsString() {
-	std::stringstream ss;
-	auto now = std::chrono::system_clock::now();
-	auto time_t = std::chrono::system_clock::to_time_t(now);
-	auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-		now.time_since_epoch()) % 1000;
-	auto tm = *std::localtime(&time_t);
-	std::string tmFormat = std::format("{:02d}:{:02d}:{:02d}:{:03d}",
-		tm.tm_hour, tm.tm_min, tm.tm_sec, ms.count());
-	ss << tmFormat.c_str();
-	return ss.str();
-}
 
 Logger::Logger()
 {
 	m_logStream.open(m_logFileName, std::ios::out | std::ios::trunc);
 	ShowConsole();
+}
+
+std::string Logger::TimeNow() {
+	auto now = std::chrono::system_clock::now();
+	auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+		now.time_since_epoch()) % 1000;
+
+	std::time_t t = std::chrono::system_clock::to_time_t(now);
+	tm tmBuf;
+	localtime_s(&tmBuf, &t);
+
+	std::ostringstream ss;
+	ss << "[" << std::put_time(&tmBuf, "%H:%M:%S")
+		<< "." << std::setw(3) << std::setfill('0') << ms.count() << "]";
+	return ss.str();
+}
+
+void Logger::LogToFile(std::string line)
+{
+	if (m_logStream.is_open()) {
+		m_logStream << line;
+		m_logStream.flush();
+	}
 }
 
 void Logger::ShowConsole()
@@ -39,10 +50,9 @@ void Logger::ShowConsole()
 	freopen("CONIN$", "r", stdin);
 }
 
-std::mutex g_mutex;
 void Logger::LogFormat(const char* format, ...)
 {
-	std::lock_guard<std::mutex> lock(g_mutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 
 	va_list args, args2;
 	va_start(args, format);
@@ -69,18 +79,13 @@ void Logger::LogFormat(const char* format, ...)
 		<< "." << std::setfill('0') << std::setw(3) << ms.count() << "]";
 
 	DWORD tid = GetCurrentThreadId();
-	sstream << "[TID:" << std::setw(5) << tid << "] ";
+	sstream << std::format("[TID:{}] ", tid);
 
 	sstream << buffer.data() << std::endl;
 
 	std::string finalLog = sstream.str();
-
 	std::cout << finalLog;
-
-	if (m_logStream.is_open()) {
-		m_logStream << finalLog;
-		m_logStream.flush();
-	}
+	LogToFile(finalLog);
 }
 
 void Logger::AddTab()

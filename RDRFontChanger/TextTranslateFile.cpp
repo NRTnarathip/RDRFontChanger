@@ -72,7 +72,7 @@ bool TextTranslateFile::TryParseLine(std::string line, int& indexOut, std::strin
 		indexOut = std::stoi(line.substr(start + 1, end - start - 1));
 	}
 	else {
-		cw("error this lien: %s", line.c_str());
+		cw("error this line: %s", line.c_str());
 		return false;
 	}
 
@@ -80,7 +80,7 @@ bool TextTranslateFile::TryParseLine(std::string line, int& indexOut, std::strin
 	if (dash != std::string::npos) {
 		text = line.substr(dash + 1);
 		text = StringTrim(text);
-		cw("found parer text: %s", text.c_str());
+		// cw("found parer text: %s", text.c_str());
 		return true;
 	}
 

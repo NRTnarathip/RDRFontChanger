@@ -3,27 +3,25 @@
 #include "ISystem.h"
 #include "SWFTypes.h"
 #include "CustomFont.h"
-#include "CustomSwfFontBitmap.h"
 #include "CustomFontSDF.h"
 
 class FontReplacer : public ISystem
 {
 public:
 	static std::vector<swfFont*> g_gameFonts;
+	static constexpr auto FontFileExtName = ".sdfont";
+
 	FontReplacer() {
 		g_instance = this;
 	}
-
 	bool Init() override;
-	void RegisterFontNarrowWithFontBitmap(std::string fontPath);
-	void RegisterFontNarrowWithFontSDF(
-		std::string regularPath, std::string boldPath);
-	CustomSwfFontBitmap* TryReplaceFontNarrowWithBitmap(swfFont* font);
-	CustomSwfFontSDF* TryReplaceFontNarrowWithSDF(swfFont* font);
+
+	void RegisterFontWithFontSDF(std::string gameFontName, std::string newFontPath);
+	CustomSwfFontSDF* TryReplaceFont(swfFont* font);
+	void RegisterFontFromDir(std::string dir);
 
 	static FontReplacer* Instance() { return g_instance; };
 private:
-	CustomSwfFontSDF* TryReplaceFontNarrowWithSDFInternal(swfFont* font);
 	static FontReplacer* g_instance;
 };
 

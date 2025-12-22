@@ -31,9 +31,7 @@ void Application::SetupOnDllLoaded(HMODULE hModule)
 
 	// register thai font 
 	auto fontReplacer = FontReplacer::Instance();
-	fontReplacer->RegisterFontNarrowWithFontSDF(
-		"mods/fonts/rsu_sdf_regular.txt",
-		"mods/fonts/rsu_sdf_bold.txt");
+	fontReplacer->RegisterFontFromDir("mods/fonts");
 }
 
 void Application::RegisterAllMyModule()

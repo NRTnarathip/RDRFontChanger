@@ -78,6 +78,8 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/wd4267 /wd4244 /wd4200 %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -92,12 +94,11 @@
     <ClInclude Include="..\SDFontLib\SDFont.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="AssetLib.h" />
-    <ClInclude Include="BitmapFont.h" />
     <ClInclude Include="CustomFont.h" />
     <ClInclude Include="CustomFontSDF.h" />
-    <ClInclude Include="CustomSwfFontBitmap.h" />
     <ClInclude Include="dllmain.h" />
     <ClInclude Include="DXLib.h" />
+    <ClInclude Include="FileLib.h" />
     <ClInclude Include="FileSystemHook.h" />
     <ClInclude Include="FontReplacer.h" />
     <ClInclude Include="grcImage.h" />
@@ -121,12 +122,11 @@
     <ClCompile Include="..\SDFontLib\Glyph.cpp" />
     <ClCompile Include="..\SDFontLib\SDFont.cpp" />
     <ClCompile Include="Application.cpp" />
-    <ClCompile Include="BitmapFont.cpp" />
     <ClCompile Include="CustomFont.cpp" />
     <ClCompile Include="CustomFontSDF.cpp" />
-    <ClCompile Include="CustomSwfFontBitmap.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="DXLib.cpp" />
+    <ClCompile Include="FileLib.cpp" />
     <ClCompile Include="FileSystemHook.cpp" />
     <ClCompile Include="FontReplacer.cpp" />
     <ClCompile Include="grcImage.cpp" />
