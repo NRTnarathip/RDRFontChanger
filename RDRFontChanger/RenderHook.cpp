@@ -37,11 +37,11 @@ static void* HK_DrawTextWithFont(
 
 	std::string drawTextString = p2_text ? p2_text : "";
 
-	//// we can translate text when font is support 
-	//if (customFont && drawTextString.empty() == false) {
-	//	// translate text with new font!
-	//	TextTranslator::TryTranslate(drawTextString);
-	//}
+	// we can translate text when font is support 
+	if (customFont && drawTextString.empty() == false) {
+		// translate text with new font!
+		TextTranslator::TryTranslate(drawTextString);
+	}
 
 	// cw("try call backup_DrawTextWithFont");
 	auto result = backup_DrawTextWithFont(self,

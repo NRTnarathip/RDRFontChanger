@@ -8,7 +8,7 @@ namespace XMem {
 	uintptr_t GetRvaFromAddress(void* addr);
 	void* GetAddressFromRva(int rva);
 	bool IsPointerReadable(void* ptr, size_t size = 8);
-	void* Allocate(int count, int dataSize);
+	void* Allocate(int bytes, int alignBytes);
 }
 
 class XMemSystem :public ISystem {

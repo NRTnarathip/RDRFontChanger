@@ -59,9 +59,9 @@ bool XMem::IsPointerReadable(void* ptr, size_t size) {
 	}
 }
 
-void* XMem::Allocate(int count, int dataSize)
+void* XMem::Allocate(int bytes, int alignBytes)
 {
-	return HookLib::InvokeRva<void*, void*, int, int>(0xaa9a0, g_allocatorInstance, count, dataSize);
+	return HookLib::InvokeRva<void*, void*, int, int>(0xaa9a0, g_allocatorInstance, bytes, alignBytes);
 }
 
 bool XMemSystem::Init()

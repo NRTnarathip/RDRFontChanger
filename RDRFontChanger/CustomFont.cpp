@@ -45,7 +45,7 @@ void DumpSwfFont(swfFont* font, const char* prefixFileName) {
 
 	for (int i = 0;i < font->glyphCount;i++)
 	{
-		unsigned short currentCode = font->glyphToCodeArrayFirstItem[i];
+		unsigned short currentCode = font->glyphToCodeArray[i];
 		auto gAddress = (uintptr_t)glyphArrayFirstElement + i * sizeof(swfGlyph);
 		auto g = (swfGlyph*)gAddress;
 		auto line = std::format(

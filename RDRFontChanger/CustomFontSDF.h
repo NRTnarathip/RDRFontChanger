@@ -13,7 +13,7 @@ public:
 	CustomSwfFontSDF(swfFont* gameFont, std::string fontpath, float fontSize);
 
 private:
-	void ReplaceGlyph(unsigned short charCode, SDFGlyph* glyph);
-	void RecalculateGameFontGlyphs();
+	void AddNewGlyph(unsigned short charCode, SDFGlyph* glyph);
+	void RecalculateGlyphsForTexturePack2x2();
 };
 

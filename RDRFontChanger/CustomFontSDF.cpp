@@ -42,12 +42,12 @@ CustomSwfFontSDF::CustomSwfFontSDF(swfFont* gameFont,
 	gameFont->LogInfo();
 
 	// Recalculate game glyph with 512x512 in left top 0,0
-	RecalculateGameFontGlyphs();
+	RecalculateGlyphsForTexturePack2x2();
 
 	// replace all glyphs
 	// allocate memory for new glyphs
 
-	m_glyphIndexCounter = gameFont->glyphCount - 1;
+	m_addNewGlyphIndexCounter = gameFont->glyphCount - 1;
 	auto sheet = gameFont->sheet;
 
 	pn("try fetch sd font...");
@@ -56,7 +56,7 @@ CustomSwfFontSDF::CustomSwfFontSDF(swfFont* gameFont,
 	std::unordered_set<unsigned short> newSDFontCharCodes;
 	std::unordered_set<unsigned short> gameFontCharCodes;
 	for (int i = 0; i < gameFont->glyphCount;i++) {
-		auto charCode = gameFont->glyphToCodeArrayFirstItem[i];
+		auto charCode = gameFont->glyphToCodeArray[i];
 		gameFontCharCodes.insert(charCode);
 	}
 	pn("game font char codes: {}", gameFontCharCodes.size());
@@ -77,44 +77,34 @@ CustomSwfFontSDF::CustomSwfFontSDF(swfFont* gameFont,
 		int newGameFontGlyphCount = oldGameFontGlyphCount + newSDFontCharCodes.size();
 
 		unsigned short* newGlyphIndexToCodeArray = (unsigned short*)XMem::Allocate(
-			newGameFontGlyphCount, sizeof(unsigned short));
-		cw("new newGameFontGlyphCount: %p", newGlyphIndexToCodeArray);
+			newGameFontGlyphCount * sizeof(unsigned short), sizeof(unsigned short));
 
 		float* newAdvanceArray = (float*)XMem::Allocate(
-			newGameFontGlyphCount, sizeof(float));
-		cw("new newAdvanceArray: %p", newAdvanceArray);
+			newGameFontGlyphCount * sizeof(float), sizeof(float));
 
 		swfGlyph* newGlyphArray = (swfGlyph*)XMem::Allocate(
-			newGameFontGlyphCount, sizeof(swfGlyph));
-		cw("new newGlyphArray: %p", newGlyphArray);
+			newGameFontGlyphCount * sizeof(swfGlyph), sizeof(swfGlyph));
 
 
 		// glyphIndexToCharCodeArray
-		pn("glyphToCodeArrayFirstItem: {}", (void*)gameFont->glyphToCodeArrayFirstItem);
-		memcpy(newGlyphIndexToCodeArray, gameFont->glyphToCodeArrayFirstItem,
+		memcpy(newGlyphIndexToCodeArray, gameFont->glyphToCodeArray,
 			oldGameFontGlyphCount * sizeof(unsigned short));
-		pn("clone glyphIndexToCharCodeArray");
 
 		// advanceXArray 
-		pn("advanceFirstItem: {}", (void*)gameFont->advanceArray);
 		memcpy(newAdvanceArray, gameFont->advanceArray,
 			oldGameFontGlyphCount * sizeof(float));
-		pn("clone advance array!!");
 
 		// glyph array!!
-		pn("cell array: {}", (void*)sheet->glyphArray);
 		memcpy(newGlyphArray, sheet->glyphArray,
 			oldGameFontGlyphCount * sizeof(swfGlyph));
-		pn("clone glyph array");
 
 		// backup it!
-		pn("try backup font field array...");
-		this->backupGlyphIndexToCodeArray = gameFont->glyphToCodeArrayFirstItem;
+		this->backupGlyphIndexToCodeArray = gameFont->glyphToCodeArray;
 		this->backupAdanveArrayPtr = gameFont->advanceArray;
 		this->backupGlyphArray = sheet->glyphArray;
 
 		// assign to new array!!
-		gameFont->glyphToCodeArrayFirstItem = newGlyphIndexToCodeArray;
+		gameFont->glyphToCodeArray = newGlyphIndexToCodeArray;
 		gameFont->advanceArray = newAdvanceArray;
 		sheet->glyphArray = newGlyphArray;
 
@@ -130,30 +120,31 @@ CustomSwfFontSDF::CustomSwfFontSDF(swfFont* gameFont,
 	}
 
 	// ready!!
-	//for (auto code : newSDFontCharCodes) {
-	//	auto glyph = fontSDF->charCodeToGlyphMap[code];
-	//	ReplaceGlyph(code, glyph);
-	//}
+	for (auto code : newSDFontCharCodes) {
+		auto glyph = fontSDF->charCodeToGlyphMap[code];
+		AddNewGlyph(code, glyph);
+	}
 	pn("done new obj CustomSDFont!");
 }
 
 
-void CustomSwfFontSDF::ReplaceGlyph(unsigned short charCode, SDFGlyph* glyph)
+void CustomSwfFontSDF::AddNewGlyph(unsigned short charCode, SDFGlyph* glyph)
 {
-	cw("try replace glyph, name: %s", glyph->name);
+	//	cw("try replace glyph, name: %s", glyph->name);
 
 	auto font = this->originalGameFont;
 	auto sdf = this->fontSDF;
 
 	// assert
-	if (this->m_glyphIndexCounter >= font->sheet->cellCount) {
+	if (this->m_addNewGlyphIndexCounter >= font->sheet->cellCount) {
 		// full glyph
 		return;
 	}
 
 	auto sheet = font->sheet;
 	// ready
-	int glyphIndex = m_glyphIndexCounter;
+	int glyphIndex = m_addNewGlyphIndexCounter;
+	// cw("glyph index: %d", glyphIndex);
 
 	// 700 size! on rdr2narrow sdf 
 	const float imageSize = 1024;
@@ -182,10 +173,19 @@ void CustomSwfFontSDF::ReplaceGlyph(unsigned short charCode, SDFGlyph* glyph)
 	textureWidth *= imageSize;
 	textureHeight *= imageSize;
 
+	// we ues texture pack 2x2 or 4 sprite in dds texture
+	// downscale into 512x512
+	textureLeft /= 2;
+	textureTop /= 2;
+	textureWidth /= 2;
+	textureHeight /= 2;
+	// so we will add margin left start at x: 512
+	textureLeft += 512;
+
 
 	// log
-	cw("size:     %.2f - %.2f", textureWidth, textureHeight);
-	cw("left-top: %.2f - %.2f", textureLeft, textureTop);
+	//cw("size:     %.2f - %.2f", textureWidth, textureHeight);
+	//cw("left-top: %.2f - %.2f", textureLeft, textureTop);
 
 	float xoffset = sdfGlyph.horizontalBearingX;
 	float yoffset = sdfGlyph.horizontalBearingY;
@@ -232,19 +232,18 @@ void CustomSwfFontSDF::ReplaceGlyph(unsigned short charCode, SDFGlyph* glyph)
 	// update glyph advanceX array
 	float advanceX = sdfGlyph.advanceX * fontSize;
 	font->advanceArray[glyphIndex] = advanceX;
-	cw("advanceX: %.2f", advanceX);
+	// cw("advanceX: %.2f", advanceX);
 
 	// update glyphToCode 
-	font->glyphToCodeArrayFirstItem[glyphIndex] = charCode;
-	this->m_glyphIndexCounter++;
-	cw("replace glyph index[%d] = charCode: %d", glyphIndex, charCode);
-
-	cw("info glyph: left:%d, top:%d, w:%d, h:%d", (int)g->left, (int)g->top, (int)g->width, (int)g->height);
-	cw("bound: minX:%.2f, maxX:%.2f, minY:%.2f, maxY:%.2f", g->minX, g->maxX, g->minY, g->maxY);
+	font->glyphToCodeArray[glyphIndex] = charCode;
+	this->m_addNewGlyphIndexCounter++;
+	//cw("replace glyph index[%d] = charCode: %d", glyphIndex, charCode);
+	//cw("info glyph: left:%d, top:%d, w:%d, h:%d", (int)g->left, (int)g->top, (int)g->width, (int)g->height);
+	//cw("bound: minX:%.2f, maxX:%.2f, minY:%.2f, maxY:%.2f", g->minX, g->maxX, g->minY, g->maxY);
 
 }
 
-void CustomSwfFontSDF::RecalculateGameFontGlyphs()
+void CustomSwfFontSDF::RecalculateGlyphsForTexturePack2x2()
 {
 	pn("RecalculateGameFontGlyphs...");
 

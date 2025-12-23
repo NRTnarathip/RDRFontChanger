@@ -124,7 +124,7 @@ struct swfFont
 	void* _0x10;
 	void* _0x18; // 0x18 -> 0x20
 	// glyph index to char code
-	unsigned short* glyphToCodeArrayFirstItem; //0x20 - > 0x28
+	unsigned short* glyphToCodeArray; //0x20 - > 0x28
 	float* advanceArray; // x28 -> x30
 	char codeToGlyph[0x80]; // 0x30 -> 0xb0
 	short sheetCount; // 0xb0
@@ -143,7 +143,7 @@ struct swfFont
 	swfFont* Clone();
 	void LogInfo();
 };
-CHECK_OFFSET(swfFont, glyphToCodeArrayFirstItem, 0x20);
+CHECK_OFFSET(swfFont, glyphToCodeArray, 0x20);
 CHECK_OFFSET(swfFont, sheetCount, 0xb0);
 CHECK_OFFSET(swfFont, glyphCount, 0xb8);
 CHECK_OFFSET(swfFont, langCode, 0xbb);

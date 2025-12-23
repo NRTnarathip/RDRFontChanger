@@ -24,7 +24,7 @@ public:
 
 	// base on calling ReplaceTexture(); !!!
 
-	int m_glyphIndexCounter;
+	int m_addNewGlyphIndexCounter;
 	float* backupAdanveArrayPtr;
 	swfGlyph* backupGlyphArray;
 	unsigned short* backupGlyphIndexToCodeArray;
