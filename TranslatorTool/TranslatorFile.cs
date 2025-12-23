@@ -91,10 +91,11 @@ public class TranslatorFile
     }
 
     public int updateLineCounter = 0;
-    public void UpdateLineParser(LineParser parser)
+    public void UpdateLineParser(LineParser _parser)
     {
-        m_lineStringMap[parser.m_index] = parser.m_text;
-        m_lineParserMap[parser.m_index] = parser;
+        var cloneParser = _parser.Clone();
+        m_lineStringMap[cloneParser.m_index] = cloneParser.m_text;
+        m_lineParserMap[cloneParser.m_index] = cloneParser;
         updateLineCounter++;
     }
 
@@ -152,20 +153,13 @@ public class TranslatorFile
         if (src == null || dst == null)
             return false;
 
-        if (src.isPureSingleSymbol)
+        if (src.m_isPureSingleSymbol)
             return false;
 
 
         if (src.m_index != dst.m_index)
         {
             Console.WriteLine($"src index: {src.m_index} != dst index: {dst.m_index}!");
-            return false;
-        }
-
-        // assert should you translate this source line??
-        if (src.isPureSingleSymbol)
-        {
-            Console.WriteLine($"skip line: {src.m_raw}");
             return false;
         }
 
@@ -190,5 +184,82 @@ public class TranslatorFile
     internal int GetTotalLine()
     {
         return m_lineParserMap.Count;
+    }
+    public bool TryRestoreBackToSource(int index)
+    {
+        if (!isSourceFile)
+            return false;
+
+        var srcLineParser = m_srcFile.TryGetLine(index);
+        if (srcLineParser == null)
+            return false;
+
+        var dstLineParser = this.TryGetLine(index);
+        if (dstLineParser == null)
+            return false;
+
+        if (dstLineParser.m_text != srcLineParser.m_text)
+            UpdateLineParser(srcLineParser);
+
+        return true;
+    }
+
+    public bool TryGetLine(int index, out LineParser? srcLine, out LineParser? translateLine)
+    {
+        srcLine = translateLine = null;
+
+        var srcLineParser = m_srcFile.TryGetLine(index);
+        if (srcLineParser == null)
+            return false;
+
+        var dstLineParser = this.TryGetLine(index);
+        if (dstLineParser == null)
+            return false;
+
+        srcLine = srcLineParser;
+        translateLine = dstLineParser;
+        return true;
+    }
+
+    public bool TryRestoreTags(LineParser? src, LineParser? dst, out LineParser newLine)
+    {
+        newLine = null;
+
+        if (src == null || dst == null)
+            return false;
+
+        if (src.IsSameTags(dst))
+            return false;
+
+        int restoreTagCount = 0;
+        string newLineText = dst.m_text;
+        // Console.WriteLine("src tags: " + src.m_tagOrSymbolList.Count);
+        // Console.WriteLine("dst tags: " + dst.m_tagOrSymbolList.Count);
+        if (src.m_tagOrSymbolList.Count != dst.m_tagOrSymbolList.Count)
+        {
+            // Console.WriteLine("can't restore cause tag count are not same!");
+            return false;
+        }
+
+        for (int i = 0; i < src.m_tagOrSymbolList.Count; i++)
+        {
+            //    Console.WriteLine($"try get tag: {i}");
+            var srcTag = src.m_tagOrSymbolList[i];
+            var srcTagType = src.m_tagTypeList[i];
+
+            var dstTag = dst.m_tagOrSymbolList[i];
+            var dstTagType = dst.m_tagTypeList[i];
+
+            // check if tag it's same type
+            if (srcTag != dstTag && srcTagType == dstTagType)
+            {
+                // restore tag
+                newLineText = newLineText.Replace(dstTag, srcTag);
+                restoreTagCount++;
+            }
+        }
+
+        newLine = LineParser.Parse(dst.m_index, newLineText);
+        return restoreTagCount > 0;
     }
 }

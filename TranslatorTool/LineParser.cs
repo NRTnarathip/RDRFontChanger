@@ -4,6 +4,7 @@ using System.Reflection.Metadata.Ecma335;
 using System.Security.Permissions;
 using System.Text;
 using System.Text.RegularExpressions;
+using TranslatorTool;
 
 public sealed class LineParser
 {
@@ -21,12 +22,13 @@ public sealed class LineParser
     public readonly string m_raw;
     public readonly string m_text;
     public readonly int m_index = -1;
-    public readonly List<string> textSplits = new();
-    public readonly List<TextType> textTypeSplits = new();
+    public readonly List<string> m_textSplits = new();
+    public readonly List<TextType> m_textTypeSplits = new();
     // don't keep text
     public readonly List<string> m_tagOrSymbolList = new();
-    public readonly bool isPureText;
-    public readonly bool isPureSingleSymbol;
+    public readonly List<TextType> m_tagTypeList = new();
+    public readonly bool m_isPureText;
+    public readonly bool m_isPureSingleSymbol;
 
     public LineParser(string line)
     {
@@ -58,14 +60,16 @@ public sealed class LineParser
             int moveNext = 1;
             var c = currentText[0];
 
+            //Logger.Log("current text >> ");
+            //Logger.Log(currentText);
             // find html tag first!
             if (c == '<')
             {
                 if (TryParseHTMLTag(currentText,
                     out var content, out var beginTag, out var endTag))
                 {
-                    //  Console.WriteLine($"found html parse: {beginTag}{content}{endTag}");
                     moveNext = content.Length + beginTag.Length + endTag.Length;
+                    //  Console.WriteLine($"found html parse: {beginTag}{content}{endTag}");
                     // check if it's color tag
                     if (IsColorTag(beginTag, out var colorName))
                     {
@@ -76,8 +80,9 @@ public sealed class LineParser
                     }
                     else
                     {
+                        string htmlLine = $"{beginTag}{content}{endTag}";
                         // Console.WriteLine("is not color tag!");
-                        MarkText(content, TextType.HTMLTag);
+                        MarkText(htmlLine, TextType.HTMLTag);
                     }
                 }
                 else
@@ -90,7 +95,7 @@ public sealed class LineParser
                     if (unknowTag.Length > 0)
                     {
                         // Console.WriteLine("found unknow tag: " + unknowTag);
-                        moveNext += unknowTag.Length;
+                        moveNext = unknowTag.Length;
                         MarkText(unknowTag, TextType.Unknow);
                     }
                 }
@@ -144,19 +149,19 @@ public sealed class LineParser
         }
 
         // helper
-        foreach (var type in textTypeSplits)
+        if (m_textTypeSplits.Count == 1)
         {
-            if (type != TextType.Text)
-            {
-                isPureText = false;
-                break;
-            }
+            m_isPureSingleSymbol = m_textTypeSplits[0] != TextType.Text;
+            m_isPureText = !m_isPureSingleSymbol;
         }
-
-        isPureSingleSymbol = textTypeSplits.Count == 1
-                && textTypeSplits[0] != TextType.Text;
+        else if (m_textSplits.Count == 0)
+        {
+            // empty string!!
+            throw new Exception($"not found any text at src raw: {m_raw}");
+        }
     }
-    public static LineParser New(int i, string text)
+
+    public static LineParser Parse(int i, string text)
     {
         return new LineParser(MakeLine(i, text));
     }
@@ -166,10 +171,15 @@ public sealed class LineParser
     }
     void MarkText(string text, TextType type)
     {
-        this.textSplits.Add(text);
-        this.textTypeSplits.Add(type);
+        //Console.WriteLine($"[mark text]-{text}");
+        //Console.WriteLine($"[mark tag ]-{type}");
+        this.m_textSplits.Add(text);
+        this.m_textTypeSplits.Add(type);
         if (type != TextType.Text)
+        {
             m_tagOrSymbolList.Add(text);
+            m_tagTypeList.Add(type);
+        }
     }
 
     static readonly HashSet<string> ColorBeginTags = [
@@ -265,26 +275,23 @@ public sealed class LineParser
 
     internal bool IsSameTags(LineParser target)
     {
-        // just pure text, don't check tags
-        if (target.isPureText && this.isPureText)
-            return true;
-
         // same tags count
-        if (target.m_tagOrSymbolList.Count == this.m_tagOrSymbolList.Count)
-        {
-            for (int i = 0; i < target.m_tagOrSymbolList.Count; i++)
-            {
-                // not same!!
-                if (target.m_tagOrSymbolList[i] != this.m_tagOrSymbolList[i])
-                    return false;
-            }
+        if (target.m_tagOrSymbolList.Count != this.m_tagOrSymbolList.Count)
+            return false;
 
-            // same here
-            return true;
+        // check all tags
+        var thisTags = this.m_tagOrSymbolList;
+        var targetTags = target.m_tagOrSymbolList;
+        for (int i = 0; i < target.m_tagOrSymbolList.Count; i++)
+        {
+            if (targetTags[i] != thisTags[i])
+                return false;
         }
 
-
-        // not match tags
-        return false;
+        return true;
+    }
+    public LineParser Clone()
+    {
+        return Parse(m_index, m_text);
     }
 }

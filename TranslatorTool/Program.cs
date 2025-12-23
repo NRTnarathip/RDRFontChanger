@@ -55,12 +55,12 @@ internal class Program
         foreach (var srcLineParserPair in srcFile.m_lineParserMap)
         {
             var srcLineParser = srcLineParserPair.Value;
-            var index = srcLineParser.m_index;
+            var lineIndex = srcLineParser.m_index;
             {
-                var dstLineParser = translateFile.TryGetLine(index);
+                var dstLineParser = translateFile.TryGetLine(lineIndex);
                 if (dstLineParser == null)
                 {
-                    Console.WriteLine("not found dst line at index: " + index);
+                    Console.WriteLine("not found dst line at index: " + lineIndex);
                     continue;
                 }
 
@@ -71,6 +71,13 @@ internal class Program
                     continue;
             }
 
+            // restore first before translate!
+            if (translateFile.TryRestoreBackToSource(lineIndex))
+            {
+                Logger.Log(" -- done restore line back to soruce!");
+            }
+
+
             int maxRetry = GlobalConfig.MaxTranslateRrtry;
             for (int attemptIndex = 0; attemptIndex < maxRetry; attemptIndex++)
             {
@@ -80,45 +87,63 @@ internal class Program
                     translateFile.Save();
                     saveFileTimer.Restart();
                 }
-
-                var result = await ai.TryTranslateAsync(
-                    srcLineParser.m_text);
-                if (result == null)
+                LineParser? translateParser;
                 {
-                    Logger.Log([
-                        " -- can't translate this line",
+
+                    var result = await ai.TryTranslateAsync(
+                        srcLineParser.m_text);
+                    if (result == null)
+                    {
+                        Logger.Log([
+                            " -- can't translate this line",
                         srcLineParser.m_text,
                         " -- skip it",
                     ]);
-                    break;
+                        break;
+                    }
+                    // parse it
+                    translateParser = LineParser.Parse(lineIndex, result);
+                    // fix tags first!!
+                    if (translateFile.TryRestoreTags(srcLineParser, translateParser,
+                            out var newLineRestoreTags))
+                    {
+                        translateParser = newLineRestoreTags;
+                        translateFile.UpdateLineParser(newLineRestoreTags);
+                        Logger.Log([
+                            " -- restored tags: ",
+                        " -- source >> ",
+                        srcLineParser.m_raw,
+                        " -- translate result >> ",
+                        translateParser.m_raw,
+                    ]);
+                    }
                 }
-
-
-                var resultParser = LineParser.New(index, result);
 
                 // retry translate if result word from ai correct
                 if (translateFile.ShouldTranslateText(
-                        srcLineParser, resultParser))
+                        srcLineParser, translateParser))
                 {
                     Logger.Log([
                         $" -- retry translate again",
                         $" -- attemp: {attemptIndex + 1}/{maxRetry}",
+                        $" -- line index: {lineIndex}/{totalLine}",
                         $" -- source text >> ",
                         srcLineParser.m_text,
                         $" -- translate result >> ",
-                        result,
+                        translateParser.m_text,
                     ]);
+
                     continue;
                 }
 
                 // replace it
                 Logger.Log([
                     $" -- translated text!",
-                    $" -- index   : {index}/{totalLine}",
+                    $" -- index   : {lineIndex}/{totalLine}",
                     $" -- src text: {srcLineParser.m_text}",
-                    $" -- new text: {result}",
+                    $" -- new text: {translateParser.m_text}",
                     ]);
-                translateFile.UpdateLineParser(resultParser);
+                translateFile.UpdateLineParser(translateParser);
 
                 // next line!
                 break;
