@@ -41,7 +41,7 @@ void DumpSwfFont(swfFont* font, const char* prefixFileName) {
 	stream << std::format("sheet cell count= {}\n", sheet->cellCount);
 	stream << std::format("sheet texture count= {}\n", sheet->textureCount);
 
-	auto glyphArrayFirstElement = (swfGlyph**)sheet->cellArrayPtr;
+	auto glyphArrayFirstElement = (swfGlyph**)sheet->glyphArray;
 
 	for (int i = 0;i < font->glyphCount;i++)
 	{
@@ -56,7 +56,7 @@ void DumpSwfFont(swfFont* font, const char* prefixFileName) {
 		float minY = g->minY;
 		float maxX = g->maxX;
 		float maxY = g->maxY;
-		float advance = *((float*)font->advanceFirstItem + i);
+		float advance = *((float*)font->advanceArray + i);
 		line += std::format(
 			", minX={:.2f}, minY={:.2f}, maxX={:.2f}, maxY={:.2f}, advance={:.2f}",
 			minX, minY, maxX, maxY, advance);

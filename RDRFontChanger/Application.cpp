@@ -5,6 +5,7 @@
 #include "Hooks.h"
 #include "RenderHook.h"
 #include "TextTranslator.h"
+#include "XMem.h"
 
 Application::Application() {
 }
@@ -44,5 +45,6 @@ void Application::RegisterAllMyModule()
 	sys.Register<TextureReplacer>();
 	sys.Register<FontReplacer, TextureReplacer>();
 	sys.Register<RenderHook>();
+	sys.Register<XMemSystem>();
 
 }

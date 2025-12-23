@@ -7,6 +7,7 @@
 #include "HookLib.h"
 #include "FileLib.h"
 #include "StringLib.h"
+#include "TextureLib.h"
 using namespace HookLib;
 
 // variables
@@ -38,71 +39,93 @@ swfFont* HK_FindFont(swfFile* file, const char* findName) {
 	return result;
 }
 
-void* (*fn_UnkSwfFont)(void* ctx, void* reader);
-void* HK_UnkSwfFont(void* ctx, void* reader) {
-	cw("BeginHook HK_UnkSwfFont");
+void* (*fn_UnkSwfReader)(void* ctx, void* reader);
+void* HK_UnkSwfReader(void* ctx, void* reader) {
+	cw("BeginHook HK_UnkSwfReader");
 	cw("ctx: %p", ctx);
 	cw("reader: %p", reader);
-	auto result = fn_UnkSwfFont(ctx, reader);
-	cw("HK_UnkSwfFont result: %p", result);
+	auto result = fn_UnkSwfReader(ctx, reader);
+	cw("HK_UnkSwfReader result: %p", result);
 
 	// try replace font here
-	//if (g_queueFontCreated.size() > 0) {
-	//	for (swfFont* font : g_queueFontCreated) {
-	//		auto fontReplacer = FontReplacer::Instance();
-	//		fontReplacer->TryReplaceFontNarrowWithSDF(font);
-	//	}
-	//	g_queueFontCreated.clear();
-	//}
 
-	cw("EndHook HK_UnkSwfFont");
+	cw("EndHook HK_UnkSwfReader");
 
 	return result;
 }
 
-void* (*fn_SwfFont_VF16_Rader)(swfFont* font, void* reader);
-void* HK_SwfFont_VF16_Rader(swfFont* font, void* reader) {
-	cw("BeginHook HK_SwfFont_VF16_Rader");
+void* (*fn_SwfFont_VF16_Reader)(swfFont* font, void* reader);
+void* HK_SwfFont_VF16_Reader(swfFont* font, void* reader) {
+	cw("BeginHook HK_SwfFont_VF16_Reader");
 	cw("font: %p", font);
 	cw("reader: %p", reader);
-	auto result = fn_SwfFont_VF16_Rader(font, reader);
+	auto result = fn_SwfFont_VF16_Reader(font, reader);
 	cw("HK_SwfFont_VF16_Rader result: %p", result);
-	// try replace font here
-	//auto fontReplacer = FontReplacer::Instance();
-	//fontReplacer->TryReplaceFontNarrowWithSDF(font);
 	font->LogInfo();
 	FontReplacer::g_gameFonts.push_back(font);
 
-	cw("EndHook HK_SwfFont_VF16_Rader");
+	cw("EndHook HK_SwfFont_VF16_Reader");
 	return result;
 }
 
+
+void* (*fn_swfContext_Place)(swfContext* self, void* param_2);
+void* HK_swfContext_Place(swfContext* self, void* p2) {
+	cw("BeginHook HK_swfContext_Place");
+	cw("self: %p", self);
+	cw("p2: %p", p2);
+	auto r = fn_swfContext_Place(self, p2);
+	cw("HK_swfContext_Place result: %p", r);
+
+	cw("EndHook HK_swfContext_Place");
+	return r;
+}
+
+void* (*fn_swfContext_Place2)(swfContext* self, void* param_2, void* p3);
+void* HK_swfContext_Place2(swfContext* self, void* p2, void* p3) {
+	cw("BeginHook HK_swfContext_Place2");
+	cw("self: %p", self);
+	cw("p2: %p", p2);
+	cw("p3: %p", p3);
+	cw("try call fn_swfContext_Place2...");
+	auto r = fn_swfContext_Place2(self, p2, p3);
+	cw("HK_swfContext_Place2 result: %p", r);
+
+	auto fontReplacer = FontReplacer::Instance();
+	for (swfFont* font : FontReplacer::g_gameFonts) {
+		fontReplacer->TryReplaceFont(font);
+	}
+
+	cw("EndHook HK_swfContext_Place2");
+	return r;
+}
 
 // class functions
 bool FontReplacer::Init()
 {
 	// HookRva(0x1b72550, HK_FindFont, &fn_FindFont);
-	// crash here if you enter in game
-	// HookRva(0x183160, HK_UnkSwfFont, &fn_UnkSwfFont);
-	HookRva(0x19b3b0, HK_SwfFont_VF16_Rader, &fn_SwfFont_VF16_Rader);
+	// HookRva(0x183160, HK_UnkSwfReader, &fn_UnkSwfReader);
+	// HookRva(0x19b3b0, HK_SwfFont_VF16_Reader, &fn_SwfFont_VF16_Reader);
+	// HookRva(0x11bb80, HK_swfContext_Place, &fn_swfContext_Place);
+	// HookRva(0x1150c0, HK_swfContext_Place2, &fn_swfContext_Place2);
 
 	return true;
 }
 
 // key: font name | value: new font sdf path
 void FontReplacer::RegisterFontWithFontSDF(
-	std::string gameFontNameKey, std::string newFontPath)
+	std::string gameFontName, std::string newFontPath)
 {
 	// normalize it!!
-	gameFontNameKey = MakeGameFontNameKey(gameFontNameKey);
+	gameFontName = MakeGameFontNameKey(gameFontName);
 
 	// regular
 	pn("try register game font: {}, new font: {}",
-		gameFontNameKey, newFontPath);
+		gameFontName, newFontPath);
 
 	// already 
-	if (g_registerGameFontMap.contains(gameFontNameKey)) {
-		pn("already register game font: {}", gameFontNameKey);
+	if (g_registerGameFontMap.contains(gameFontName)) {
+		pn("already register game font: {}", gameFontName);
 		return;
 	}
 
@@ -120,28 +143,32 @@ void FontReplacer::RegisterFontWithFontSDF(
 	pn("font dir: {}", fontDir);
 	auto textureReplacer = TextureReplacer::Instance();
 
-	// max texture count at 3!
-	for (int indedx = 0; indedx < 3;indedx++) {
-		// regular
-		{
-			auto gameTextureRegular = std::format("{}.charset_{}.dds", gameFontNameKey, indedx);
-			auto ddstextureRegularPath = fs::path(fontDir) / gameTextureRegular;
-			textureReplacer->RegisterReplaceTexture(gameTextureRegular,
-				ddstextureRegularPath.string());
-		}
+	const char* k_Pack2x2DDSNameSuffix = ".pack2x2.dds";
+	// regular
+	{
+		auto ddsFilename = std::format("{}{}", gameFontName, k_Pack2x2DDSNameSuffix);
+		auto ddspath = fs::path(fontDir) / ddsFilename;
+		textureReplacer->RegisterReplaceTexture(
+			std::format("{}.charset_0.dds", gameFontName),
+			ddspath.string());
+	}
 
-		// bold
-		{
-			auto gameTextureBold = std::format("{}.charset_b_{}.dds", gameFontNameKey, indedx);
-			auto ddstextureBoldPath = fs::path(fontDir) / gameTextureBold;
-			textureReplacer->RegisterReplaceTexture(gameTextureBold,
-				ddstextureBoldPath.string());
+	// bold
+	{
+		auto fontBoldSDFFilename = std::format("{}_bold{}", gameFontName, k_SDFontFileExtName);
+		// check is have a bold sdffont file??
+		if (fs::exists(fs::path(fontDir) / fontBoldSDFFilename)) {
+			auto ddsFilename = std::format("{}_bold{}", gameFontName, k_Pack2x2DDSNameSuffix);
+			auto ddspath = fs::path(fontDir) / ddsFilename;
+			textureReplacer->RegisterReplaceTexture(
+				std::format("{}.charset_b_0.dds", gameFontName),
+				ddspath.string());
 		}
 	}
 
-	g_registerGameFontMap[gameFontNameKey] = newFontPath;
+	g_registerGameFontMap[gameFontName] = newFontPath;
 	pn("registed game font: {}, new font: {}",
-		gameFontNameKey, newFontPath);
+		gameFontName, newFontPath);
 }
 
 bool IsBold(swfFont* font) {
@@ -190,7 +217,7 @@ CustomSwfFontSDF* FontReplacer::TryReplaceFont(swfFont* gameFont)
 	bool isBold = IsBold(gameFont);
 	if (isBold) {
 		// redirect into bold font 
-		fontPath = std::format("{}/{}_bold{}", fontDir, fontName, FontFileExtName);
+		fontPath = std::format("{}/{}_bold{}", fontDir, fontName, k_SDFontFileExtName);
 		pn("redirect to font bold: {}", fontPath);
 	}
 
@@ -202,20 +229,47 @@ CustomSwfFontSDF* FontReplacer::TryReplaceFont(swfFont* gameFont)
 	auto customFont = g_gameFontMapWithFontSDF[gameFont]
 		= new CustomSwfFontSDF(gameFont, fontPath, fontSize);
 	cw("replaced original font: %p", gameFont);
+
+	// debug!!
+
 	return customFont;
+}
+
+CustomSwfFontSDF* FontReplacer::TryGetCustomFont(swfFont* font)
+{
+	if (g_gameFontMapWithFontSDF.contains(font))
+		return g_gameFontMapWithFontSDF[font];
+	return nullptr;
 }
 
 void FontReplacer::RegisterFontFromDir(std::string dir)
 {
 	std::vector<std::string> files;
 	GetFiles(dir, files);
+	std::unordered_set<std::string> g_gameFontNames = {
+			"rdr2narrow_ol1",
+			"rdr2narrow",
+			"rdr2narrowbig",
+			"redemption",
+			"rdr2lucid",
+			"redemption_ol1",
+			"redemption_shadow",
+			"redemptionbig",
+			"rdr2narrowbigol1",
+			"redemptionstagger",
+			"redemptionstaggershadow",
+	};
+
 	for (auto file : files) {
 		auto path = fs::path(file);
-		if (path.extension() != FontFileExtName)
+		if (path.extension() != k_SDFontFileExtName)
 			continue;
 
-		auto gameFontName = StringFileNoExt(file);
-		RegisterFontWithFontSDF(gameFontName, file);
+		auto filename = path.filename().string();
+		auto gameFontName = MakeGameFontNameKey(StringFileNoExt(filename));
+		if (g_gameFontNames.contains(gameFontName) == false)
+			continue;
 
+		RegisterFontWithFontSDF(gameFontName, file);
 	}
 }

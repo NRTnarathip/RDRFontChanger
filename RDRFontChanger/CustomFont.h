@@ -23,11 +23,11 @@ public:
 	// swfFont* newGameFont;
 
 	// base on calling ReplaceTexture(); !!!
-	std::vector<grcTextureD11*> backupTextureArray;
-	std::vector<const char*> backupTextureNameArray;
-	std::vector<grcTextureD11*> newTextures;
-	std::vector<std::string> newTextureFileNames;
-	int replaceGlyphCount;
+
+	int m_glyphIndexCounter;
+	float* backupAdanveArrayPtr;
+	swfGlyph* backupGlyphArray;
+	unsigned short* backupGlyphIndexToCodeArray;
 };
 
 

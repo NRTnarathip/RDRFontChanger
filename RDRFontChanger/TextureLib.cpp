@@ -7,6 +7,18 @@
 #include "stb_image_write.h"
 
 #include "DXLib.h"
+#include <filesystem>
+#include "HookLib.h"
+#include <string>
+#include "StringLib.h"
+#include "Rage.h"
+#include <iostream>
+#include <unordered_set>
+#include <unordered_map>
+#include "DirectXTex.h"
+#include "ISystem.h"
+
+namespace fs = std::filesystem;
 
 void TrySaveTextureForCC0x32(grcTextureD11* tex) {
 	cw("try save into png...");
@@ -57,5 +69,67 @@ void TrySaveTextureForCC0x32(grcTextureD11* tex) {
 	);
 
 	cw("saved path: %s", saveFilePath.c_str());
+}
+
+std::unordered_map<std::string, DirectX::ScratchImage> m_scratchImageMap;
+
+grcTextureD11* TryLoadTextureD11(const char* path)
+{
+	cw("TryLoadTextureD11");
+	cw("try to read file: %s", path);
+	if (std::filesystem::exists(path) == false) {
+		pn("failed load texture, file not found: {}", path);
+		return nullptr;
+	}
+
+	auto instance = grcTextureFactoryD11::GetInstance();
+	grcTextureD11* tex = instance->CreateTexture(path, 0);
+
+	auto textureKey = tex->GetName();
+	cw("texture key: %s", textureKey.c_str());
+
+	DirectX::ScratchImage img;
+	auto filePathSystem = fs::path(path);
+	auto wFilePath = filePathSystem.wstring();
+	HRESULT hr = DirectX::LoadFromDDSFile(
+		wFilePath.data(),
+		DirectX::DDS_FLAGS::DDS_FLAGS_NONE,
+		nullptr, img);
+
+	if (FAILED(hr)) {
+		cw("error to LoadFromDDSFile");
+		return nullptr;
+	}
+
+	// check image it match metadata
+	auto meta = img.GetMetadata();
+	// Todo: need to check fourCC and dxgi format this!
+	bool isMatchMetadata =
+		meta.mipLevels == tex->mipmap
+		&& meta.width == tex->width
+		&& meta.height == tex->height;
+
+	cw("new texture meta info...");
+	cw("size:   %d - %d", meta.width, meta.height);
+	cw("mipmap: %d", meta.mipLevels);
+	cw("format: 0x%x | name: %s", meta.format, DxgiFormatToString(meta.format));
+	cw("and here your current texture info...");
+	tex->LogInfo();
+
+
+	// ready to change new raw data of dds file!!
+	auto oldRawImage = tex->rawImage;
+	auto newRawImage = img.GetPixels();
+	tex->rawImage = newRawImage;
+	cw("set rawImage!! old: %p, new: %p!!", oldRawImage, newRawImage);
+
+	// add to cache
+	pn("try call CreateFromBackingStore...");
+	HookLib::InvokeRva<void*, grcTextureD11*>(0x1543c0, tex);
+	tex->rawImage = 0;
+	pn("done CreateFromBackingStore!!");
+	tex->LogInfo();
+	m_scratchImageMap.emplace(textureKey, std::move(img));
+	return tex;
 }
 

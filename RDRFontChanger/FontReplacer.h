@@ -9,7 +9,7 @@ class FontReplacer : public ISystem
 {
 public:
 	static std::vector<swfFont*> g_gameFonts;
-	static constexpr auto FontFileExtName = ".sdfont";
+	static constexpr auto k_SDFontFileExtName = ".sdfont";
 
 	FontReplacer() {
 		g_instance = this;
@@ -18,6 +18,7 @@ public:
 
 	void RegisterFontWithFontSDF(std::string gameFontName, std::string newFontPath);
 	CustomSwfFontSDF* TryReplaceFont(swfFont* font);
+	CustomSwfFontSDF* TryGetCustomFont(swfFont* font);
 	void RegisterFontFromDir(std::string dir);
 
 	static FontReplacer* Instance() { return g_instance; };

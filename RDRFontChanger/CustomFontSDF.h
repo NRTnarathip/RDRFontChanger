@@ -14,5 +14,6 @@ public:
 
 private:
 	void ReplaceGlyph(unsigned short charCode, SDFGlyph* glyph);
+	void RecalculateGameFontGlyphs();
 };
 

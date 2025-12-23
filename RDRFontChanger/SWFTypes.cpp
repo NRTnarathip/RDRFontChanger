@@ -248,8 +248,19 @@ void swfFont::LogInfo()
 		cw("texture count: %d", sheet->textureCount);
 		for (int i = 0;i < sheet->textureCount;i++) {
 			std::string name = sheet->textureNameArray[i];
-			cw("texture[%d]: %s", i, name.c_str());
+			pn("texture[{}]: {}", i, name);
 		}
+
+		cw("texture glyph index array: %p", sheet->textureGlyphIndexArray);
+		//for (int i = 0;i < sheet->cellCount;i++) {
+		//	swfGlyph* g = sheet->cellArrayPtr + i;
+		//	pn("glyph[{}] ptr: {}", i, (void*)g);
+		//	auto textureGlyphIndexArray = (USHORT*)sheet->textureGlyphIndexArray;
+		//	if (textureGlyphIndexArray) {
+		//		auto textureSpriteIndex = textureGlyphIndexArray[i];
+		//		pn("texture sprite index: {}", (void*)textureSpriteIndex);
+		//	}
+		//}
 	}
 	cw(" -- End Font Info --");
 }

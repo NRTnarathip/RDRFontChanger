@@ -90,7 +90,6 @@ struct swfGlyph {
 	float width;
 	float height;
 
-	// unit EM
 	float minX;
 	float minY;
 	float maxX;
@@ -101,10 +100,10 @@ static_assert(sizeof(swfGlyph) == 0x20, "Assert Size");
 
 struct swfSheet {
 	grcTextureD11** textureArray;
-	swfGlyph* cellArrayPtr; // 0x8 -> 0x10
+	swfGlyph* glyphArray; // 0x8 -> 0x10
 	unsigned short size; // 0x10
 	unsigned short cellCount; // 0x12
-	void* indexArray; //x18
+	unsigned short* textureGlyphIndexArray; //x18
 	const char** textureNameArray; // 0x20
 	void* x28; //x28
 	int textureCount;
@@ -124,8 +123,9 @@ struct swfFont
 	void* _0x8;
 	void* _0x10;
 	void* _0x18; // 0x18 -> 0x20
+	// glyph index to char code
 	unsigned short* glyphToCodeArrayFirstItem; //0x20 - > 0x28
-	float* advanceFirstItem; // x28 -> x30
+	float* advanceArray; // x28 -> x30
 	char codeToGlyph[0x80]; // 0x30 -> 0xb0
 	short sheetCount; // 0xb0
 	short ascent;  // 0xb2

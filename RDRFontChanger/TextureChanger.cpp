@@ -4,9 +4,13 @@
 #include <filesystem>
 #include <string>
 #include <vector>
-#include <string>
 #include "StringLib.h"
 #include "Rage.h"
+#include <iostream>
+#include <unordered_set>
+#include <unordered_map>
+#include "DirectXTex.h"
+#include "ISystem.h"
 
 namespace fs = std::filesystem;
 
