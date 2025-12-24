@@ -1,19 +1,26 @@
 #pragma once
-#include "CustomFont.h"
 #include "../SDFontLib/SDFont.h"
+#include "SWFTypes.h"
+#include <unordered_set>
 
-class CustomSwfFontSDF : public CustomSwfFontAbstract
+class CustomFontSDF
 {
 public:
-	float baselineNormalize;
-	float lineHeightNormalize;
+	swfFont* originalGameFont;
+	float* backupAdanveArrayPtr;
+	swfGlyph* backupGlyphArray;
+	unsigned short* backupGlyphIndexToCodeArray;
 	// rdr2narrow sheet size = 700
 	float fontSize;
 	SDFont* fontSDF;
-	CustomSwfFontSDF(swfFont* gameFont, std::string fontpath, float fontSize);
+	CustomFontSDF(swfFont* gameFont, std::string fontpath, float fontSize);
 
 private:
-	void AddNewGlyph(unsigned short charCode, SDFGlyph* glyph);
-	void RecalculateGlyphsForTexturePack2x2();
+	int m_oldGameFontGlyphCount;
+	int m_newGameFontGlyphCount;
+	std::unordered_set<unsigned short> m_newSDFontCharCodes;
+	std::unordered_set<unsigned short> m_gameFontCharCodes;
+	void AddNewGlyph(int index, unsigned short charCode, SDFGlyph* glyph);
+	void RecalculateGameFontGlyphsBaseTexture2x2();
 };
 

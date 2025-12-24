@@ -11,7 +11,6 @@
 #include <filesystem>
 #include "Logger.h"
 #include "Hooks.h"
-#include "CustomFont.h"
 #include "TextureChanger.h"
 #include <unordered_set>
 #include "Application.h"

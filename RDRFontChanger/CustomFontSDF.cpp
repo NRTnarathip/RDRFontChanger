@@ -7,96 +7,70 @@
 
 namespace fs = std::filesystem;
 
-CustomSwfFontSDF::CustomSwfFontSDF(swfFont* gameFont,
+CustomFontSDF::CustomFontSDF(swfFont* gameFont,
 	std::string fontpath, float fontSize)
 {
 	cw("try create custom sdf font: %s", fontpath.c_str());
+	gameFont->LogInfo();
 
+	// initialize data
 	this->originalGameFont = gameFont;
 	this->fontSDF = new SDFont(fontpath);
 	this->fontSize = fontSize;
-
-	//float ascentMax = 0, descentMax = 0;
-	//for (auto& item : fontSDF->charCodeToGlyphMap) {
-	//	auto code = item.first;
-	//	auto glyph = item.second;
-	//	float topY = glyph->horizontalBearingY;
-	//	if (topY > ascentMax)
-	//		ascentMax = topY;
-
-	//	float bottomY = topY - glyph->height;
-	//	if (bottomY < 0.0f) {
-	//		float distBelow = -bottomY;
-	//		if (distBelow > descentMax)
-	//			descentMax = distBelow;
-	//	}
-	//}
-
-	//this->baselineNormalize = ascentMax;
-	//this->lineHeightNormalize = ascentMax + descentMax;
-//	cw("lineHeight: %.2f", lineHeightNormalize * fontSize);
-	//this->originalGameFont->ascent = ascentMax * fontSize;
-	//this->originalGameFont->descent = descentMax * fontSize;
-	//this->originalGameFont->leading = (ascentMax + descentMax) * 0.30 * fontSize;
-
-	gameFont->LogInfo();
-
-	// Recalculate game glyph with 512x512 in left top 0,0
-	RecalculateGlyphsForTexturePack2x2();
-
-	// replace all glyphs
-	// allocate memory for new glyphs
-
-	m_addNewGlyphIndexCounter = gameFont->glyphCount - 1;
-	auto sheet = gameFont->sheet;
-
-	pn("try fetch sd font...");
-
 	// fetch sdfont new glyphs{
-	std::unordered_set<unsigned short> newSDFontCharCodes;
-	std::unordered_set<unsigned short> gameFontCharCodes;
 	for (int i = 0; i < gameFont->glyphCount;i++) {
-		auto charCode = gameFont->glyphToCodeArray[i];
-		gameFontCharCodes.insert(charCode);
+		this->m_gameFontCharCodes.insert(gameFont->glyphToCodeArray[i]);
 	}
-	pn("game font char codes: {}", gameFontCharCodes.size());
+	pn("game font char codes: {}", m_gameFontCharCodes.size());
 
 	for (auto& item : fontSDF->charCodeToGlyphMap) {
 		auto code = item.first;
-		if (gameFontCharCodes.contains(code))
+		if (m_gameFontCharCodes.contains(code))
 			continue;
 
-		newSDFontCharCodes.insert(code);
+		m_newSDFontCharCodes.insert(code);
 	}
+	m_oldGameFontGlyphCount = gameFont->glyphCount;
+	m_newGameFontGlyphCount = m_oldGameFontGlyphCount + m_newSDFontCharCodes.size();
 
+	// Recalculate game glyph with 512x512 in left top 0,0
+	RecalculateGameFontGlyphsBaseTexture2x2();
+
+
+	// allocate memory for new glyphs
+	auto sheet = gameFont->sheet;
 	// allocate new array!
-
 	{
 		pn("try allocate new arary...");
-		int oldGameFontGlyphCount = gameFont->glyphCount;
-		int newGameFontGlyphCount = oldGameFontGlyphCount + newSDFontCharCodes.size();
-
-		unsigned short* newGlyphIndexToCodeArray = (unsigned short*)XMem::Allocate(
-			newGameFontGlyphCount * sizeof(unsigned short), sizeof(unsigned short));
-
-		float* newAdvanceArray = (float*)XMem::Allocate(
-			newGameFontGlyphCount * sizeof(float), sizeof(float));
-
-		swfGlyph* newGlyphArray = (swfGlyph*)XMem::Allocate(
-			newGameFontGlyphCount * sizeof(swfGlyph), sizeof(swfGlyph));
-
 
 		// glyphIndexToCharCodeArray
+		cw("gameFont glyphToCodeArray: %p", gameFont->glyphToCodeArray);
+		auto newGlyphIndexToCodeArray = (unsigned short*)XMem::Allocate(
+			m_newGameFontGlyphCount * sizeof(unsigned short), sizeof(unsigned short));
 		memcpy(newGlyphIndexToCodeArray, gameFont->glyphToCodeArray,
-			oldGameFontGlyphCount * sizeof(unsigned short));
+			m_oldGameFontGlyphCount * sizeof(unsigned short));
+		pn("clone newGlyphIndexToCodeArray");
 
 		// advanceXArray 
-		memcpy(newAdvanceArray, gameFont->advanceArray,
-			oldGameFontGlyphCount * sizeof(float));
+		cw("gameFont advnaceArray: %p", gameFont->advanceArray);
+		auto newAdvanceArray = (float*)XMem::Allocate(
+			m_newGameFontGlyphCount * sizeof(float), sizeof(float));
+		if (gameFont->advanceArray) {
+			memcpy(newAdvanceArray, gameFont->advanceArray,
+				m_oldGameFontGlyphCount * sizeof(float));
+			pn("clone newAdvanceArray");
+		}
+		else {
+			cw("no need to clone advance array!");
+		}
+		gameFont->advanceArray = newAdvanceArray;
 
 		// glyph array!!
+		auto newGlyphArray = (swfGlyph*)XMem::Allocate(
+			m_newGameFontGlyphCount * sizeof(swfGlyph), sizeof(swfGlyph));
 		memcpy(newGlyphArray, sheet->glyphArray,
-			oldGameFontGlyphCount * sizeof(swfGlyph));
+			m_oldGameFontGlyphCount * sizeof(swfGlyph));
+		pn("clone newGlyphArray");
 
 		// backup it!
 		this->backupGlyphIndexToCodeArray = gameFont->glyphToCodeArray;
@@ -105,30 +79,45 @@ CustomSwfFontSDF::CustomSwfFontSDF(swfFont* gameFont,
 
 		// assign to new array!!
 		gameFont->glyphToCodeArray = newGlyphIndexToCodeArray;
-		gameFont->advanceArray = newAdvanceArray;
 		sheet->glyphArray = newGlyphArray;
 
 		// update gameFont glyph count...
-		gameFont->glyphCount = newGameFontGlyphCount;
-		sheet->cellCount = newGameFontGlyphCount;
+		gameFont->glyphCount = m_newGameFontGlyphCount;
+		sheet->cellCount = m_newGameFontGlyphCount;
+
+		// resize texture glyph index
+		if (sheet->textureGlyphIndexArray)
+		{
+			auto newTextureGlyphIndexArray = (unsigned short*)XMem::Allocate(
+				m_newGameFontGlyphCount * sizeof(unsigned short), sizeof(unsigned short));
+			memcpy(newTextureGlyphIndexArray, sheet->textureGlyphIndexArray,
+				m_oldGameFontGlyphCount * sizeof(unsigned short));
+			sheet->textureGlyphIndexArray = newTextureGlyphIndexArray;
+			pn("clone textureGlyphIndexArray");
+		}
 
 		// debug log
 		pn("update game font glyph array!");
 		pn("glyph count old: {}, new: {}",
-			oldGameFontGlyphCount, gameFont->glyphCount);
+			m_oldGameFontGlyphCount, gameFont->glyphCount);
 		// next step you can update new glyph slot!
 	}
 
-	// ready!!
-	for (auto code : newSDFontCharCodes) {
-		auto glyph = fontSDF->charCodeToGlyphMap[code];
-		AddNewGlyph(code, glyph);
+	// ready to add new glyphs !!
+	{
+		// start at end
+		int myGlyphIndexCounter = m_oldGameFontGlyphCount;
+		for (auto code : m_newSDFontCharCodes) {
+			auto glyph = fontSDF->charCodeToGlyphMap[code];
+			AddNewGlyph(myGlyphIndexCounter, code, glyph);
+			myGlyphIndexCounter++;
+		}
 	}
 	pn("done new obj CustomSDFont!");
 }
 
 
-void CustomSwfFontSDF::AddNewGlyph(unsigned short charCode, SDFGlyph* glyph)
+void CustomFontSDF::AddNewGlyph(int glyphIndex, unsigned short charCode, SDFGlyph* glyph)
 {
 	//	cw("try replace glyph, name: %s", glyph->name);
 
@@ -136,18 +125,15 @@ void CustomSwfFontSDF::AddNewGlyph(unsigned short charCode, SDFGlyph* glyph)
 	auto sdf = this->fontSDF;
 
 	// assert
-	if (this->m_addNewGlyphIndexCounter >= font->sheet->cellCount) {
+	if (glyphIndex >= font->sheet->cellCount) {
 		// full glyph
 		return;
 	}
 
 	auto sheet = font->sheet;
 	// ready
-	int glyphIndex = m_addNewGlyphIndexCounter;
 	// cw("glyph index: %d", glyphIndex);
 
-	// 700 size! on rdr2narrow sdf 
-	const float imageSize = 1024;
 	auto& sdfGlyph = *glyph;
 	float spreadTexture = this->fontSDF->spreadTexture;
 	// width, height pixel on texture dds
@@ -168,19 +154,18 @@ void CustomSwfFontSDF::AddNewGlyph(unsigned short charCode, SDFGlyph* glyph)
 	textureHeight += 2.0f * spreadTexture;
 
 	// finally convert (pixel normalize) to (texture size)
-	textureTop *= imageSize;
-	textureLeft *= imageSize;
-	textureWidth *= imageSize;
-	textureHeight *= imageSize;
+	{
+		const float imageSize = 512;
+		textureTop *= imageSize;
+		textureLeft *= imageSize;
+		textureWidth *= imageSize;
+		textureHeight *= imageSize;
+		// we ues texture pack 2x2 or 4 sprite in dds texture
+		// downscale into 512x512
+		// so we will add margin left start at x: 512
+		textureLeft += imageSize;
+	}
 
-	// we ues texture pack 2x2 or 4 sprite in dds texture
-	// downscale into 512x512
-	textureLeft /= 2;
-	textureTop /= 2;
-	textureWidth /= 2;
-	textureHeight /= 2;
-	// so we will add margin left start at x: 512
-	textureLeft += 512;
 
 
 	// log
@@ -230,58 +215,64 @@ void CustomSwfFontSDF::AddNewGlyph(unsigned short charCode, SDFGlyph* glyph)
 
 
 	// update glyph advanceX array
-	float advanceX = sdfGlyph.advanceX * fontSize;
-	font->advanceArray[glyphIndex] = advanceX;
+	if (font->advanceArray) {
+		float advanceX = sdfGlyph.advanceX * fontSize;
+		font->advanceArray[glyphIndex] = advanceX;
+	}
+	else {
+		cw("warning!!, this font don't have advance array!!");
+	}
 	// cw("advanceX: %.2f", advanceX);
 
-	// update glyphToCode 
+// update glyphToCode 
 	font->glyphToCodeArray[glyphIndex] = charCode;
-	this->m_addNewGlyphIndexCounter++;
+
+	// check is need update textureGlyphIndenx
+	// fixed firist index!
+	if (sheet->textureGlyphIndexArray)
+		sheet->textureGlyphIndexArray[glyphIndex] = 0;
+
+	// debug log
 	//cw("replace glyph index[%d] = charCode: %d", glyphIndex, charCode);
 	//cw("info glyph: left:%d, top:%d, w:%d, h:%d", (int)g->left, (int)g->top, (int)g->width, (int)g->height);
 	//cw("bound: minX:%.2f, maxX:%.2f, minY:%.2f, maxY:%.2f", g->minX, g->maxX, g->minY, g->maxY);
-
 }
 
-void CustomSwfFontSDF::RecalculateGlyphsForTexturePack2x2()
+void CustomFontSDF::RecalculateGameFontGlyphsBaseTexture2x2()
 {
 	pn("RecalculateGameFontGlyphs...");
 
-	auto& font = *originalGameFont;
-	auto glyphCount = font.glyphCount;
-	pn("glyph count: {}", glyphCount);
+	auto font = originalGameFont;
+	auto sheet = font->sheet;
+	auto glyphCount = font->glyphCount;
+	pn("font->glyphCount: {}", font->glyphCount);
+	pn("sheet->cellCount: {}", sheet->cellCount);
 
-	auto& sheet = *font.sheet;
 	for (int i = 0;i < glyphCount;i++) {
-		pn("try access glyph index: {}", i);
-		swfGlyph& g = sheet.glyphArray[i];
-		pn("glyph ready to read and write!");
-		int texIndex = 0;
+		swfGlyph& g = sheet->glyphArray[i];
+		unsigned short charCode = font->glyphToCodeArray[i];
+		pn("[{}] glyph, charCode: {}", i, charCode);
+		//pn("glyph ready to read and write!");
 
 		// check if you have multiple textures
-		if (sheet.textureGlyphIndexArray) {
-			texIndex = sheet.textureGlyphIndexArray[i];
-		}
-
-		// pn("texture sprite index: {}", texIndex);
-		// don't rescale if not texture index 0
-		if (texIndex > 0) {
+		if (sheet->textureGlyphIndexArray &&
+			sheet->textureGlyphIndexArray[i] > 0)
 			continue;
-		}
 
 		// should rescale if this glyph is on texture index 0
-		float& left = g.left;
-		float& top = g.top;
-		float& width = g.width;
-		float& height = g.height;
 		pn("[{}] glyph before rescale: x:{}, y:{}, w:{}, h:{}",
-			i, left, top, width, height);
-		left = left / 2;
-		top = top / 2;
-		width = width / 2;
-		height = height / 2;
+			i, g.left, g.top, g.width, g.height);
+
+		g.left /= 2;
+		g.top /= 2;
+		g.width /= 2;
+		g.height /= 2;
+
 		pn("[{}] glyph after rescale: x:{}, y:{}, w:{}, h:{}",
-			i, left, top, width, height);
+			i, g.left, g.top, g.width, g.height);
+
+		// update
+		sheet->glyphArray[i] = g;
 	}
 
 	pn("Done RecalculateGameFontGlyphs!");

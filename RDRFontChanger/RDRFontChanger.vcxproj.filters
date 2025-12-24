@@ -102,9 +102,6 @@
     <ClInclude Include="FileLib.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="CustomFont.h">
-      <Filter>Source Files\Font</Filter>
-    </ClInclude>
     <ClInclude Include="CustomFontSDF.h">
       <Filter>Source Files\Font</Filter>
     </ClInclude>
@@ -180,9 +177,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FontReplacer.cpp">
-      <Filter>Source Files\Font</Filter>
-    </ClCompile>
-    <ClCompile Include="CustomFont.cpp">
       <Filter>Source Files\Font</Filter>
     </ClCompile>
     <ClCompile Include="CustomFontSDF.cpp">

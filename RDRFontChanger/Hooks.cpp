@@ -6,7 +6,6 @@
 #include <sstream>
 #include <cstdint>
 
-#include "CustomFont.h"
 #include "SWFTypes.h"
 #include "XMem.h"
 #include "HookLib.h"
@@ -131,7 +130,6 @@ void* swfFontDeclareStruct(swfFont* self, void* p1) {
 	logFormat("self: %p", self);
 	logFormat("p1: %p", p1);
 	auto result = backup_swfFontDeclareStruct(self, p1);
-	DumpSwfFont(self, "swfFontDeclareStructAfter");
 	logFormat("result: %p", result);
 	return result;
 }
@@ -265,24 +263,24 @@ void* CreateAndMountRedemptionPackfile(char* p1) {
 	return res;
 }
 
-void* (*backup_txtFontTex_Load)(void* self, char* p1_fontPath, bool p2, bool p3);
-void* txtFontTex_Load(void* self, char* p1_fontPath, uint64_t p2, uint64_t p3) {
-	cw("BeginHook txtFontTex_Load...");
-	cw("self: %p", self);
-	cw("font path: %s", p1_fontPath);
-	cw("p2: %d", p2);
-	cw("p3: %d", p3);
-	auto result = backup_txtFontTex_Load(self, p1_fontPath, p2, p3);
-	cw("result: %p", result);
-	cw("try debug font...");
-
-	Fonttext* fnt = (Fonttext*)self;
-	cw("char height: %d", fnt->CharHeight);
-	cw("NumGlyphs: %d", fnt->NumGlyphs);
-
-	cw("EndHook txtFontTex_Load");
-	return result;
-}
+//void* (*backup_txtFontTex_Load)(void* self, char* p1_fontPath, bool p2, bool p3);
+//void* txtFontTex_Load(void* self, char* p1_fontPath, uint64_t p2, uint64_t p3) {
+//	cw("BeginHook txtFontTex_Load...");
+//	cw("self: %p", self);
+//	cw("font path: %s", p1_fontPath);
+//	cw("p2: %d", p2);
+//	cw("p3: %d", p3);
+//	auto result = backup_txtFontTex_Load(self, p1_fontPath, p2, p3);
+//	cw("result: %p", result);
+//	cw("try debug font...");
+//
+//	Fonttext* fnt = (Fonttext*)self;
+//	cw("char height: %d", fnt->CharHeight);
+//	cw("NumGlyphs: %d", fnt->NumGlyphs);
+//
+//	cw("EndHook txtFontTex_Load");
+//	return result;
+//}
 
 void* (*backup_PackFile_c)(PackFile_c* self, void* p1, void* p2, void* p3);
 void* HK_PackFile_c(PackFile_c* self, void* p1, void* p2, void* p3) {

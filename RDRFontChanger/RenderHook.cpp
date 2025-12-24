@@ -28,16 +28,30 @@ static void* HK_DrawTextWithFont(
 	cw("p6_align: %d", p6_align);
 
 
-	// init 
+	// init patch all fonts!
 	auto fontReplacer = FontReplacer::Instance();
-	auto customFont = fontReplacer->TryReplaceFont(p3_font);
-	if (p3_font)
-		p3_font->LogInfo();
+	int totalFonts = FontReplacer::g_gameFonts.size();
+	static int g_lastInitFontCount;
+	cw("total game fonts: %d", totalFonts);
+	if (g_lastInitFontCount != totalFonts) {
+		int prevInitFontCount = g_lastInitFontCount;
+		g_lastInitFontCount = totalFonts;
 
+		cw("try init load all custom font...");
+		for (int i = prevInitFontCount; i < totalFonts;i++) {
+			auto font = FontReplacer::g_gameFonts[i];
+			fontReplacer->TryLoadCustomFont(font);
+		}
+		cw("done loaded all custom font...");
+	}
+
+
+	// get it
 
 	std::string drawTextString = p2_text ? p2_text : "";
 
 	// we can translate text when font is support 
+	auto customFont = fontReplacer->TryGetCustomFont(p3_font);
 	if (customFont && drawTextString.empty() == false) {
 		// translate text with new font!
 		TextTranslator::TryTranslate(drawTextString);

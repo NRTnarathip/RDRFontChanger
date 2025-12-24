@@ -3,7 +3,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "CustomFont.h"
 #include "TextTranslateFile.h"
 
 class TextTranslator
