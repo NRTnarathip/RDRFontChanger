@@ -55,12 +55,12 @@ static void* HK_DrawTextWithFont(
 
 	// we can translate text when font is support 
 	auto customFont = fontReplacer->TryGetCustomFont(p3_font);
-	if (customFont && drawTextString.empty() == false) {
+	if (customFont && drawTextString.size() >= 2) {
 		// translate text with new font!
 		TextTranslator::TryTranslate(drawTextString);
 	}
 
-	// cw("try call backup_DrawTextWithFont");
+	cw("try call backup_DrawTextWithFont");
 	auto result = backup_DrawTextWithFont(self,
 		drawTextString.c_str(), p3_font, p4_fontHeight,
 		p5_drawColorInt, p6_align, p7_drawInfo, p8_drawCtx);

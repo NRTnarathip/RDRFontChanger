@@ -67,39 +67,45 @@ bool TextTranslator::Init() {
 }
 
 std::string TextTranslator::MakeTextKeyFromEnglish(std::string englishString) {
-	auto key = ToLower(englishString);
-	key = StringTrim(key);
-	// collapse multiple spaces -> single space
+	static std::unordered_map<std::string, std::string> g_cache;
+	if (g_cache.contains(englishString))
+		return g_cache[englishString];
+
+	std::string out;
+	bool lastUnderscore = true;
+
+	for (char c : englishString)
 	{
-		std::string keyRemoveDuplicateSpace;
-		bool lastSpace = false;
-		for (char c : key)
+		if (std::isalnum((unsigned char)c))
 		{
-			if (std::isspace((unsigned char)c))
+			out += std::tolower((unsigned char)c);
+			lastUnderscore = false;
+		}
+		else if (std::isspace((unsigned char)c))
+		{
+			if (!lastUnderscore)
 			{
-				if (!lastSpace)
-				{
-					keyRemoveDuplicateSpace.push_back(' ');
-					lastSpace = true;
-				}
-			}
-			else
-			{
-				keyRemoveDuplicateSpace.push_back(c);
-				lastSpace = false;
+				out += '_';
+				lastUnderscore = true;
 			}
 		}
-		key = keyRemoveDuplicateSpace;
 	}
 
-	return key;
+	if (!out.empty() && out.back() == '_')
+		out.pop_back();
+
+	return g_cache[englishString] = out;
 }
 
+std::mutex g_mutex;
 bool TextTranslator::TryTranslate(std::string& inout)
 {
 	if (g_translateMap.empty())
 		return false;
 
+	// crash sometime
+	// multiple thread!!
+	std::lock_guard<std::mutex> lock(g_mutex);
 	auto stringKey = MakeTextKeyFromEnglish(inout);
 	cw("try translate string key: %s", stringKey.c_str());
 	if (g_translateMap.contains(stringKey)) {
@@ -108,6 +114,7 @@ bool TextTranslator::TryTranslate(std::string& inout)
 		return true;
 	}
 
+	cw("no need to translate");
 	return false;
 }
 

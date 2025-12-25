@@ -10,13 +10,21 @@
 #include <cstdarg>
 #include <sstream>
 #include <mutex>
+#include "ModLoaderConfig.h"
 
 std::string tabString;
 
+ModLoaderConfig* modLoaderConfig;
+
 Logger::Logger()
 {
-	m_logStream.open(m_logFileName, std::ios::out | std::ios::trunc);
-	ShowConsole();
+	modLoaderConfig = ModLoaderConfig::Instance();
+
+	if (modLoaderConfig->logFile)
+		m_logStream.open(m_logFileName, std::ios::out | std::ios::trunc);
+
+	if (modLoaderConfig->enableConsole)
+		ShowConsole();
 }
 
 std::string Logger::TimeNow() {
@@ -36,10 +44,11 @@ std::string Logger::TimeNow() {
 
 void Logger::LogToFile(std::string line)
 {
-	if (m_logStream.is_open()) {
-		m_logStream << line;
-		m_logStream.flush();
-	}
+	if (modLoaderConfig->logFile)
+		if (m_logStream.is_open()) {
+			m_logStream << line;
+			m_logStream.flush();
+		}
 }
 
 void Logger::ShowConsole()
@@ -52,6 +61,11 @@ void Logger::ShowConsole()
 
 void Logger::LogFormat(const char* format, ...)
 {
+	if (modLoaderConfig->logConsole == false
+		&& modLoaderConfig->logFile == false) {
+		return;
+	}
+
 	std::lock_guard<std::mutex> lock(m_mutex);
 
 	va_list args, args2;
