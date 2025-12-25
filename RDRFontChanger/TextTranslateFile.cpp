@@ -5,84 +5,41 @@
 #include <string>
 #include <iostream>
 #include <filesystem>
+#include "rapidcsv.h"
+#include "StringLib.h"
 
 namespace fs = std::filesystem;
 
+TextTranslateCsvFile::TextTranslateCsvFile(std::string path)
+{
+	this->m_csvPath = fs::path(path).generic_string();
+}
 
-void TextTranslateFile::LoadStringFromFile(std::string filepath,
-	std::unordered_map<int, std::string>& stringMap) {
-	cw("try to load string from file: %s", filepath.c_str());
 
-	std::ifstream stream(filepath);
-	if (!stream.is_open()) {
-		cw("error file can't open!");
-		return;
-	}
+bool TextTranslateCsvFile::TryLoad()
+{
+	try {
+		rapidcsv::Document doc(m_csvPath);
 
-	std::string line;
-	while (std::getline(stream, line)) {
-		if (line.empty())
-			continue;
+		std::vector<std::string> keys = doc.GetColumn<std::string>("row_key");
+		std::vector<std::string> engs = doc.GetColumn<std::string>("english");
+		std::vector<std::string> translates = doc.GetColumn<std::string>("translate");
 
-		int index;
-		std::string text;
-		if (TryParseLine(line, index, text) == false) {
-			continue;
+		for (size_t i = 0; i < keys.size(); ++i) {
+			auto rowKey = keys[i];
+			auto eng = engs[i];
+			auto translate = translates[i];
+			if (translate.length() <= 1)
+				continue;
+
+			m_translateMap[eng] = translate;
+			// pn("loaded line: {} - {}", rowKey, translate);
 		}
-		stringMap[index] = text;
+	}
+	catch (const std::exception& e) {
+		cw("error: %s", e.what());
 	}
 
-	stream.close();
-}
-
-TextTranslateFile::TextTranslateFile(std::string srcPath, std::string translatePath)
-{
-	this->m_srcPath = srcPath;
-	this->m_translatePath = translatePath;
-}
-
-
-bool TextTranslateFile::TryLoad()
-{
-	if (fs::exists(m_srcPath) == false
-		|| fs::exists(m_translatePath) == false) {
-		return false;
-	}
-
-
-
-	LoadStringFromFile(m_srcPath, srcStringMap.map);
-	LoadStringFromFile(m_translatePath, translateStingMap.map);
 
 	return true;
-}
-
-std::string TextTranslateFile::TryGetSrcString(int i)
-{
-	return srcStringMap.get(i);
-}
-
-bool TextTranslateFile::TryParseLine(std::string line, int& indexOut, std::string& text) {
-	if (line.empty())
-		return false;
-
-	size_t start = line.find('[');
-	size_t end = line.find(']');
-	if (start != std::string::npos && end != std::string::npos && end > start) {
-		indexOut = std::stoi(line.substr(start + 1, end - start - 1));
-	}
-	else {
-		cw("error this line: %s", line.c_str());
-		return false;
-	}
-
-	size_t dash = line.find("-");
-	if (dash != std::string::npos) {
-		text = line.substr(dash + 1);
-		text = StringTrim(text);
-		// cw("found parer text: %s", text.c_str());
-		return true;
-	}
-
-	return false;
 }

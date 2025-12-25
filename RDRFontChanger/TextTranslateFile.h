@@ -26,21 +26,21 @@ struct StringMap {
 	}
 };
 
-class TextTranslateFile
+class TextTranslateCsvFile
 {
 public:
-	StringMap srcStringMap;
-	StringMap translateStingMap;
-
-	TextTranslateFile(std::string srcPath, std::string translatePath);
+	TextTranslateCsvFile(std::string path);
 	bool TryLoad();
 	std::string TryGetSrcString(int i);
 
-	static bool TryParseLine(std::string line, int& indexOut, std::string& text);
-	static void LoadStringFromFile(std::string filepath,
-		std::unordered_map<int, std::string>& stringMap);
+	std::unordered_map<std::string, std::string> GetTranslateMap() {
+		return m_translateMap;
+	}
 
 private:
-	std::string m_srcPath;
-	std::string m_translatePath;
+	std::string m_csvPath;
+	// key  : english raw, un normalize
+	// value: translate
+	std::unordered_map<std::string, std::string> m_translateMap;
+
 };

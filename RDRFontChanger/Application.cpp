@@ -22,11 +22,6 @@ void Application::SetupOnDllLoaded(HMODULE hModule)
 	}
 
 
-	// ready
-	// load text translate
-	TextTranslator::Initialize();
-
-
 	// debug!!
 	Hooks::SetupDebugHooks();
 
@@ -46,5 +41,6 @@ void Application::RegisterAllMyModule()
 	sys.Register<FontReplacer, TextureReplacer>();
 	sys.Register<RenderHook>();
 	sys.Register<XMemSystem>();
+	sys.Register<TextTranslator>();
 
 }

@@ -12,8 +12,8 @@ namespace fs = std::filesystem;
 
 const char* localizeDir = "mods/localize";
 
-std::unordered_map<std::string, std::string> TextTranslator::g_translateStringMap;
-std::vector<TextTranslateFile*> TextTranslator::g_textTranslateFileList;
+std::unordered_map<std::string, std::string> TextTranslator::g_translateMap;
+std::vector<TextTranslateCsvFile*> TextTranslator::g_translateFiles;
 
 
 void TextTranslator::AddTranslateString(std::string english, std::string newText)
@@ -22,64 +22,48 @@ void TextTranslator::AddTranslateString(std::string english, std::string newText
 	if (key.empty())
 		return;
 
-	g_translateStringMap[key] = newText;
+	g_translateMap[key] = newText;
 	// cw("added translate: %s = %s", key.c_str(), newText.c_str());
 }
 
-void TextTranslator::Initialize() {
-	static bool isInitialize;
-	if (isInitialize) return;
-	isInitialize = true;
-	cw("InitializeTranslatator");
-
+bool TextTranslator::Init() {
+	cw("try initialize Translatator");
 
 	// fetch all files
-	std::unordered_set<std::string> foundFiles;
-	auto gameDir = fs::current_path();
-
+	std::unordered_set<std::string> csvFiles;
 	if (fs::exists(localizeDir) && fs::is_directory(localizeDir)) {
 		for (const auto& entry : fs::directory_iterator(localizeDir)) {
 			auto path = entry.path();
-			auto filename = path.filename();
-			if (fs::is_regular_file(entry) && path.extension() == ".txt") {
-				auto relativePath = fs::relative(path, gameDir);
-				foundFiles.insert(relativePath.string());
+			if (fs::is_regular_file(entry) && path.extension() == ".csv") {
+				csvFiles.insert(path.generic_string());
 			}
 		}
 	}
 
-	// key: filename such as interface_win32.txt
-	static std::unordered_map<std::string,
-		std::unordered_map<int, std::string>> cache_fileStringMap;
-
 	// search translate text file with @
-	for (auto currentPath : foundFiles) {
-		cw("localize file: %s", currentPath.c_str());
-		// filter file by '@' for detect translate file!
-		size_t atPos = currentPath.find('@');
-		if (atPos == std::string::npos)
-			continue;
-
-		auto srcPath = currentPath.substr(0, atPos) + ".txt";
-		cw("en file: %s", srcPath.c_str());
-		if (foundFiles.contains(srcPath) == false)
-			continue;
-
+	for (auto csvPath : csvFiles) {
+		cw("localize csv file: %s", csvPath.c_str());
 
 		// ready!!
-		TextTranslateFile translateFile(srcPath, currentPath);
-		if (translateFile.TryLoad() == false) {
+		auto translateFile = new TextTranslateCsvFile(csvPath);
+		g_translateFiles.push_back(translateFile);
+		if (translateFile->TryLoad() == false) {
+			cw("failed to load translate file!");
 			continue;
 		}
-		cw("loaded translate file: %s", currentPath.c_str());
+
+
+		cw("loaded translate csv file: %s", csvPath.c_str());
 
 		// build translate string map!
-		for (auto& [index, newString] : translateFile.translateStingMap.map) {
-			auto english = translateFile.srcStringMap.get(index);
-			if (english.empty() == false)
-				AddTranslateString(english, newString);
+		auto translateMap = translateFile->GetTranslateMap();
+		for (auto [eng, newString] : translateMap) {
+			if (newString.size() > 1)
+				AddTranslateString(eng, newString);
 		}
 	}
+
+	return true;
 }
 
 std::string TextTranslator::MakeTextKeyFromEnglish(std::string englishString) {
@@ -113,13 +97,13 @@ std::string TextTranslator::MakeTextKeyFromEnglish(std::string englishString) {
 
 bool TextTranslator::TryTranslate(std::string& inout)
 {
-	if (g_translateStringMap.empty())
+	if (g_translateMap.empty())
 		return false;
 
 	auto stringKey = MakeTextKeyFromEnglish(inout);
 	cw("try translate string key: %s", stringKey.c_str());
-	if (g_translateStringMap.contains(stringKey)) {
-		inout = g_translateStringMap[stringKey];
+	if (g_translateMap.contains(stringKey)) {
+		inout = g_translateMap[stringKey];
 		cw("translated string: %s", inout.c_str());
 		return true;
 	}

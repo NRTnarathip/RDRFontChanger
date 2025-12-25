@@ -142,6 +142,7 @@ struct swfFont
 	}
 	swfFont* Clone();
 	void LogInfo();
+	bool IsBold();
 };
 CHECK_OFFSET(swfFont, glyphToCodeArray, 0x20);
 CHECK_OFFSET(swfFont, sheetCount, 0xb0);

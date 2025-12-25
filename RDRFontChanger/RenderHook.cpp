@@ -16,8 +16,8 @@ static void* HK_DrawTextWithFont(
 	uint64_t p5_drawColorInt, uint64_t p6_align, void* p7_drawInfo, void* p8_drawCtx) {
 	cw("HK_DrawTextWithFont!!");
 	cw("draw text: %s", (const char*)p2_text);
-	cw("p8: %p", p8_drawCtx);
-	cw("font: %p", p3_font);
+	cw("p3_font: %p", p3_font);
+	cw("p8_drawCtx: %p", p8_drawCtx);
 
 	auto color = swfEditTextDrawColor::Decode(p5_drawColorInt);
 	float rNorm = color.r / 255.0;
@@ -26,6 +26,9 @@ static void* HK_DrawTextWithFont(
 	float gray = (rNorm * 0.299) + (gNorm * 0.587) + (bNorm * 0.114);
 	cw("color rgba: %d %d %d %d", color.r, color.g, color.b, color.a);
 	cw("p6_align: %d", p6_align);
+
+	if (p3_font)
+		p3_font->LogInfo();
 
 
 	// init patch all fonts!

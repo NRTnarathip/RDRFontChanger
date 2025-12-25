@@ -239,6 +239,7 @@ void swfFont::LogInfo()
 	cw(" -- Font Info --");
 	std::string name = nameBuffer;
 	cw("name: %s", name.c_str());
+	cw("bold?: %s", IsBold() ? "yes" : "no");
 	cw("ascent: %d", ascent);
 	cw("descent: %d", descent);
 	cw("sheet: %p", sheet);
@@ -263,4 +264,16 @@ void swfFont::LogInfo()
 		//}
 	}
 	cw(" -- End Font Info --");
+}
+
+bool swfFont::IsBold()
+{
+	if (this->sheet == nullptr)
+		return false;
+
+	static std::unordered_map<swfFont*, bool> g_fontBoldCache;
+	if (g_fontBoldCache.contains(this))
+		return g_fontBoldCache[this];
+
+	return g_fontBoldCache[this] = sheet->DoesTextureContains("_b_0.dds");
 }

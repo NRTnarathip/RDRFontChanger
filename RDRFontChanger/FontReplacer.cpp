@@ -174,16 +174,6 @@ void FontReplacer::RegisterFontWithFontSDF(
 		gameFontName, newFontPath);
 }
 
-bool IsBold(swfFont* font) {
-	if (font->sheet == nullptr)
-		return false;
-
-	static std::unordered_map<swfFont*, bool> g_fontBoldmap;
-	if (g_fontBoldmap.contains(font))
-		return g_fontBoldmap[font];
-
-	return g_fontBoldmap[font] = font->sheet->DoesTextureContains("_b_0.dds");
-}
 
 void DebugFonts() {
 	cw("try dump all font...");
@@ -235,7 +225,7 @@ CustomFontSDF* FontReplacer::TryLoadCustomFont(swfFont* gameFont)
 	cw("font path: %s", fontPath.c_str());
 	auto fontDir = fs::path(fontPath).parent_path().string();
 	float fontSize = sheet->size;
-	bool isBold = IsBold(gameFont);
+	bool isBold = gameFont->IsBold();
 	if (isBold) {
 		// redirect into bold font 
 		fontPath = std::format("{}/{}_bold{}", fontDir, fontName, k_SDFontFileExtName);
