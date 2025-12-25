@@ -4,8 +4,10 @@
 #include <algorithm>
 #include <iostream>
 #include "XMem.h"
+#include "FontConfig.h"
 
 namespace fs = std::filesystem;
+
 
 CustomFontSDF::CustomFontSDF(swfFont* gameFont,
 	std::string fontpath, float fontSize)
@@ -30,8 +32,8 @@ CustomFontSDF::CustomFontSDF(swfFont* gameFont,
 
 		m_newSDFontCharCodes.insert(code);
 	}
-	m_oldGameFontGlyphCount = gameFont->glyphCount;
-	m_newGameFontGlyphCount = m_oldGameFontGlyphCount + m_newSDFontCharCodes.size();
+	m_oldGameFontGlyphTotal = gameFont->glyphCount;
+	m_newGameFontGlyphTotal = m_oldGameFontGlyphTotal + m_newSDFontCharCodes.size();
 
 	// Recalculate game glyph with 512x512 in left top 0,0
 	RecalculateGameFontGlyphsBaseTexture2x2();
@@ -46,18 +48,18 @@ CustomFontSDF::CustomFontSDF(swfFont* gameFont,
 		// glyphIndexToCharCodeArray
 		cw("gameFont glyphToCodeArray: %p", gameFont->glyphToCodeArray);
 		auto newGlyphIndexToCodeArray = (unsigned short*)XMem::Allocate(
-			m_newGameFontGlyphCount * sizeof(unsigned short), sizeof(unsigned short));
+			m_newGameFontGlyphTotal * sizeof(unsigned short), sizeof(unsigned short));
 		memcpy(newGlyphIndexToCodeArray, gameFont->glyphToCodeArray,
-			m_oldGameFontGlyphCount * sizeof(unsigned short));
+			m_oldGameFontGlyphTotal * sizeof(unsigned short));
 		pn("clone newGlyphIndexToCodeArray");
 
 		// advanceXArray 
 		cw("gameFont advnaceArray: %p", gameFont->advanceArray);
 		auto newAdvanceArray = (float*)XMem::Allocate(
-			m_newGameFontGlyphCount * sizeof(float), sizeof(float));
+			m_newGameFontGlyphTotal * sizeof(float), sizeof(float));
 		if (gameFont->advanceArray) {
 			memcpy(newAdvanceArray, gameFont->advanceArray,
-				m_oldGameFontGlyphCount * sizeof(float));
+				m_oldGameFontGlyphTotal * sizeof(float));
 			pn("clone newAdvanceArray");
 		}
 		else {
@@ -67,9 +69,9 @@ CustomFontSDF::CustomFontSDF(swfFont* gameFont,
 
 		// glyph array!!
 		auto newGlyphArray = (swfGlyph*)XMem::Allocate(
-			m_newGameFontGlyphCount * sizeof(swfGlyph), sizeof(swfGlyph));
+			m_newGameFontGlyphTotal * sizeof(swfGlyph), sizeof(swfGlyph));
 		memcpy(newGlyphArray, sheet->glyphArray,
-			m_oldGameFontGlyphCount * sizeof(swfGlyph));
+			m_oldGameFontGlyphTotal * sizeof(swfGlyph));
 		pn("clone newGlyphArray");
 
 		// backup it!
@@ -82,16 +84,16 @@ CustomFontSDF::CustomFontSDF(swfFont* gameFont,
 		sheet->glyphArray = newGlyphArray;
 
 		// update gameFont glyph count...
-		gameFont->glyphCount = m_newGameFontGlyphCount;
-		sheet->cellCount = m_newGameFontGlyphCount;
+		gameFont->glyphCount = m_newGameFontGlyphTotal;
+		sheet->cellCount = m_newGameFontGlyphTotal;
 
 		// resize texture glyph index
 		if (sheet->textureGlyphIndexArray)
 		{
 			auto newTextureGlyphIndexArray = (unsigned short*)XMem::Allocate(
-				m_newGameFontGlyphCount * sizeof(unsigned short), sizeof(unsigned short));
+				m_newGameFontGlyphTotal * sizeof(unsigned short), sizeof(unsigned short));
 			memcpy(newTextureGlyphIndexArray, sheet->textureGlyphIndexArray,
-				m_oldGameFontGlyphCount * sizeof(unsigned short));
+				m_oldGameFontGlyphTotal * sizeof(unsigned short));
 			sheet->textureGlyphIndexArray = newTextureGlyphIndexArray;
 			pn("clone textureGlyphIndexArray");
 		}
@@ -99,21 +101,58 @@ CustomFontSDF::CustomFontSDF(swfFont* gameFont,
 		// debug log
 		pn("update game font glyph array!");
 		pn("glyph count old: {}, new: {}",
-			m_oldGameFontGlyphCount, gameFont->glyphCount);
+			m_oldGameFontGlyphTotal, gameFont->glyphCount);
 		// next step you can update new glyph slot!
 	}
 
 	// ready to add new glyphs !!
 	{
 		// start at end
-		int myGlyphIndexCounter = m_oldGameFontGlyphCount;
+		int myGlyphIndexCounter = m_oldGameFontGlyphTotal;
 		for (auto code : m_newSDFontCharCodes) {
 			auto glyph = fontSDF->charCodeToGlyphMap[code];
 			AddNewGlyph(myGlyphIndexCounter, code, glyph);
 			myGlyphIndexCounter++;
 		}
+
+		RecalculateFontSDFScale();
+		// fix sdf font glyph scale match to game font!
 	}
 	pn("done new obj CustomSDFont!");
+}
+
+void CustomFontSDF::RecalculateFontSDFScale()
+{
+	float rescale = -1;
+
+	auto fontConfig = FontConfig::Instance();
+	auto fontName = originalGameFont->name();
+	if (fontName == "RDR2 Narrow")
+		rescale = fontConfig->narrowSDFontScale;
+	else if (fontName == "RDR2 Narrow_OL1")
+		rescale = fontConfig->narrowOL1SDFontScale;
+	else if (fontName == "Redemption")
+		rescale = fontConfig->redemptionSDFontScale;
+
+	// any rescale?
+	if (rescale <= 0 || rescale == 1)
+		return;
+
+	cw("try rescale sdf glyphs to: %.2f", rescale);
+	cw("font name: %s", fontName.c_str());
+
+	int startIndex = m_oldGameFontGlyphTotal;
+	for (int i = startIndex;i < m_newGameFontGlyphTotal;i++) {
+		auto& g = originalGameFont->sheet->glyphArray[i];
+		g.minX *= rescale;
+		g.maxX *= rescale;
+		g.minY *= rescale;
+		g.maxY *= rescale;
+		if (originalGameFont->advanceArray) {
+			auto& advance = originalGameFont->advanceArray[i];
+			advance *= rescale;
+		}
+	}
 }
 
 
@@ -212,7 +251,6 @@ void CustomFontSDF::AddNewGlyph(int glyphIndex, unsigned short charCode, SDFGlyp
 	g->maxX = maxX;
 	g->minY = minY;
 	g->maxY = maxY;
-
 
 	// update glyph advanceX array
 	if (font->advanceArray) {

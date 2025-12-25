@@ -92,6 +92,7 @@
   <ItemGroup>
     <ClInclude Include="..\SDFontLib\Glyph.h" />
     <ClInclude Include="..\SDFontLib\SDFont.h" />
+    <ClInclude Include="FontConfig.h" />
     <ClInclude Include="ini.h" />
     <ClInclude Include="INIReader.h" />
     <ClInclude Include="ModLoaderConfig.h" />
@@ -123,6 +124,7 @@
   <ItemGroup>
     <ClCompile Include="..\SDFontLib\Glyph.cpp" />
     <ClCompile Include="..\SDFontLib\SDFont.cpp" />
+    <ClCompile Include="FontConfig.cpp" />
     <ClCompile Include="ini.c" />
     <ClCompile Include="INIReader.cpp" />
     <ClCompile Include="ModLoaderConfig.cpp" />

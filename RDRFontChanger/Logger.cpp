@@ -98,8 +98,12 @@ void Logger::LogFormat(const char* format, ...)
 	sstream << buffer.data() << std::endl;
 
 	std::string finalLog = sstream.str();
-	std::cout << finalLog;
-	LogToFile(finalLog);
+
+	if (modLoaderConfig->logConsole)
+		std::cout << finalLog;
+
+	if (modLoaderConfig->logFile)
+		LogToFile(finalLog);
 }
 
 void Logger::AddTab()
