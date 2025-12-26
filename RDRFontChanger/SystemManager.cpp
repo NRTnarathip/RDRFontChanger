@@ -13,7 +13,7 @@ void SystemManager::OnRegisteredType(SystemRegisterData& data)
 	cw("registed system type: %s", data.name());
 }
 
-bool SystemManager::TryInitSystemRecursive(SystemRegisterData& sysData)
+bool SystemManager::TryCreateSystemInstanceRecursive(SystemRegisterData& sysData)
 {
 	// already registered
 	auto& mainID = sysData.id;
@@ -29,7 +29,7 @@ bool SystemManager::TryInitSystemRecursive(SystemRegisterData& sysData)
 	for (auto& dependencyID : sysData.dependencies) {
 		auto& dependency = *TryGetSystemRegisterData(dependencyID);
 		cw("try check dependency: %s", dependency.name());
-		if (!TryInitSystemRecursive(dependency)) {
+		if (!TryCreateSystemInstanceRecursive(dependency)) {
 			cw("error try to load dependency system!!");
 			return false;
 		}
@@ -37,13 +37,10 @@ bool SystemManager::TryInitSystemRecursive(SystemRegisterData& sysData)
 
 
 	// create instance!!
+	cw("try create instance...");
 	sysData.instance = sysData.createFn();
 	cw("create type instance: %p", sysData.instance);
 	cw("type name: %s", mainID.name());
-
-	// init it!
-	sysData.instance->Init();
-	cw("done init system: %s", mainID.name());
 
 	return true;
 }
@@ -73,11 +70,21 @@ SystemManager::SystemRegisterData* SystemManager::TryGetSystemRegisterData(std::
 
 bool SystemManager::InitializeAll()
 {
-	cw("try initialize all...");
+	cw("try Create all instance...");
 	for (auto& item : m_registerSystems) {
 		auto& sys = item.second;
-		if (!TryInitSystemRecursive(sys)) {
+		if (!TryCreateSystemInstanceRecursive(sys)) {
 			return false;
+		}
+	}
+
+	cw("try Init all instance...");
+	for (auto& sysDataPair : m_registerSystems) {
+		auto& typeID = sysDataPair.first;
+		auto& data = sysDataPair.second;
+		cw("try Init() instance type: %s", typeID.name());
+		if (!data.instance->Init()) {
+			cw("failed to Init() instance type: %s", typeID.name());
 		}
 	}
 

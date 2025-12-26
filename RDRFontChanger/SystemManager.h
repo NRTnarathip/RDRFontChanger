@@ -70,7 +70,7 @@ private:
 	static SystemManager* g_instance;
 	std::unordered_map<std::type_index, SystemRegisterData> m_registerSystems;
 	void OnRegisteredType(SystemRegisterData& data);
-	bool TryInitSystemRecursive(SystemRegisterData& sysData);
+	bool TryCreateSystemInstanceRecursive(SystemRegisterData& sysData);
 };
 
 

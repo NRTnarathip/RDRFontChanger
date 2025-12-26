@@ -16,9 +16,6 @@
     <Filter Include="libs">
       <UniqueIdentifier>{4784dd90-fee2-47e9-a0a0-cef16131c832}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\SDFontLib">
-      <UniqueIdentifier>{a294a1f8-f7ee-4c2e-8407-cc4a94a61d24}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Translator">
       <UniqueIdentifier>{62d7fa53-6649-413f-a104-f3343cc749f2}</UniqueIdentifier>
     </Filter>
@@ -27,6 +24,9 @@
     </Filter>
     <Filter Include="Source Files\INIReader">
       <UniqueIdentifier>{70673228-cee6-489a-8a37-4b8c754df2ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Font\SDFontLib">
+      <UniqueIdentifier>{a294a1f8-f7ee-4c2e-8407-cc4a94a61d24}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -88,10 +88,10 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\SDFontLib\Glyph.h">
-      <Filter>Source Files\SDFontLib</Filter>
+      <Filter>Source Files\Font\SDFontLib</Filter>
     </ClInclude>
     <ClInclude Include="..\SDFontLib\SDFont.h">
-      <Filter>Source Files\SDFontLib</Filter>
+      <Filter>Source Files\Font\SDFontLib</Filter>
     </ClInclude>
     <ClInclude Include="TextTranslator.h">
       <Filter>Source Files\Translator</Filter>
@@ -118,7 +118,10 @@
       <Filter>Source Files\INIReader</Filter>
     </ClInclude>
     <ClInclude Include="FontConfig.h">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files\Font</Filter>
+    </ClInclude>
+    <ClInclude Include="FontManager.h">
+      <Filter>Source Files\Font</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -177,10 +180,10 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\SDFontLib\Glyph.cpp">
-      <Filter>Source Files\SDFontLib</Filter>
+      <Filter>Source Files\Font\SDFontLib</Filter>
     </ClCompile>
     <ClCompile Include="..\SDFontLib\SDFont.cpp">
-      <Filter>Source Files\SDFontLib</Filter>
+      <Filter>Source Files\Font\SDFontLib</Filter>
     </ClCompile>
     <ClCompile Include="TextTranslator.cpp">
       <Filter>Source Files\Translator</Filter>
@@ -207,7 +210,10 @@
       <Filter>Source Files\INIReader</Filter>
     </ClCompile>
     <ClCompile Include="FontConfig.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Font</Filter>
+    </ClCompile>
+    <ClCompile Include="FontManager.cpp">
+      <Filter>Source Files\Font</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

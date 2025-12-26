@@ -7,9 +7,6 @@ class CustomFontSDF
 {
 public:
 	swfFont* originalGameFont;
-	float* backupAdanveArrayPtr;
-	swfGlyph* backupGlyphArray;
-	unsigned short* backupGlyphIndexToCodeArray;
 	// rdr2narrow sheet size = 700
 	float fontSize;
 	SDFont* fontSDF;

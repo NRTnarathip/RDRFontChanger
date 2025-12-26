@@ -423,9 +423,36 @@ void* HK_ShowError3(uint64_t param_1, uint64_t param_2, void* p3, void* p4) {
 	return 0;
 }
 
+HHOOK g_keyboardHook = NULL;
+LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
+	cw("Begin LowLevelKeyboardProc");
+	if (nCode >= HC_ACTION) {
+		KBDLLHOOKSTRUCT* pkh = (KBDLLHOOKSTRUCT*)lParam;
+		cw("key code: %d", pkh->vkCode);
+		if (pkh->vkCode == VK_LWIN || pkh->vkCode == VK_RWIN) {
+			cw("return 1!");
+			return 1;
+		}
+	}
 
+	cw("try call CallNextHookEx");
+	auto r = CallNextHookEx(g_keyboardHook, nCode, wParam, lParam);
+	cw("End LowLevelKeyboardProc");
+	return r;
+}
 void Hooks::SetupDebugHooks()
 {
+	g_keyboardHook = SetWindowsHookEx(
+		WH_KEYBOARD_LL,      // Type of hook (low-level keyboard)
+		LowLevelKeyboardProc, // Pointer to the hook function
+		GetModuleHandle(NULL),// Instance handle
+		0                    // Thread identifier (0 for global hook)
+	);
+
+	if (g_keyboardHook == NULL) {
+		cw("failed to install LowLevelKeyboardProc!!");
+	}
+
 	// HookRva(0x1fced0, HK_LoadFlashFile, &backup_LoadFlashFile);
 	// HookFuncRva(0x11b110, HK_pgRscBuilder_LoadFlash, &fn_pgRscBuilder_LoadFlash);
 	// HookFuncRva(0xc7510, rage_swfCONTEXT_GetGlobal, &backup_rage_swfCONTEXT_GetGlobal);

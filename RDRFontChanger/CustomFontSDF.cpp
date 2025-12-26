@@ -52,6 +52,7 @@ CustomFontSDF::CustomFontSDF(swfFont* gameFont,
 		memcpy(newGlyphIndexToCodeArray, gameFont->glyphToCodeArray,
 			m_oldGameFontGlyphTotal * sizeof(unsigned short));
 		pn("clone newGlyphIndexToCodeArray");
+		gameFont->glyphToCodeArray = newGlyphIndexToCodeArray;
 
 		// advanceXArray 
 		cw("gameFont advnaceArray: %p", gameFont->advanceArray);
@@ -73,14 +74,6 @@ CustomFontSDF::CustomFontSDF(swfFont* gameFont,
 		memcpy(newGlyphArray, sheet->glyphArray,
 			m_oldGameFontGlyphTotal * sizeof(swfGlyph));
 		pn("clone newGlyphArray");
-
-		// backup it!
-		this->backupGlyphIndexToCodeArray = gameFont->glyphToCodeArray;
-		this->backupAdanveArrayPtr = gameFont->advanceArray;
-		this->backupGlyphArray = sheet->glyphArray;
-
-		// assign to new array!!
-		gameFont->glyphToCodeArray = newGlyphIndexToCodeArray;
 		sheet->glyphArray = newGlyphArray;
 
 		// update gameFont glyph count...
@@ -220,9 +213,6 @@ void CustomFontSDF::AddNewGlyph(int glyphIndex, unsigned short charCode, SDFGlyp
 
 
 	// debug
-	float ascentNormalize = font->ascent / fontSize;
-	float descentNormalize = font->descent / fontSize;
-	float leadingNormalize = font->leading / fontSize;
 	float pixelTop = yoffset;
 	float pixelBottom = pixelTop - sdfGlyph.height;
 
@@ -266,7 +256,7 @@ void CustomFontSDF::AddNewGlyph(int glyphIndex, unsigned short charCode, SDFGlyp
 	font->glyphToCodeArray[glyphIndex] = charCode;
 
 	// check is need update textureGlyphIndenx
-	// fixed firist index!
+	// fixed first index!
 	if (sheet->textureGlyphIndexArray)
 		sheet->textureGlyphIndexArray[glyphIndex] = 0;
 

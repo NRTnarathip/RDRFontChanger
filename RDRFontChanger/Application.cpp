@@ -6,6 +6,7 @@
 #include "RenderHook.h"
 #include "TextTranslator.h"
 #include "XMem.h"
+#include "FontManager.h"
 
 Application::Application() {
 }
@@ -38,9 +39,11 @@ void Application::RegisterAllMyModule()
 
 	// reigster here
 	sys.Register<TextureReplacer>();
-	sys.Register<FontReplacer, TextureReplacer>();
 	sys.Register<RenderHook>();
 	sys.Register<XMemSystem>();
 	sys.Register<TextTranslator>();
+	sys.Register<FontManager>();
+
+	sys.Register<FontReplacer, TextureReplacer, FontManager>();
 
 }

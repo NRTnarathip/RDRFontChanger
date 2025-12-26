@@ -97,17 +97,14 @@ std::string TextTranslator::MakeTextKeyFromEnglish(std::string englishString) {
 	return g_cache[englishString] = out;
 }
 
-std::mutex g_mutex;
 bool TextTranslator::TryTranslate(std::string& inout)
 {
 	if (g_translateMap.empty())
 		return false;
 
-	// crash sometime
-	// multiple thread!!
-	std::lock_guard<std::mutex> lock(g_mutex);
 	auto stringKey = MakeTextKeyFromEnglish(inout);
 	cw("try translate string key: %s", stringKey.c_str());
+
 	if (g_translateMap.contains(stringKey)) {
 		inout = g_translateMap[stringKey];
 		cw("translated string: %s", inout.c_str());
