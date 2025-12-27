@@ -27,16 +27,16 @@ static void HK_DrawTextWithFont(
 	if (p3_font)
 		p3_font->LogInfo();
 
-	static std::string drawTextString;
-	drawTextString = p2_text ? p2_text : "";
+	//static std::string drawTextString;
+	//drawTextString = p2_text ? p2_text : "";
 
-	auto fontReplacer = FontReplacer::Instance();
-	auto customFont = fontReplacer->TryGetCustomFont(p3_font);
-	if (customFont && drawTextString.size() >= 2) {
-		if (TextTranslator::TryTranslate(drawTextString)) {
-			p2_text = drawTextString.c_str();
-		}
-	}
+	//auto fontReplacer = FontReplacer::Instance();
+	//auto customFont = fontReplacer->TryGetCustomFont(p3_font);
+	//if (customFont && drawTextString.size() >= 2) {
+	//	if (TextTranslator::TryTranslate(drawTextString)) {
+	//		p2_text = drawTextString.c_str();
+	//	}
+	//}
 
 	cw("try call backup_DrawTextWithFont");
 	__try {

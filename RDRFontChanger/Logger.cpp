@@ -42,13 +42,29 @@ std::string Logger::TimeNow() {
 	return ss.str();
 }
 
-void Logger::LogToFile(std::string line)
+void Logger::LogToFileInternal(std::string line)
 {
 	if (modLoaderConfig->logFile)
 		if (m_logStream.is_open()) {
 			m_logStream << line;
 			m_logStream.flush();
 		}
+}
+
+void Logger::LogToConsoleInternal(std::string line)
+{
+	if (modLoaderConfig->logConsole)
+		std::cout << line.c_str();
+}
+
+bool Logger::IsDisableAllLog()
+{
+	if (modLoaderConfig->logConsole == false
+		&& modLoaderConfig->logFile == false) {
+		return true;
+	}
+
+	return false;
 }
 
 void Logger::ShowConsole()
@@ -61,8 +77,7 @@ void Logger::ShowConsole()
 
 void Logger::LogFormat(const char* format, ...)
 {
-	if (modLoaderConfig->logConsole == false
-		&& modLoaderConfig->logFile == false) {
+	if (IsDisableAllLog()) {
 		return;
 	}
 
@@ -99,11 +114,8 @@ void Logger::LogFormat(const char* format, ...)
 
 	std::string finalLog = sstream.str();
 
-	if (modLoaderConfig->logConsole)
-		std::cout << finalLog;
-
-	if (modLoaderConfig->logFile)
-		LogToFile(finalLog);
+	LogToConsoleInternal(finalLog);
+	LogToFileInternal(finalLog);
 }
 
 void Logger::AddTab()

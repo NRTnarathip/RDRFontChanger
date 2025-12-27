@@ -15,6 +15,7 @@
 #include "TextureLib.h"
 #include "FontReplacer.h"
 #include "TextTranslator.h"
+#include "StringTypes.h"
 
 
 using namespace XMem;
@@ -239,7 +240,6 @@ void* fiAssetManager_Open2(void* self, char* p1, char* p2, uint64_t p3, uint64_t
 	logFormat("path: %s", p1);
 	logFormat("fileType: %s", p2);
 	auto res = backup_fiAssetManager_Open2(self, p1, p2, p3, p4);
-	//	logFormat("res: %p", res);
 	logFormat("EndHook fiAssetManager_Open2");
 	return res;
 }
@@ -417,42 +417,60 @@ void* HK_grcTextureD11_Debug3(void* p1, void* p2) {
 	cw("EndHook HK_grcTextureD11_Debug3");
 	return r;
 }
-void* (*fn_ShowError3)(uint64_t param_1, uint64_t param_2, void*, void*);
-void* HK_ShowError3(uint64_t param_1, uint64_t param_2, void* p3, void* p4) {
-	cw("bypass fn_ShowError3");
-	return 0;
+
+void* (*fn_GetString)(void* self, char* p1_string);
+void* HK_GetString(void* self, char* p1_string) {
+	cw("BeginHook HK_GetString");
+	cw("self: %p", self);
+	cw("p1 string: %s", p1_string);
+	auto result = fn_GetString(self, p1_string);
+	cw("HK_GetString result: %s", result);
+	cw("EndHook HK_GetString");
+	return result;
 }
 
-HHOOK g_keyboardHook = NULL;
-LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
-	cw("Begin LowLevelKeyboardProc");
-	if (nCode >= HC_ACTION) {
-		KBDLLHOOKSTRUCT* pkh = (KBDLLHOOKSTRUCT*)lParam;
-		cw("key code: %d", pkh->vkCode);
-		if (pkh->vkCode == VK_LWIN || pkh->vkCode == VK_RWIN) {
-			cw("return 1!");
-			return 1;
-		}
-	}
 
-	cw("try call CallNextHookEx");
-	auto r = CallNextHookEx(g_keyboardHook, nCode, wParam, lParam);
-	cw("End LowLevelKeyboardProc");
+void (*fn_txtStringTableReader)(void* reader, void* p1, int p2);
+void HK_txtStringTableReader(void* reader, void* p1, int p2) {
+	cw("BeginHook HK_txtStringTableReader");
+	cw("string table: %p", p1);
+	cw("read count: %d", p2);
+	cw("calling fn_txtStringTableReader...");
+	fn_txtStringTableReader(reader, p1, p2);
+	cw("done call fn_txtStringTableReader");
+	cw("EndHook HK_txtStringTableReader");
+}
+
+void* (*fn_GetFullStringTablePath)(txtStringTable* self,
+	char* p1, void* p2, void* p3);
+void* GetFullStringTablePath(txtStringTable* self,
+	char* p1, void* p2, void* p3) {
+	cw("Begin GetFullStringTablePath");
+	cw("self: %p", self);
+	cw("p1: %s", p1);
+	auto r = fn_GetFullStringTablePath(self, p1, p2, p3);
+	cw("GetFullStringTablePath result %s", r);
+	cw("End GetFullStringTablePath");
 	return r;
 }
+
+void* (*fn_GetStringTablePath)(txtStringTable* self, char* p1);
+void* GetStringTablePath(txtStringTable* self, char* path) {
+	cw("Begin GetStringTablePath");
+	cw("self: %p", self);
+	cw("p1: %s", path);
+	auto r = fn_GetStringTablePath(self, path);
+	cw("GetStringTablePath result %s", r);
+	cw("End GetStringTablePath");
+	return r;
+}
+
 void Hooks::SetupDebugHooks()
 {
-	g_keyboardHook = SetWindowsHookEx(
-		WH_KEYBOARD_LL,      // Type of hook (low-level keyboard)
-		LowLevelKeyboardProc, // Pointer to the hook function
-		GetModuleHandle(NULL),// Instance handle
-		0                    // Thread identifier (0 for global hook)
-	);
-
-	if (g_keyboardHook == NULL) {
-		cw("failed to install LowLevelKeyboardProc!!");
-	}
-
+	// HookRva(0xfaf10, HK_GetString, &fn_GetString);
+	//HookRva(0xfbf30, HK_txtStringTableReader, &fn_txtStringTableReader);
+	// HookRva(0x2a9b00, GetFullStringTablePath, &fn_GetFullStringTablePath);
+	// HookRva(0xfbcb0, GetStringTablePath, &fn_GetStringTablePath);
 	// HookRva(0x1fced0, HK_LoadFlashFile, &backup_LoadFlashFile);
 	// HookFuncRva(0x11b110, HK_pgRscBuilder_LoadFlash, &fn_pgRscBuilder_LoadFlash);
 	// HookFuncRva(0xc7510, rage_swfCONTEXT_GetGlobal, &backup_rage_swfCONTEXT_GetGlobal);
@@ -462,7 +480,7 @@ void Hooks::SetupDebugHooks()
 	// HookRva(0x194d10, HK_swfSomeFactory, &backup_swfSomeFactory);
 	// HookFuncRva(0xc95c0, PushFolder, &backup_PushFolder);
 	// HookFuncRva(0xc9140, fiAssetManager_Open, &backup_fiAssetManager_Open);
-	// HookFuncRva(0xc98b0, fiAssetManager_Open2, &backup_fiAssetManager_Open2);
+	// HookRva(0xc98b0, fiAssetManager_Open2, &backup_fiAssetManager_Open2);
 	//HookFuncRva(0xeae740, HK_PackFileInit, &fn_PackFileInit);
 	//HookFuncRva(0xeae670, HK_PackFile_DoesFileExist, &fnDoesFileExist);
 	//HookFuncRva(0xeaebe0, HK_PackFile_OpenForRead, &fn_PackFile_OpenForRead);
@@ -488,7 +506,6 @@ void Hooks::SetupDebugHooks()
 	//HookRva(0xebfc00, HK_ShowErrorExceptionVector, &fn_ShowErrorExceptionVector);
 	//HookRva(0xebfa80, HK_ShowError2, &fn_ShowError2);
 	// disable error
-	HookRva(0xf6f820, HK_ShowError3, &fn_ShowError3);
 }
 
 void Hooks::OnDetachDLL() {

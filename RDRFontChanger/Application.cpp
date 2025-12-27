@@ -7,9 +7,17 @@
 #include "TextTranslator.h"
 #include "XMem.h"
 #include "FontManager.h"
+#include "HookLib.h"
+using namespace HookLib;
 
-Application::Application() {
+void* (*fn_ShowError3)(uint64_t param_1, uint64_t param_2, void*, void*);
+void* HK_ShowError3(uint64_t param_1, uint64_t param_2, void* p3, void* p4) {
+	cw("bypass fn_ShowError3");
+	return 0;
 }
+
+
+Application::Application() {}
 
 void Application::SetupOnDllLoaded(HMODULE hModule)
 {
@@ -29,6 +37,9 @@ void Application::SetupOnDllLoaded(HMODULE hModule)
 	// register thai font 
 	auto fontReplacer = FontReplacer::Instance();
 	fontReplacer->RegisterFontFromDir("mods/fonts");
+
+	// bypass error dialog
+	HookLib::HookRva(0xf6f820, HK_ShowError3, &fn_ShowError3);
 }
 
 void Application::RegisterAllMyModule()

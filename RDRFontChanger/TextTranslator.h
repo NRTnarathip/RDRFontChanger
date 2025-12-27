@@ -13,9 +13,11 @@ public:
 	static std::vector<TextTranslateCsvFile*> g_translateFiles;
 
 	static void AddTranslateString(std::string english, std::string newText);
-	static bool TryTranslate(std::string& inout);
+	static const char* TryTranslate(std::string english);
 
 	static std::string MakeTextKeyFromEnglish(std::string englishString);
+	static const char* TryGetTranslateStringRef(std::string stringKey);
+
 	bool Init() override;
 };
 

@@ -279,7 +279,7 @@ void CustomFontSDF::RecalculateGameFontGlyphsBaseTexture2x2()
 	for (int i = 0;i < glyphCount;i++) {
 		swfGlyph& g = sheet->glyphArray[i];
 		unsigned short charCode = font->glyphToCodeArray[i];
-		pn("[{}] glyph, charCode: {}", i, charCode);
+		// pn("[{}] glyph, charCode: {}", i, charCode);
 		//pn("glyph ready to read and write!");
 
 		// check if you have multiple textures
@@ -288,16 +288,16 @@ void CustomFontSDF::RecalculateGameFontGlyphsBaseTexture2x2()
 			continue;
 
 		// should rescale if this glyph is on texture index 0
-		pn("[{}] glyph before rescale: x:{}, y:{}, w:{}, h:{}",
-			i, g.left, g.top, g.width, g.height);
+		//pn("[{}] glyph before rescale: x:{}, y:{}, w:{}, h:{}",
+		//	i, g.left, g.top, g.width, g.height);
 
 		g.left /= 2;
 		g.top /= 2;
 		g.width /= 2;
 		g.height /= 2;
 
-		pn("[{}] glyph after rescale: x:{}, y:{}, w:{}, h:{}",
-			i, g.left, g.top, g.width, g.height);
+		//pn("[{}] glyph after rescale: x:{}, y:{}, w:{}, h:{}",
+		//	i, g.left, g.top, g.width, g.height);
 
 		// update
 		sheet->glyphArray[i] = g;

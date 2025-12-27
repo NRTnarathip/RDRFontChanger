@@ -21,19 +21,19 @@ const char* TextureReplacer::k_modsReplaceTeturesDir = "mods/replace_textures"; 
 
 void* (*fn_grcTextureD11_CreateFromBackingStore)(grcTextureD11* self);
 void* HK_grcTextureD11_CreateFromBackingStore(grcTextureD11* self) {
-	cw("BeginHook HK_grcTextureD11_CreateFromBackingStore, self: %p", self);
+	// cw("BeginHook HK_grcTextureD11_CreateFromBackingStore, self: %p", self);
 
 	//self->BeforeCreateFromBackingStore();
 
 	// replace here
 	TextureReplacer::Instance()->OnBeforeCreateFromBackingStore(self);
 
-	cw("try call original fn_grcTextureD11_CreateFromBackingStore");
+	// cw("try call original fn_grcTextureD11_CreateFromBackingStore");
 	auto r = fn_grcTextureD11_CreateFromBackingStore(self);
 
 	// self->AfterCreateFromBackingStore();
 
-	cw("EndHook HK_grcTextureD11_CreateFromBackingStore");
+	// cw("EndHook HK_grcTextureD11_CreateFromBackingStore");
 	return r;
 }
 
@@ -51,13 +51,13 @@ bool TextureReplacer::Init()
 
 void TextureReplacer::OnBeforeCreateFromBackingStore(grcTextureD11* tex)
 {
-	cw("TextureReplacer::OnBeforeCreateFromBackingStore");
+	// cw("TextureReplacer::OnBeforeCreateFromBackingStore");
 	auto textureKey = tex->GetName();
-	cw("texture key: %s", textureKey.c_str());
+	// cw("texture key: %s", textureKey.c_str());
 
-	cw("try check m_registerReplaceTextureMap ");
+	// cw("try check m_registerReplaceTextureMap ");
 	if (m_registerReplaceTextureMap.contains(textureKey) == false) {
-		cw("return exit");
+		//	cw("return exit");
 		return;
 	}
 
@@ -103,6 +103,7 @@ void TextureReplacer::OnBeforeCreateFromBackingStore(grcTextureD11* tex)
 	auto newRawImage = img.GetPixels();
 	tex->rawImage = newRawImage;
 	cw("set rawImage!! old: %p, new: %p!!", oldRawImage, newRawImage);
+	cw("replaced texture key: %s", textureKey.c_str());
 
 	// add to cache
 	m_scratchImageMap.emplace(textureKey, std::move(img));

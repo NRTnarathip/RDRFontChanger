@@ -98,7 +98,7 @@
     <ClInclude Include="INIReader.h" />
     <ClInclude Include="ModLoaderConfig.h" />
     <ClInclude Include="Application.h" />
-    <ClInclude Include="AssetLib.h" />
+    <ClInclude Include="AssertLib.h" />
     <ClInclude Include="CustomFontSDF.h" />
     <ClInclude Include="dllmain.h" />
     <ClInclude Include="DXLib.h" />
@@ -114,6 +114,7 @@
     <ClInclude Include="RenderHook.h" />
     <ClInclude Include="StringHooks.h" />
     <ClInclude Include="StringLib.h" />
+    <ClInclude Include="StringTypes.h" />
     <ClInclude Include="SWFTypes.h" />
     <ClInclude Include="SystemManager.h" />
     <ClInclude Include="TextTranslateFile.h" />
@@ -146,6 +147,7 @@
     <ClCompile Include="RenderHook.cpp" />
     <ClCompile Include="StringHooks.cpp" />
     <ClCompile Include="StringLib.cpp" />
+    <ClCompile Include="StringTypes.cpp" />
     <ClCompile Include="SWFTypes.cpp" />
     <ClCompile Include="SystemManager.cpp" />
     <ClCompile Include="TextTranslateFile.cpp" />

@@ -57,7 +57,7 @@
     <ClInclude Include="grcImage.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="AssetLib.h">
+    <ClInclude Include="AssertLib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DXLib.h">
@@ -122,6 +122,9 @@
     </ClInclude>
     <ClInclude Include="FontManager.h">
       <Filter>Source Files\Font</Filter>
+    </ClInclude>
+    <ClInclude Include="StringTypes.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -214,6 +217,9 @@
     </ClCompile>
     <ClCompile Include="FontManager.cpp">
       <Filter>Source Files\Font</Filter>
+    </ClCompile>
+    <ClCompile Include="StringTypes.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

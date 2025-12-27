@@ -1,6 +1,8 @@
 #include "SDFont.h"
 #include "Logger.h"
 
+#define cw std::println
+
 SDFont::SDFont(fs::path path) {
 	this->path = path;
 
@@ -109,3 +111,4 @@ void SDFont::TryParseGlyphs(std::ifstream& file) {
 	}
 
 }
+#undef cw

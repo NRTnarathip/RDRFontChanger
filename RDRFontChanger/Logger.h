@@ -29,13 +29,16 @@ public:
 
 	template<typename... Args>
 	void Print(const std::string& fmt, Args&&... args) {
+		if (IsDisableAllLog())
+			return;
+
 		std::lock_guard<std::mutex> lock(m_mutex);
 		std::string msg = std::vformat(fmt, std::make_format_args(args...));
 		std::string time = TimeNow();
 		DWORD tid = GetCurrentThreadId();
 		auto final = std::format("{}[TID:{}] {}\n", time, tid, msg);
-		std::cout << final;
-		LogToFile(final);
+		LogToConsoleInternal(final);
+		LogToFileInternal(final);
 	}
 
 private:
@@ -46,7 +49,9 @@ private:
 
 	std::string TimeNow();
 
-	void LogToFile(std::string line);
+	void LogToFileInternal(std::string line);
+	void LogToConsoleInternal(std::string line);
+	bool IsDisableAllLog();
 };
 
 #define cw Logger::Instance()->LogFormat

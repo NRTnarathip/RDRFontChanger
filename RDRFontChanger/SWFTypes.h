@@ -2,7 +2,7 @@
 #include <iostream>
 #include <cstddef>
 #include "grcImage.h"
-#include "AssetLib.h"
+#include "AssertLib.h"
 
 enum SWFTypeEnum {
 	Shape = 1,
@@ -31,7 +31,8 @@ struct swfEditText {
 	unsigned char html, align; // x44 -> x46
 	float boundX;// x48 -> x4c
 	float boundY;// x4c -> x50
-	float unkx50;
+	float boundWidth;
+	float boundHeight;
 	struct Bound {
 		float x, y, width, height;
 	};
