@@ -14,7 +14,7 @@ std::string WCharToString(const wchar_t* wstr) {
 	return result;
 }
 
-std::wstring ToWString(const std::string& str) {
+std::wstring ToWString(const std::string str) {
 	if (str.empty())
 		return std::wstring();
 	int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);

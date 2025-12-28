@@ -23,13 +23,15 @@ public:
 		return &instance;
 	}
 	void ShowConsole();
+	void LogFormat(const wchar_t* format, ...);
 	void LogFormat(const char* format, ...);
+
 	void AddTab();
 	void UnTab();
 
 	template<typename... Args>
 	void Print(const std::string& fmt, Args&&... args) {
-		if (IsDisableAllLog())
+		if (IsDisableAllLogTypes())
 			return;
 
 		std::lock_guard<std::mutex> lock(m_mutex);
@@ -51,7 +53,7 @@ private:
 
 	void LogToFileInternal(std::string line);
 	void LogToConsoleInternal(std::string line);
-	bool IsDisableAllLog();
+	bool IsDisableAllLogTypes();
 };
 
 #define cw Logger::Instance()->LogFormat

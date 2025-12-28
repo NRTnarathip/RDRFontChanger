@@ -20,7 +20,7 @@ BOOL WINAPI HK_ReadFile(HANDLE hFile, LPVOID buffer,
 	DWORD size, LPDWORD bytesRead, LPOVERLAPPED overlapped)
 {
 	wchar_t pathWString[MAX_PATH];
-	cw("Hook ReaFile...");
+	// cw("Hook ReaFile...");
 
 	if (GetFinalPathNameByHandleW(
 		hFile,
@@ -29,7 +29,7 @@ BOOL WINAPI HK_ReadFile(HANDLE hFile, LPVOID buffer,
 		FILE_NAME_NORMALIZED
 	)) {
 		auto path = WCharToString(pathWString);
-		cw("[ReadFile] %s | size=%lu", path.c_str(), size);
+		// cw("[ReadFile] %s | size=%lu", path.c_str(), size);
 	}
 
 	return fnReadFile(

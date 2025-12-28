@@ -11,6 +11,5 @@ int main()
 {
 	fs::path path = R"(D:\RDRModder\ThaiFontMaker\SDFont-App\thai_sdf.txt)";
 	SDFont font(path);
-	cw("try make min max bitmap font");
 	while (true) {}
 }

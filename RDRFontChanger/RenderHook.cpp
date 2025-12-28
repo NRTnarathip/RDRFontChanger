@@ -17,6 +17,8 @@ static void HK_DrawTextWithFont(
 	cw("Begin HK_DrawTextWithFont!!");
 	cw("p2_text: %s", (const char*)p2_text);
 	cw("p3_font: %p", p3_font);
+	if (p3_font)
+		p3_font->LogInfo();
 
 	auto color = swfEditTextDrawColor::Decode(p5_drawColorInt);
 	float rNorm = color.r / 255.0;
@@ -24,22 +26,9 @@ static void HK_DrawTextWithFont(
 	float bNorm = color.b / 255.0;
 	cw("color rgba: %d %d %d %d", color.r, color.g, color.b, color.a);
 
-	if (p3_font)
-		p3_font->LogInfo();
 
-	//static std::string drawTextString;
-	//drawTextString = p2_text ? p2_text : "";
-
-	//auto fontReplacer = FontReplacer::Instance();
-	//auto customFont = fontReplacer->TryGetCustomFont(p3_font);
-	//if (customFont && drawTextString.size() >= 2) {
-	//	if (TextTranslator::TryTranslate(drawTextString)) {
-	//		p2_text = drawTextString.c_str();
-	//	}
-	//}
-
-	cw("try call backup_DrawTextWithFont");
 	__try {
+		//	cw("try call backup_DrawTextWithFont");
 		backup_DrawTextWithFont(self,
 			p2_text, p3_font, p4_fontHeight,
 			p5_drawColorInt, p6_align, p7_drawInfo);

@@ -221,6 +221,9 @@
     <ClCompile Include="StringTypes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="inc\uni_algo\uni_algo_data.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\ScriptHookRDR.lib">

@@ -31,16 +31,14 @@ class TextTranslateCsvFile
 public:
 	TextTranslateCsvFile(std::string path);
 	bool TryLoad();
-	std::string TryGetSrcString(int i);
 
 	std::unordered_map<std::string, std::string> GetTranslateMap() {
 		return m_translateMap;
 	}
 
+	static std::string MakeEnglishRowKey(std::string english);
+
 private:
 	std::string m_csvPath;
-	// key  : english raw, un normalize
-	// value: translate
 	std::unordered_map<std::string, std::string> m_translateMap;
-
 };

@@ -15,7 +15,8 @@ namespace fs = std::filesystem;
 
 const char* localizeDir = "mods/localize";
 
-std::unordered_map<std::string, std::string> TextTranslator::g_translateMap;
+std::unordered_map<std::string, std::string> TextTranslator::g_translateStringMap;
+std::unordered_map<std::string, std::string> TextTranslator::g_isTranslateYetMap;
 std::vector<TextTranslateCsvFile*> TextTranslator::g_translateFiles;
 
 void TryTranslateStringTable(txtStringTable* self) {
@@ -49,11 +50,13 @@ void TryTranslateStringTable(txtStringTable* self) {
 
 			// cw("[%d] data string: %s", i, data->string);
 
-			auto translateResult = TextTranslator::TryTranslate(data->string);
-			if (translateResult) {
-				data->string = translateResult;
-				//cw("replaced game string: %s", gameString.c_str());
-				//cw("new string:           %s", tempNewString.c_str());
+			if (TextTranslator::IsTranslateYet(data->string) == false) {
+				auto translateResult = TextTranslator::TryTranslate(data->string);
+				if (translateResult) {
+					data->string = translateResult;
+					//cw("replaced game string: %s", gameString.c_str());
+					//cw("new string:           %s", tempNewString.c_str());
+				}
 			}
 
 			// move next!
@@ -82,13 +85,12 @@ void* HK_txtStringTable_Load(txtStringTable* self, byte* p2_path,
 
 
 
-void TextTranslator::AddTranslateString(std::string english, std::string newText)
+void TextTranslator::AddTranslateString(std::string key, std::string newText)
 {
-	auto key = MakeTextKeyFromEnglish(english);
-	if (key.empty())
+	if (key.length() <= 1)
 		return;
 
-	g_translateMap[key] = newText;
+	g_translateStringMap[key] = newText;
 	// cw("added translate: %s = %s", key.c_str(), newText.c_str());
 }
 
@@ -130,71 +132,36 @@ bool TextTranslator::Init() {
 
 		// build translate string map!
 		auto translateMap = translateFile->GetTranslateMap();
-		for (auto [eng, newString] : translateMap) {
-			if (newString.size() > 1)
-				AddTranslateString(eng, newString);
+		for (auto [engKey, newString] : translateMap) {
+			if (newString.size() >= 2)
+				AddTranslateString(engKey, newString);
 		}
 	}
 
 	return true;
 }
 
-std::string TextTranslator::MakeTextKeyFromEnglish(std::string englishString) {
-	static std::unordered_map<std::string, std::string> g_cache;
-	if (g_cache.contains(englishString))
-		return g_cache[englishString];
-
-	std::string out;
-	bool lastUnderscore = true;
-
-	for (char c : englishString)
-	{
-		if (std::isalnum((unsigned char)c))
-		{
-			out += std::tolower((unsigned char)c);
-			lastUnderscore = false;
-		}
-		else if (std::isspace((unsigned char)c))
-		{
-			if (!lastUnderscore)
-			{
-				out += '_';
-				lastUnderscore = true;
-			}
-		}
-	}
-
-	if (!out.empty() && out.back() == '_')
-		out.pop_back();
-
-	return g_cache[englishString] = out;
-}
-
-const char* TextTranslator::TryGetTranslateStringRef(std::string stringKey) {
-	if (g_translateMap.empty())
-		return nullptr;
-
-	if (g_translateMap.contains(stringKey)) {
-		auto string = &g_translateMap[stringKey];
-		return string->c_str();
-	}
-
-	return nullptr;
-}
-
 const char* TextTranslator::TryTranslate(std::string english)
 {
-	if (g_translateMap.empty())
+	if (g_translateStringMap.empty())
 		return nullptr;
 
-	auto stringKey = MakeTextKeyFromEnglish(english);
-	cw("try translate string key: %s", stringKey.c_str());
+	auto key = TextTranslateCsvFile::MakeEnglishRowKey(english);
+
+	cw("try translate string key: %s", key.c_str());
+
 	const char* result = nullptr;
-	if (g_translateMap.contains(stringKey)) {
-		result = (&g_translateMap[stringKey])->c_str();
+	if (g_translateStringMap.contains(key)) {
+		result = (&g_translateStringMap[key])->c_str();
+		g_isTranslateYetMap[result] = result;
 		cw("translated string: %s", result);
 	}
 
 	return result;
+}
+
+bool TextTranslator::IsTranslateYet(const char* str)
+{
+	return g_isTranslateYetMap.contains(str);
 }
 

@@ -8,16 +8,17 @@
 class TextTranslator : public ISystem
 {
 public:
-	//	key: english, value: new string
-	static std::unordered_map<std::string, std::string> g_translateMap;
-	static std::vector<TextTranslateCsvFile*> g_translateFiles;
+	bool Init() override;
 
 	static void AddTranslateString(std::string english, std::string newText);
 	static const char* TryTranslate(std::string english);
+	static bool IsTranslateYet(const char* data);
 
-	static std::string MakeTextKeyFromEnglish(std::string englishString);
-	static const char* TryGetTranslateStringRef(std::string stringKey);
 
-	bool Init() override;
+private:
+	//	key: english normalize, value: new string
+	static std::unordered_map<std::string, std::string> g_translateStringMap;
+	static std::unordered_map<std::string, std::string> g_isTranslateYetMap;
+	static std::vector<TextTranslateCsvFile*> g_translateFiles;
 };
 

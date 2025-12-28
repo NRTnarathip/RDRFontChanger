@@ -11,6 +11,7 @@
 #include <sstream>
 #include <mutex>
 #include "ModLoaderConfig.h"
+#include "StringLib.h"
 
 std::string tabString;
 
@@ -20,8 +21,10 @@ Logger::Logger()
 {
 	modLoaderConfig = ModLoaderConfig::Instance();
 
-	if (modLoaderConfig->logFile)
+	if (modLoaderConfig->logFile) {
 		m_logStream.open(m_logFileName, std::ios::out | std::ios::trunc);
+		m_logStream << "\xEF\xBB\xBF"; // utf8 boom
+	}
 
 	if (modLoaderConfig->enableConsole)
 		ShowConsole();
@@ -53,11 +56,12 @@ void Logger::LogToFileInternal(std::string line)
 
 void Logger::LogToConsoleInternal(std::string line)
 {
-	if (modLoaderConfig->logConsole)
-		std::cout << line.c_str();
+	if (modLoaderConfig->logConsole) {
+		std::cout << line;
+	}
 }
 
-bool Logger::IsDisableAllLog()
+bool Logger::IsDisableAllLogTypes()
 {
 	if (modLoaderConfig->logConsole == false
 		&& modLoaderConfig->logFile == false) {
@@ -73,11 +77,16 @@ void Logger::ShowConsole()
 	freopen("CONOUT$", "w", stdout);
 	freopen("CONOUT$", "w", stderr);
 	freopen("CONIN$", "r", stdin);
+	SetConsoleOutputCP(CP_UTF8);
+	SetConsoleCP(CP_UTF8);
+
+	// ให้ stdout เป็น wide
+	std::wcout.imbue(std::locale(""));
 }
 
 void Logger::LogFormat(const char* format, ...)
 {
-	if (IsDisableAllLog()) {
+	if (IsDisableAllLogTypes()) {
 		return;
 	}
 
@@ -116,6 +125,30 @@ void Logger::LogFormat(const char* format, ...)
 
 	LogToConsoleInternal(finalLog);
 	LogToFileInternal(finalLog);
+}
+
+
+void Logger::LogFormat(const wchar_t* format, ...)
+{
+	if (IsDisableAllLogTypes())
+		return;
+
+	va_list args;
+	va_start(args, format);
+
+	int len = _vscwprintf(format, args);
+	if (len <= 0) {
+		va_end(args);
+		return;
+	}
+
+	std::wstring buffer(len, L'\0');
+	vswprintf(buffer.data(), len + 1, format, args);
+
+	va_end(args);
+
+	std::string utf8 = WCharToString(buffer.c_str());
+	LogFormat(utf8.c_str());
 }
 
 void Logger::AddTab()
