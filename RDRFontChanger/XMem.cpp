@@ -15,8 +15,7 @@ void* HK_AllocateInternal(void* self, uint64_t p1, uint64_t p2) {
 	//pn("p1: {:x}", (int)p1);
 	//pn("p2: {:x}", (int)p2);
 
-	if (g_allocatorInstance == nullptr)
-		g_allocatorInstance = self;
+	g_allocatorInstance = self;
 
 	auto r = fn_AllocateInternal(self, p1, p2);
 	//if (p1 == 0x3100 && p2 == 4

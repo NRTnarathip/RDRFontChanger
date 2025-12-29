@@ -18,7 +18,7 @@ using namespace HookLib;
 std::unordered_map<swfFont*, CustomFontSDF*> g_fontSDFMap;
 FontReplacer* FontReplacer::g_instance;
 std::unordered_map<std::string, std::string> g_registerGameFontMap;
-std::unordered_map<swfFont*, CustomFontSDF*> g_gameFontMapWithCustomFont;
+// std::unordered_map<swfFont*, CustomFontSDF*> g_gameFontMapWithCustomFont;
 
 
 void OnCreateFont(swfFont* font) {
@@ -47,6 +47,9 @@ void FontReplacer::RegisterFontWithFontSDF(
 {
 	// normalize it!!
 	gameFontName = FontManager::MakeGameFontNameKey(gameFontName);
+
+	// normalize 
+	newFontPath = fs::path(newFontPath).generic_string();
 
 	// regular
 	pn("try register game font: {}, new font: {}",
@@ -123,17 +126,19 @@ void DebugFonts() {
 CustomFontSDF* FontReplacer::TryLoadCustomFont(swfFont* gameFont)
 {
 	cw("try replace new font sdf...");
-	//	gameFont->LogInfo();
+	cw("game font: %p", gameFont);
+	gameFont->LogInfo();
 
-		// don't have any font
+	// don't have any font
 	if (g_registerGameFontMap.empty())
 		return nullptr;
 
 
 	// from cache
-	if (g_gameFontMapWithCustomFont.contains(gameFont)) {
-		return g_gameFontMapWithCustomFont[gameFont];
-	}
+	//if (g_gameFontMapWithCustomFont.contains(gameFont)) {
+	//	cw("get it from cache!: %p", gameFont);
+	//	return g_gameFontMapWithCustomFont[gameFont];
+	//}
 
 	// assert
 	auto sheet = gameFont->sheet;
@@ -145,9 +150,11 @@ CustomFontSDF* FontReplacer::TryLoadCustomFont(swfFont* gameFont)
 
 	// check if font narrow regular - bold
 	auto fontName = FontManager::MakeGameFontNameKey(gameFont->name());
-	cw("font name: %s", fontName);
-	if (g_registerGameFontMap.contains(fontName) == false)
+	cw("font name: %s", fontName.c_str());
+	if (g_registerGameFontMap.contains(fontName) == false) {
+		cw("this font name have't register!");
 		return nullptr;
+	}
 
 	std::string fontPath = g_registerGameFontMap[fontName];
 	cw("font path: %s", fontPath.c_str());
@@ -161,12 +168,14 @@ CustomFontSDF* FontReplacer::TryLoadCustomFont(swfFont* gameFont)
 	}
 
 	if (fs::exists(fontPath) == false) {
+		cw("font path not found!: %s", fontPath);
 		return nullptr;
 	}
 
 	// ready create it!
-	auto customFont = g_gameFontMapWithCustomFont[gameFont]
-		= new CustomFontSDF(gameFont, fontPath, fontSize);
+	cw("try create custom game font with sdf!");
+	//auto customFont = g_gameFontMapWithCustomFont[gameFont]
+	auto customFont = new CustomFontSDF(gameFont, fontPath, fontSize);
 	cw("replaced original font: %p", gameFont);
 
 	return customFont;
@@ -174,8 +183,8 @@ CustomFontSDF* FontReplacer::TryLoadCustomFont(swfFont* gameFont)
 
 CustomFontSDF* FontReplacer::TryGetCustomFont(swfFont* font)
 {
-	if (g_gameFontMapWithCustomFont.contains(font))
-		return g_gameFontMapWithCustomFont[font];
+	//if (g_gameFontMapWithCustomFont.contains(font))
+	//	return g_gameFontMapWithCustomFont[font];
 	return nullptr;
 }
 
@@ -209,25 +218,4 @@ void FontReplacer::RegisterFontFromDir(std::string dir)
 
 		RegisterFontWithFontSDF(gameFontName, file);
 	}
-}
-
-void FontReplacer::TryLoadCustomFonts()
-{
-	//auto fontMgr = FontManager::Instance();
-	//auto gameFonts = fontMgr->GetFonts();
-
-	//static int g_lastInitFontCount;
-	//if (g_lastInitFontCount != totalFonts) {
-	//	int prevInitFontCount = g_lastInitFontCount;
-	//	g_lastInitFontCount = totalFonts;
-
-	//	cw("total game fonts: %d", totalFonts);
-	//	cw("try init load all custom font...");
-	//	for (int i = prevInitFontCount; i < totalFonts;i++) {
-	//		auto font = FontReplacer::g_gameFonts[i];
-	//		TryLoadCustomFont(font);
-	//	}
-	//	cw("done loaded all custom font...");
-	//}
-
 }

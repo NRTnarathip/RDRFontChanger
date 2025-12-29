@@ -3,9 +3,46 @@
 #include "SWFTypes.h"	
 #include "FontReplacer.h"
 #include "TextTranslator.h"
+#include <iostream>
+#include <stdexcept>
+#include <stacktrace> 
+#include <windows.h>
+#include <dbghelp.h>
+#pragma comment(lib, "dbghelp.lib")
 
 using namespace HookLib;
 
+void PrintStackTrace()
+{
+	void* stack[62];
+	USHORT frames = CaptureStackBackTrace(0, 62, stack, nullptr);
+
+	HANDLE process = GetCurrentProcess();
+	SymInitialize(process, nullptr, TRUE);
+
+	for (USHORT i = 0; i < frames; ++i)
+	{
+		DWORD64 address = (DWORD64)(stack[i]);
+
+		char buffer[sizeof(SYMBOL_INFO) + 256] = { 0 };
+		PSYMBOL_INFO symbol = (PSYMBOL_INFO)buffer;
+		symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+		symbol->MaxNameLen = 255;
+
+		DWORD64 displacement = 0;
+		if (SymFromAddr(process, address, &displacement, symbol))
+		{
+			cw("[%d]frame : %s - 0x%x", frames - i - 1,
+				symbol->Name, symbol->Address);
+		}
+		else
+		{
+			cw("[%d]frame : ??? - 0x%x", frames - i - 1, symbol->Address);
+		}
+	}
+
+	SymCleanup(process);
+}
 
 typedef void (*HK_DrawTextWithFont_TypeDef)(
 	swfEditText* p1, const char* p2, swfFont* p3, uint64_t p4,
@@ -35,6 +72,7 @@ static void HK_DrawTextWithFont(
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER) {
 		cw("crash in backup_DrawTextWithFont");
+		PrintStackTrace();
 	}
 
 	cw("End HK_DrawTextWithFont");
@@ -46,7 +84,7 @@ LONG WINAPI MyVEH(EXCEPTION_POINTERS* ep)
 	auto code = ep->ExceptionRecord->ExceptionCode;
 	auto rip = ep->ContextRecord->Rip;
 	auto rva = XMem::GetRvaFromAddress(rip);
-	cw("RenderHook::VectoredException code=%08X RIP= %p, RVA: 0x%x",
+	cw("RenderHook::VectoredException code=0x%x RIP= %p, RVA: 0x%x",
 		code, (void*)rip, rva);
 	return EXCEPTION_CONTINUE_SEARCH;
 }
@@ -55,8 +93,8 @@ RenderHook* g_instance;
 bool RenderHook::Init()
 {
 	g_instance = this;
-	HookRva(0x1979c0, HK_DrawTextWithFont, &backup_DrawTextWithFont);
-	AddVectoredExceptionHandler(1, MyVEH);
+	// HookRva(0x1979c0, HK_DrawTextWithFont, &backup_DrawTextWithFont);
+	// AddVectoredExceptionHandler(1, MyVEH);
 	return true;
 }
 

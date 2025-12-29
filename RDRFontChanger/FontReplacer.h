@@ -18,7 +18,6 @@ public:
 	CustomFontSDF* TryLoadCustomFont(swfFont* font);
 	CustomFontSDF* TryGetCustomFont(swfFont* font);
 	void RegisterFontFromDir(std::string dir);
-	void TryLoadCustomFonts();
 
 	static FontReplacer* Instance() { return g_instance; };
 private:
