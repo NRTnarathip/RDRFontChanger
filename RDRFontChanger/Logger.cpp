@@ -12,10 +12,26 @@
 #include <mutex>
 #include "ModLoaderConfig.h"
 #include "StringLib.h"
+#include <unordered_map>
+#include <unordered_set>
+#include <string>
+#include <stacktrace>
+#include <sstream>
+#include <cstdint>
 
 std::string tabString;
 
 ModLoaderConfig* modLoaderConfig;
+
+void Logger::LogStacktrace()
+{
+	std::stringstream ss;
+	auto stack = std::stacktrace::current();
+	ss << stack;
+	auto stackString = ss.str();
+	cw("Stack trace...");
+	cw("%s", stackString.c_str());
+}
 
 Logger::Logger()
 {

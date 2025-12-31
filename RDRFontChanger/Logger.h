@@ -43,6 +43,8 @@ public:
 		LogToFileInternal(final);
 	}
 
+	static void LogStacktrace();
+
 private:
 	Logger();
 	std::mutex m_mutex;

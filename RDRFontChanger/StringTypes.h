@@ -8,7 +8,7 @@ struct txtStringData {
 	const char* string; // x8
 };
 
-// data size 0x8
+// size 0x18!
 struct txtHashEntry {
 	uint32_t hash; // 0x0
 	uint32_t hashUnk; // 0x4
@@ -43,3 +43,7 @@ struct txtStringTable {
 };
 
 
+// confirm size: 0x18!
+struct swfString {
+
+};

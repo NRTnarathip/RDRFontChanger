@@ -80,6 +80,23 @@ std::string TextTranslateCsvFile::MakeEnglishRowKey(std::string key)
 {
 	key = NormalizeNBSP(key);
 
+	key = StringTrim(key);
+
+	// collapse multiple space -> single underscore
+	bool lastSpace = false;
+	std::string collapse;
+	for (char c : key) {
+		if (isspace((unsigned char)c)) {
+			if (!lastSpace) collapse += '_';
+			lastSpace = true;
+		}
+		else {
+			collapse += c;
+			lastSpace = false;
+		}
+	}
+	key = collapse;
+
 	// remove chars . " ? ! , and more...
 	static std::unordered_set<char> g_charCodeToRemoveMap = {
 		'.',
@@ -100,21 +117,6 @@ std::string TextTranslateCsvFile::MakeEnglishRowKey(std::string key)
 
 	// normalize!
 	key = normalizeNFC(key);
-
-	// collapse multiple space -> single underscore
-	bool lastSpace = false;
-	std::string collapse;
-	for (char c : key) {
-		if (isspace((unsigned char)c)) {
-			if (!lastSpace) collapse += '_';
-			lastSpace = true;
-		}
-		else {
-			collapse += c;
-			lastSpace = false;
-		}
-	}
-	key = collapse;
 
 
 	return key;

@@ -430,16 +430,6 @@ void* HK_GetString(void* self, char* p1_string) {
 }
 
 
-void (*fn_txtStringTableReader)(void* reader, void* p1, int p2);
-void HK_txtStringTableReader(void* reader, void* p1, int p2) {
-	cw("BeginHook HK_txtStringTableReader");
-	cw("string table: %p", p1);
-	cw("read count: %d", p2);
-	cw("calling fn_txtStringTableReader...");
-	fn_txtStringTableReader(reader, p1, p2);
-	cw("done call fn_txtStringTableReader");
-	cw("EndHook HK_txtStringTableReader");
-}
 
 void* (*fn_GetFullStringTablePath)(txtStringTable* self,
 	char* p1, void* p2, void* p3);
@@ -468,7 +458,6 @@ void* GetStringTablePath(txtStringTable* self, char* path) {
 void Hooks::SetupDebugHooks()
 {
 	// HookRva(0xfaf10, HK_GetString, &fn_GetString);
-	//HookRva(0xfbf30, HK_txtStringTableReader, &fn_txtStringTableReader);
 	// HookRva(0x2a9b00, GetFullStringTablePath, &fn_GetFullStringTablePath);
 	// HookRva(0xfbcb0, GetStringTablePath, &fn_GetStringTablePath);
 	// HookRva(0x1fced0, HK_LoadFlashFile, &backup_LoadFlashFile);
