@@ -23,15 +23,12 @@ void* (*fn_grcTextureD11_CreateFromBackingStore)(grcTextureD11* self);
 void* HK_grcTextureD11_CreateFromBackingStore(grcTextureD11* self) {
 	// cw("BeginHook HK_grcTextureD11_CreateFromBackingStore, self: %p", self);
 
-	//self->BeforeCreateFromBackingStore();
-
-	// replace here
 	TextureReplacer::Instance()->OnBeforeCreateFromBackingStore(self);
 
 	// cw("try call original fn_grcTextureD11_CreateFromBackingStore");
 	auto r = fn_grcTextureD11_CreateFromBackingStore(self);
 
-	// self->AfterCreateFromBackingStore();
+	TextureReplacer::Instance()->OnAfterCreateFromBackingStore(self);
 
 	// cw("EndHook HK_grcTextureD11_CreateFromBackingStore");
 	return r;
@@ -62,8 +59,8 @@ void TextureReplacer::OnBeforeCreateFromBackingStore(grcTextureD11* tex)
 	}
 
 	auto redirectNewTexturePath = m_registerReplaceTextureMap[textureKey];
-	cw("try replace texture: %s", textureKey.c_str());
-	cw("try to read file: %s", redirectNewTexturePath.c_str());
+	// cw("try replace texture: %s", textureKey.c_str());
+	// cw("try to read file: %s", redirectNewTexturePath.c_str());
 
 	DirectX::ScratchImage img;
 	auto filePathSystem = fs::path(redirectNewTexturePath);
@@ -102,11 +99,20 @@ void TextureReplacer::OnBeforeCreateFromBackingStore(grcTextureD11* tex)
 	auto oldRawImage = tex->rawImage;
 	auto newRawImage = img.GetPixels();
 	tex->rawImage = newRawImage;
-	cw("set rawImage!! old: %p, new: %p!!", oldRawImage, newRawImage);
-	cw("replaced texture key: %s", textureKey.c_str());
+	// cw("set rawImage!! old: %p, new: %p!!", oldRawImage, newRawImage);
+	// cw("replaced texture key: %s", textureKey.c_str());
 
 	// add to cache
 	m_scratchImageMap.emplace(textureKey, std::move(img));
+}
+
+void TextureReplacer::OnAfterCreateFromBackingStore(grcTextureD11* tex)
+{
+	auto textureKey = tex->GetName();
+	if (m_scratchImageMap.contains(textureKey)) {
+		m_scratchImageMap.erase(textureKey);
+		// cw("deleted dds scratch image cache!, key: %s", textureKey.c_str());
+	}
 }
 
 void TextureReplacer::RegisterReplaceTexture(

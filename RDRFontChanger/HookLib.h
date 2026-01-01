@@ -21,10 +21,19 @@ namespace HookLib {
 	}
 
 	template<typename Ret, typename... Args>
-	Ret Invoke(void* address, Args... args)
+	Ret Invoke(void* addr, Args... args)
 	{
 		using Fn = Ret(__fastcall*)(Args...);
-		return ((Fn)(address))(args...);
+		return ((Fn)(addr))(args...);
+	}
+
+
+	template<typename Ret, typename... Args>
+	Ret InvokeVTable(void* instance, int vtableIndex, Args... args)
+	{
+		using Fn = Ret(__fastcall*)(Args...);
+		void** vftable = *(void***)instance;
+		return ((Fn)(vftable[vtableIndex]))(args...);
 	}
 }
 

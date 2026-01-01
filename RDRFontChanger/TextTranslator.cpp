@@ -30,9 +30,11 @@ void TryTranslateStringData(txtStringData* data) {
 		// cw("new translate string!: %s", translateString.c_str());
 
 		int allocSize = translateString.size() + 1;
-		auto allocString = (char*)XMem::Allocate(allocSize, 1);
+		auto allocString = (char*)XMem::New(allocSize, 1);
 		memcpy(allocString, translateResult, translateString.size());
 		allocString[allocSize - 1] = '\0';
+		// delete first!
+		XMem::Delete((void*)data->string);
 		data->string = allocString;
 	}
 
@@ -226,9 +228,9 @@ const char* TextTranslator::TryTranslate(std::string english)
 
 	auto key = TextTranslateCsvFile::MakeEnglishRowKey(english);
 
-	cw("try translate string key: %s", key.c_str());
-	cw("string key len: %d", key.length());
-	cw("english len: %d", english.length());
+	// cw("try translate string key: %s", key.c_str());
+	//cw("string key len: %d", key.length());
+	//cw("english len: %d", english.length());
 
 	const char* result = nullptr;
 	if (g_translateStringMap.contains(key)) {

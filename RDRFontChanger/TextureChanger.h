@@ -15,6 +15,7 @@ public:
 	TextureReplacer();
 	bool Init() override;
 	void OnBeforeCreateFromBackingStore(grcTextureD11* tex);
+	void OnAfterCreateFromBackingStore(grcTextureD11* tex);
 	void RegisterReplaceTexture(std::string textureName, std::string path);
 	static TextureReplacer* Instance() { return g_instance; }
 

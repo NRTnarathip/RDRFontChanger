@@ -45,8 +45,8 @@ bool TextTranslateCsvFile::TryLoad()
 				continue;
 
 			m_translateMap[rowKey] = translate;
-			cw("loaded line: %s", rowKey.c_str());
-			cw("translate  : %s", translate.c_str());
+			//cw("loaded line: %s", rowKey.c_str());
+			//cw("translate  : %s", translate.c_str());
 		}
 	}
 	catch (const std::exception& e) {

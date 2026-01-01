@@ -94,7 +94,7 @@ bool RenderHook::Init()
 {
 	g_instance = this;
 	// HookRva(0x1979c0, HK_DrawTextWithFont, &backup_DrawTextWithFont);
-	AddVectoredExceptionHandler(1, MyVEH);
+	// AddVectoredExceptionHandler(1, MyVEH);
 	return true;
 }
 
