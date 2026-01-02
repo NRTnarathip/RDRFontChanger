@@ -14,8 +14,14 @@
 #include "TextureChanger.h"
 #include <unordered_set>
 #include "Application.h"
+#include "GameVerify.h"
 
 void Setup(HMODULE module) {
+	if (GameVerify::Assert() == false) {
+		MessageBoxA(NULL, "Failed to game integrity check!", "Error", MB_OK | MB_ICONERROR);
+		return;
+	}
+
 	Application* app = new Application();
 	app->SetupOnDllLoaded(module);
 }

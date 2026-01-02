@@ -8,6 +8,7 @@
 #include "Logger.h"
 #include "HookLib.h"
 #include "StringTypes.h"
+#include "GameAllocator.h"
 
 
 using namespace HookLib;
@@ -26,15 +27,16 @@ void TryTranslateStringData(txtStringData* data) {
 	std::string engString = data->string;
 	auto translateResult = TextTranslator::TryTranslate(engString);
 	if (translateResult) {
+		auto allocator = GameAllocator::Instance();
 		std::string translateString = translateResult;
 		// cw("new translate string!: %s", translateString.c_str());
 
 		int allocSize = translateString.size() + 1;
-		auto allocString = (char*)XMem::New(allocSize, 1);
+		auto allocString = (char*)allocator->New(allocSize, 1);
 		memcpy(allocString, translateResult, translateString.size());
 		allocString[allocSize - 1] = '\0';
 		// delete first!
-		XMem::Delete((void*)data->string);
+		allocator->Delete((void*)data->string);
 		data->string = allocString;
 	}
 
@@ -239,7 +241,7 @@ const char* TextTranslator::TryTranslate(std::string english)
 		g_isTranslateStringSet.insert(result);
 	}
 	else {
-		cw("not found string to translate!");
+		// cw("not found string to translate!");
 	}
 
 	return result;

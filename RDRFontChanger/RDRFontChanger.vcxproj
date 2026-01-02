@@ -94,6 +94,8 @@
     <ClInclude Include="..\SDFontLib\SDFont.h" />
     <ClInclude Include="FontConfig.h" />
     <ClInclude Include="FontManager.h" />
+    <ClInclude Include="GameAllocator.h" />
+    <ClInclude Include="GameVerify.h" />
     <ClInclude Include="ini.h" />
     <ClInclude Include="INIReader.h" />
     <ClInclude Include="ModLoaderConfig.h" />
@@ -128,6 +130,8 @@
     <ClCompile Include="..\SDFontLib\SDFont.cpp" />
     <ClCompile Include="FontConfig.cpp" />
     <ClCompile Include="FontManager.cpp" />
+    <ClCompile Include="GameAllocator.cpp" />
+    <ClCompile Include="GameVerify.cpp" />
     <ClCompile Include="inc\uni_algo\uni_algo_data.cpp" />
     <ClCompile Include="ini.c" />
     <ClCompile Include="INIReader.cpp" />

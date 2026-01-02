@@ -5,6 +5,7 @@
 #include <iostream>
 #include "XMem.h"
 #include "FontConfig.h"
+#include "GameAllocator.h"
 
 namespace fs = std::filesystem;
 
@@ -57,19 +58,20 @@ CustomFontSDF::CustomFontSDF(swfFont* gameFont,
 	// allocate memory for new glyphs
 	auto sheet = gameFont->sheet;
 	// allocate new array!
+	auto allocator = GameAllocator::Instance();
 	{
 		pn("try allocate new arary...");
 
 		// glyphIndexToCharCodeArray
 		{
 			cw("gameFont glyphToCodeArray: %p", gameFont->glyphToCodeArray);
-			auto newGlyphIndexToCodeArray = (unsigned short*)XMem::New(
+			auto newGlyphIndexToCodeArray = (unsigned short*)allocator->New(
 				m_newGameFontGlyphTotal * sizeof(unsigned short), sizeof(unsigned short));
 			memcpy(newGlyphIndexToCodeArray, gameFont->glyphToCodeArray,
 				m_oldGameFontGlyphTotal * sizeof(unsigned short));
 			pn("clone newGlyphIndexToCodeArray");
 			// delete first!
-			XMem::Delete(gameFont->glyphToCodeArray);
+			allocator->Delete(gameFont->glyphToCodeArray);
 			gameFont->glyphToCodeArray = newGlyphIndexToCodeArray;
 		}
 
@@ -77,7 +79,7 @@ CustomFontSDF::CustomFontSDF(swfFont* gameFont,
 		{
 
 			cw("gameFont advnaceArray: %p", gameFont->advanceArray);
-			auto newAdvanceArray = (float*)XMem::New(
+			auto newAdvanceArray = (float*)allocator->New(
 				m_newGameFontGlyphTotal * sizeof(float), sizeof(float));
 			if (gameFont->advanceArray) {
 				memcpy(newAdvanceArray, gameFont->advanceArray,
@@ -88,18 +90,18 @@ CustomFontSDF::CustomFontSDF(swfFont* gameFont,
 				cw("no need to clone advance array!");
 			}
 			// delete first!
-			XMem::Delete(gameFont->advanceArray);
+			allocator->Delete(gameFont->advanceArray);
 			gameFont->advanceArray = newAdvanceArray;
 		}
 
 		// glyph array!!
 		{
-			auto newGlyphArray = (swfGlyph*)XMem::New(
+			auto newGlyphArray = (swfGlyph*)allocator->New(
 				m_newGameFontGlyphTotal * sizeof(swfGlyph), sizeof(swfGlyph));
 			memcpy(newGlyphArray, sheet->glyphArray,
 				m_oldGameFontGlyphTotal * sizeof(swfGlyph));
 			pn("clone newGlyphArray");
-			XMem::Delete(sheet->glyphArray);
+			allocator->Delete(sheet->glyphArray);
 			sheet->glyphArray = newGlyphArray;
 		}
 
@@ -110,11 +112,11 @@ CustomFontSDF::CustomFontSDF(swfFont* gameFont,
 		// resize texture glyph index
 		if (sheet->textureGlyphIndexArray)
 		{
-			auto newTextureGlyphIndexArray = (unsigned short*)XMem::New(
+			auto newTextureGlyphIndexArray = (unsigned short*)allocator->New(
 				m_newGameFontGlyphTotal * sizeof(unsigned short), sizeof(unsigned short));
 			memcpy(newTextureGlyphIndexArray, sheet->textureGlyphIndexArray,
 				m_oldGameFontGlyphTotal * sizeof(unsigned short));
-			XMem::Delete(sheet->textureGlyphIndexArray);
+			allocator->Delete(sheet->textureGlyphIndexArray);
 			sheet->textureGlyphIndexArray = newTextureGlyphIndexArray;
 			pn("clone textureGlyphIndexArray");
 		}

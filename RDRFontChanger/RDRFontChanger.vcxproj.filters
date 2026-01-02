@@ -126,6 +126,12 @@
     <ClInclude Include="StringTypes.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="GameVerify.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GameAllocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -223,6 +229,12 @@
     </ClCompile>
     <ClCompile Include="inc\uni_algo\uni_algo_data.cpp">
       <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GameVerify.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GameAllocator.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
